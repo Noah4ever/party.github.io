@@ -93,10 +93,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [applyToken]);
+  }, [applyToken, setError]);
 
   useEffect(() => {
     const handler = () => {
+      setError("Session expired. Please sign in again.");
       applyToken(null);
     };
     setUnauthorizedHandler(handler);

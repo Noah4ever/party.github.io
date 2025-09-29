@@ -1,7 +1,7 @@
 import GuestForm, { Guest } from "@/components/guest/GuestForm";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { GuestDTO, guestsApi } from "@/lib/api";
+import { ApiError, GuestDTO, guestsApi } from "@/lib/api";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 
@@ -24,10 +24,20 @@ export default function EditGuestModal() {
         const list = (await guestsApi.list()) as GuestDTO[]; // simple fetch-all; could add single endpoint later
         const found = list.find((g) => g.id === guestId);
         if (active)
-          setGuest(found ? { id: found.id, name: found.name, clue1: found.clue1, clue2: found.clue2 } : undefined);
+          setGuest(
+            found
+              ? {
+                  id: found.id,
+                  name: found.name,
+                  clue1: found.clue1,
+                  clue2: found.clue2,
+                }
+              : undefined
+          );
         if (!found) setError("Guest not found");
       } catch (e: any) {
-        if (active) setError(e.message || "Failed to load guest");
+        const apiErr = e as ApiError;
+        if (active) setError(apiErr?.message || "Failed to load guest");
       } finally {
         if (active) setLoading(false);
       }
@@ -40,31 +50,48 @@ export default function EditGuestModal() {
   const handleSave = useCallback(
     async (g: Guest) => {
       if (!g.id) return;
-      const updated = (await guestsApi.update(g.id, { name: g.name, clue1: g.clue1, clue2: g.clue2 })) as GuestDTO;
-      console.log(updated);
-      router.replace("/admin");
+      try {
+        await guestsApi.update(g.id, {
+          name: g.name,
+          clue1: g.clue1,
+          clue2: g.clue2,
+        });
+        router.replace("/admin");
+      } catch (err) {
+        const apiErr = err as ApiError;
+        throw new Error(apiErr?.message || "Failed to save guest");
+      }
     },
     [router]
   );
 
   const handleDelete = useCallback(
     async (id: string) => {
-      await guestsApi.remove(id);
-      router.replace("/admin");
+      try {
+        await guestsApi.remove(id);
+        router.replace("/admin");
+      } catch (err) {
+        const apiErr = err as ApiError;
+        throw new Error(apiErr?.message || "Failed to delete guest");
+      }
     },
     [router]
   );
 
   if (loading) {
     return (
-      <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <ThemedView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
         <ThemedText>Loading...</ThemedText>
       </ThemedView>
     );
   }
   if (error) {
     return (
-      <ThemedView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <ThemedView
+        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+      >
         <ThemedText>{error}</ThemedText>
       </ThemedView>
     );
