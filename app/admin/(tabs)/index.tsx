@@ -3,27 +3,60 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
+import { ApiError, GuestDTO, guestsApi } from "@/lib/api";
 import { Image } from "expo-image";
-import { Link, useRouter } from "expo-router";
-import React, { useState } from "react";
-import { StyleSheet, TextInput, TouchableHighlight } from "react-native";
+import { Link, useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useRef, useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, TextInput, TouchableHighlight } from "react-native";
 
 type Guest = { id: string; name: string; clue1?: string; clue2?: string };
 
 export default function HomeScreen() {
   const router = useRouter();
   const theme = useTheme();
-  const [guests, setGuests] = useState<Guest[]>([
-    { id: "1", name: "John Doe", clue1: "Loves hiking", clue2: "Enjoys cooking" },
-    { id: "2", name: "Jane Smith", clue1: "Avid reader", clue2: "Plays guitar" },
-    { id: "3", name: "Max Mustermann", clue1: "Night owl", clue2: "Coffee lover" },
-    { id: "4", name: "John Doe", clue1: "Loves hiking", clue2: "Enjoys cooking" },
-    { id: "5", name: "Jane Smith", clue1: "Avid reader", clue2: "Plays guitar" },
-    { id: "6", name: "Max Mustermann", clue1: "Night owl", clue2: "Coffee lover" },
-    { id: "7", name: "Hummel Thierwes", clue1: "Loves hiking", clue2: "Enjoys cooking" },
-    { id: "8", name: "Ashlii Drewes", clue1: "Avid reader", clue2: "Plays guitar" },
-    { id: "9", name: "Noah Thiering", clue1: "Night owl", clue2: "Coffee lover" },
-  ]);
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = (await guestsApi.list()) as GuestDTO[];
+      setGuests(data.map((g) => ({ id: g.id, name: g.name, clue1: g.clue1, clue2: g.clue2 })));
+    } catch (e) {
+      setError((e as ApiError).message || "Failed to load guests");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Refetch on screen focus (after returning from add/edit modals)
+  const didInitialLoad = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (didInitialLoad.current) {
+        load(); // subsequent focuses
+      } else {
+        didInitialLoad.current = true;
+        load(); // initial focus
+      }
+    }, [load])
+  );
+
+  // (Optional) remove old initial useEffect if desired; kept no-op to avoid double fetch
+  // useEffect(() => { load(); }, [load]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const data = (await guestsApi.list()) as GuestDTO[];
+      setGuests(data.map((g) => ({ id: g.id, name: g.name, clue1: g.clue1, clue2: g.clue2 })));
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const [searchTerm, setSearchTerm] = useState("");
   const filteredGuests = guests.filter((guest) => guest.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -65,42 +98,52 @@ export default function HomeScreen() {
       </ThemedView>
 
       {/* List of added guests */}
-      <ThemedView style={[styles.guestListContainer, { backgroundColor: theme.background }]}>
-        {filteredGuests.map((guest) => (
-          <ThemedView
-            key={guest.id}
-            style={{
-              paddingInline: 12,
-              borderRadius: 8,
-              backgroundColor: theme.accent + "20",
-              borderColor: theme.accent,
-              borderWidth: 1,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-            <ThemedText>{guest.name}</ThemedText>
-            <ThemedView style={{ flexDirection: "row", gap: 2, backgroundColor: "transparent" }}>
-              <TouchableHighlight
-                underlayColor={theme.accent + "1f"}
-                style={{ padding: 6, borderRadius: 6 }}
-                onPress={() => {
-                  router.push(`/admin/qr/${guest.id}`);
-                }}>
-                <IconSymbol name="qr-code" size={22} color={theme.text} />
-              </TouchableHighlight>
-              <TouchableHighlight
-                underlayColor={theme.accent + "1f"}
-                style={{ padding: 6, borderRadius: 6 }}
-                onPress={() => {
-                  router.push(`/admin/guest/${guest.id}`);
-                }}>
-                <IconSymbol name="ellipsis.vertical.circle.outline" size={22} color={theme.text} />
-              </TouchableHighlight>
+      <ScrollView
+        style={{ flex: 1 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}>
+        <ThemedView style={[styles.guestListContainer, { backgroundColor: theme.background }]}>
+          {error && <ThemedText style={{ color: theme.danger }}>{error}</ThemedText>}
+          {loading && guests.length === 0 && <ThemedText>Loading...</ThemedText>}
+          {filteredGuests.map((guest) => (
+            <ThemedView
+              key={guest.id}
+              style={{
+                paddingInline: 12,
+                paddingVertical: 10,
+                borderRadius: 8,
+                backgroundColor: theme.accent + "12",
+                borderColor: theme.accent,
+                borderWidth: 1,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}>
+              <ThemedText>{guest.name}</ThemedText>
+              <ThemedView style={{ flexDirection: "row", gap: 2, backgroundColor: "transparent" }}>
+                <TouchableHighlight
+                  underlayColor={theme.accent + "1f"}
+                  style={{ padding: 6, borderRadius: 6 }}
+                  onPress={() => {
+                    router.push(`/admin/qr/${guest.id}`);
+                  }}>
+                  <IconSymbol name="qr-code" size={22} color={theme.text} />
+                </TouchableHighlight>
+                <TouchableHighlight
+                  underlayColor={theme.accent + "1f"}
+                  style={{ padding: 6, borderRadius: 6 }}
+                  onPress={() => {
+                    router.push(`/admin/guest/${guest.id}`);
+                  }}>
+                  <IconSymbol name="ellipsis.vertical.circle.outline" size={22} color={theme.text} />
+                </TouchableHighlight>
+              </ThemedView>
             </ThemedView>
-          </ThemedView>
-        ))}
-      </ThemedView>
+          ))}
+          {!loading && filteredGuests.length === 0 && !error && (
+            <ThemedText style={{ opacity: 0.7, textAlign: "center" }}>No guests yet. Click + to add one.</ThemedText>
+          )}
+        </ThemedView>
+      </ScrollView>
     </ParallaxScrollView>
   );
 }
@@ -131,6 +174,7 @@ const styles = StyleSheet.create({
     marginBlock: 16,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row",
   },
   topPicture: {
     height: 200,

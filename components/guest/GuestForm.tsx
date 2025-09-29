@@ -1,8 +1,9 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -22,17 +23,83 @@ type Props = {
   submitLabel?: string; // "Add Guest" | "Save"
   onSubmit: (g: Guest) => void; // upsert
   onCancel?: () => void;
+  onDelete?: (id: string) => Promise<void> | void; // optional external delete handler
+  disabled?: boolean; // externally controlled disabled state
 };
 
-export default function GuestForm({ title, initialGuest, submitLabel = "Save", onSubmit, onCancel }: Props) {
+export default function GuestForm({
+  title,
+  initialGuest,
+  submitLabel = "Save",
+  onSubmit,
+  onCancel,
+  onDelete,
+  disabled,
+}: Props) {
   const theme = useTheme();
   const [name, setName] = useState(initialGuest?.name ?? "");
   const [clue1, setClue1] = useState(initialGuest?.clue1 ?? "");
   const [clue2, setClue2] = useState(initialGuest?.clue2 ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  function handleSubmit() {
-    onSubmit({ id: initialGuest?.id, name, clue1, clue2 });
+  async function handleSubmit() {
+    if (submitting || deleting || disabled) return;
+    setSubmitting(true);
+    try {
+      // TODO: call your API for create/update here if needed
+      // Example:
+      // await fetch(`${API_BASE}/guests${initialGuest?.id ? '/' + initialGuest.id : ''}`, {
+      //   method: initialGuest ? 'PUT' : 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ name, clue1, clue2 })
+      // });
+      onSubmit({ id: initialGuest?.id, name, clue1, clue2 });
+    } finally {
+      setSubmitting(false);
+    }
   }
+
+  const confirmDelete = useCallback(() => {
+    if (!initialGuest?.id || deleting) return;
+    // Web fallback: Alert.alert on web only supports a single OK button, so use window.confirm for multi-button UX.
+    if (Platform.OS === "web") {
+      const confirmed = (globalThis as any).confirm?.(`Delete guest "${initialGuest.name}"? This cannot be undone.`);
+      if (!confirmed) return;
+      (async () => {
+        try {
+          setDeleting(true);
+          if (onDelete) {
+            await onDelete(initialGuest.id!);
+          }
+          onCancel?.();
+        } finally {
+          setDeleting(false);
+        }
+      })();
+      return;
+    }
+
+    // Native / mobile platforms
+    Alert.alert("Delete Guest", `Are you sure you want to delete \"${initialGuest.name}\"? This cannot be undone.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setDeleting(true);
+            if (onDelete) {
+              await onDelete(initialGuest.id!);
+            }
+            onCancel?.();
+          } finally {
+            setDeleting(false);
+          }
+        },
+      },
+    ]);
+  }, [initialGuest, onDelete, onCancel, deleting]);
 
   return (
     <ThemedView style={styles.container}>
@@ -73,24 +140,46 @@ export default function GuestForm({ title, initialGuest, submitLabel = "Save", o
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
               />
-
-              <TouchableHighlight
-                style={[styles.button, { borderColor: theme.primary }]}
-                underlayColor={theme.primaryMuted}
-                onPress={handleSubmit}>
-                <ThemedText type="link" style={[styles.buttonText, { color: theme.primary }]}>
-                  {submitLabel}
+              {initialGuest && (
+                <ThemedText
+                  onPress={confirmDelete}
+                  style={{
+                    textAlign: "center",
+                    color: theme.danger,
+                    opacity: deleting ? 0.5 : 1,
+                    textDecorationLine: "underline",
+                  }}>
+                  {deleting ? "Deleting..." : "Remove"}
                 </ThemedText>
-              </TouchableHighlight>
-
-              {onCancel && (
-                <TouchableHighlight
-                  style={[styles.button, { marginTop: 16, borderColor: theme.textMuted }]}
-                  underlayColor={theme.textMuted + "22"}
-                  onPress={onCancel}>
-                  <ThemedText style={{ color: theme.textMuted }}>Cancel</ThemedText>
-                </TouchableHighlight>
               )}
+
+              <ThemedView
+                style={{
+                  marginTop: 20,
+                  gap: 12,
+                  alignItems: "center",
+                  justifyContent: "space-evenly",
+                  flexDirection: "row",
+                }}>
+                {onCancel && (
+                  <TouchableHighlight
+                    style={[styles.button, { borderColor: theme.textMuted }]}
+                    underlayColor={theme.textMuted + "22"}
+                    onPress={onCancel}>
+                    <ThemedText style={{ color: theme.textMuted }}>Cancel</ThemedText>
+                  </TouchableHighlight>
+                )}
+
+                <TouchableHighlight
+                  style={[styles.button, { borderColor: theme.primary, width: "50%", opacity: submitting ? 0.6 : 1 }]}
+                  disabled={submitting || deleting || disabled}
+                  underlayColor={theme.primaryMuted}
+                  onPress={handleSubmit}>
+                  <ThemedText style={{ color: theme.primary, textAlign: "center" }}>
+                    {submitting ? "Saving..." : submitLabel}
+                  </ThemedText>
+                </TouchableHighlight>
+              </ThemedView>
             </View>
           </ScrollView>
         </TouchableWithoutFeedback>
@@ -101,7 +190,7 @@ export default function GuestForm({ title, initialGuest, submitLabel = "Save", o
 
 const styles = StyleSheet.create({
   container: { flex: 1, alignItems: "center", justifyContent: "flex-start", padding: 20 },
-  heading: { marginBottom: 60 },
+  heading: { marginTop: 20, marginBottom: 60 },
   scrollContent: { flexGrow: 1, alignItems: "center", paddingBottom: 40 },
   form: { width: "100%", maxWidth: 420, gap: 16 },
   input: {
@@ -128,5 +217,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  buttonText: { color: "#0a7ea4" },
+  buttonText: {},
 });

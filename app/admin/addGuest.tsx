@@ -1,33 +1,25 @@
-import { useState } from "react";
-
 import GuestForm, { Guest } from "@/components/guest/GuestForm";
-import { useTheme } from "@/constants/theme";
-import { useNavigation, useRouter } from "expo-router";
+import { GuestDTO, guestsApi } from "@/lib/api";
+import { useRouter } from "expo-router";
+import { useCallback } from "react";
 
 export default function AddGuest() {
   const router = useRouter();
-  const navigation = useNavigation();
-  const theme = useTheme();
+  const createGuest = useCallback(
+    async (g: Guest) => {
+      const created = (await guestsApi.create({ name: g.name, clue1: g.clue1, clue2: g.clue2 })) as GuestDTO;
+      // Could use event emitter / context to trigger list refresh; simplest: rely on focus refetch.
 
-  const [name, setName] = useState("");
-  const [clue1, setClue1] = useState("");
-  const [clue2, setClue2] = useState("");
-
-  function handleSubmit() {
-    // You could send this to an API here
-    alert(`Guest added: ${name}\nClue 1: ${clue1}\nClue 2: ${clue2}`);
-    navigation.goBack();
-  }
+      router.back();
+    },
+    [router]
+  );
 
   return (
     <GuestForm
       title="Add new Partymaus"
       submitLabel="Add Guest"
-      onSubmit={(g: Guest) => {
-        // TODO: API/Create
-        alert(`Guest added: ${g.name}\nClue1: ${g.clue1 ?? ""}\nClue2: ${g.clue2 ?? ""}`);
-        router.back();
-      }}
+      onSubmit={createGuest}
       onCancel={() => router.back()}
     />
   );

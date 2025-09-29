@@ -27,6 +27,7 @@ const MAPPING = {
   "ellipsis.vertical": "ellipsis-horizontal", // ellipsis-vertical
   "ellipsis.vertical.circle.outline": "ellipsis-horizontal-circle-outline", // ellipsis-vertical
   "qr-code": "qr-code-outline", // qr-code
+  "reload-data": "refresh-outline",
 } as const satisfies IconMapping;
 
 // To add new icons:
