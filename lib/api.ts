@@ -4,9 +4,9 @@
 // NOTE: Switch base URL depending on environment. For local dev hitting the bundled server use localhost:4000.
 // You can override at runtime by calling api.setBaseUrl(newUrl).
 let BASE_URL =
-  typeof process !== "undefined" && process.env.EXPO_PUBLIC_API_BASE
-    ? process.env.EXPO_PUBLIC_API_BASE!
-    : "http://localhost:4000/api"; // fallback local
+  typeof process !== "undefined" && process.env.DEV === "true"
+    ? "http://localhost:5000/api" // local development
+    : "https://api.thiering.org/api"; // production
 
 export function setBaseUrl(url: string) {
   BASE_URL = url.replace(/\/$/, "");
@@ -69,15 +69,29 @@ function buildQuery(query?: Record<string, any>): string {
   return qs ? `?${qs}` : "";
 }
 
-async function request<TResponse = any, TBody = any>(opts: RequestOptions<TBody>): Promise<TResponse | Response> {
-  const { method = "GET", path, query, body, headers = {}, signal, timeoutMs = 15000, raw } = opts;
+async function request<TResponse = any, TBody = any>(
+  opts: RequestOptions<TBody>
+): Promise<TResponse | Response> {
+  const {
+    method = "GET",
+    path,
+    query,
+    body,
+    headers = {},
+    signal,
+    timeoutMs = 15000,
+    raw,
+  } = opts;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const finalSignal = signal ? mergeSignals(signal, controller.signal) : controller.signal;
+  const finalSignal = signal
+    ? mergeSignals(signal, controller.signal)
+    : controller.signal;
 
   const url = `${BASE_URL}${path}${buildQuery(query)}`;
 
-  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
 
   const reqHeaders: Record<string, string> = {
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
@@ -101,9 +115,18 @@ async function request<TResponse = any, TBody = any>(opts: RequestOptions<TBody>
   } catch (err: any) {
     clearTimeout(timeout);
     if (err?.name === "AbortError") {
-      throw new ApiError({ status: 0, url, message: "Request aborted (timeout or manual abort)" });
+      throw new ApiError({
+        status: 0,
+        url,
+        message: "Request aborted (timeout or manual abort)",
+      });
     }
-    throw new ApiError({ status: 0, url, message: err?.message || "Network error", details: err });
+    throw new ApiError({
+      status: 0,
+      url,
+      message: err?.message || "Network error",
+      details: err,
+    });
   } finally {
     clearTimeout(timeout);
   }
@@ -147,14 +170,26 @@ function mergeSignals(...signals: AbortSignal[]): AbortSignal {
 export const api = {
   request,
   setBaseUrl,
-  get: <T = any>(path: string, query?: Record<string, any>, opts: Partial<RequestOptions> = {}) =>
-    request<T>({ path, query, method: "GET", ...opts }),
-  post: <T = any, B = any>(path: string, body?: B, opts: Partial<RequestOptions<B>> = {}) =>
-    request<T, B>({ path, body, method: "POST", ...opts }),
-  put: <T = any, B = any>(path: string, body?: B, opts: Partial<RequestOptions<B>> = {}) =>
-    request<T, B>({ path, body, method: "PUT", ...opts }),
-  patch: <T = any, B = any>(path: string, body?: B, opts: Partial<RequestOptions<B>> = {}) =>
-    request<T, B>({ path, body, method: "PATCH", ...opts }),
+  get: <T = any>(
+    path: string,
+    query?: Record<string, any>,
+    opts: Partial<RequestOptions> = {}
+  ) => request<T>({ path, query, method: "GET", ...opts }),
+  post: <T = any, B = any>(
+    path: string,
+    body?: B,
+    opts: Partial<RequestOptions<B>> = {}
+  ) => request<T, B>({ path, body, method: "POST", ...opts }),
+  put: <T = any, B = any>(
+    path: string,
+    body?: B,
+    opts: Partial<RequestOptions<B>> = {}
+  ) => request<T, B>({ path, body, method: "PUT", ...opts }),
+  patch: <T = any, B = any>(
+    path: string,
+    body?: B,
+    opts: Partial<RequestOptions<B>> = {}
+  ) => request<T, B>({ path, body, method: "PATCH", ...opts }),
   delete: <T = any>(path: string, opts: Partial<RequestOptions> = {}) =>
     request<T>({ path, method: "DELETE", ...opts }),
   setToken: setAuthToken,
@@ -175,8 +210,10 @@ export type UpdateGuestInput = Partial<Omit<GuestDTO, "id" | "groupId">>;
 
 export const guestsApi = {
   list: () => api.get<GuestDTO[]>("/guests"),
-  create: (data: CreateGuestInput) => api.post<GuestDTO, CreateGuestInput>("/guests", data),
-  update: (id: string, data: UpdateGuestInput) => api.put<GuestDTO, UpdateGuestInput>(`/guests/${id}`, data),
+  create: (data: CreateGuestInput) =>
+    api.post<GuestDTO, CreateGuestInput>("/guests", data),
+  update: (id: string, data: UpdateGuestInput) =>
+    api.put<GuestDTO, UpdateGuestInput>(`/guests/${id}`, data),
   remove: (id: string) => api.delete<void>(`/guests/${id}`),
 };
 
