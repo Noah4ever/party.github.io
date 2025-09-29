@@ -1,12 +1,31 @@
 // Simple API client for https://api.thiering.org
 // Provides typed helper methods with JSON handling, query param support, abort timeout, and token injection.
 
-// NOTE: Switch base URL depending on environment. For local dev hitting the bundled server use localhost:4000.
+// NOTE: Switch base URL depending on environment. For local dev hitting the bundled server use localhost:5000.
 // You can override at runtime by calling api.setBaseUrl(newUrl).
-let BASE_URL =
-  typeof process !== "undefined" && process.env.DEV === "true"
-    ? "http://localhost:5000/api" // local development
-    : "https://api.thiering.org/api"; // production
+const normalizeBase = (url: string) => url.replace(/\/$/, "");
+
+const env: Record<string, string | undefined> =
+  typeof process !== "undefined" && process.env
+    ? (process.env as Record<string, string | undefined>)
+    : {};
+const rawOverride =
+  env.EXPO_PUBLIC_API_BASE ?? env.API_BASE_URL ?? env.NEXT_PUBLIC_API_BASE; // support multiple conventions
+const rawDevFlag = env.EXPO_PUBLIC_DEV ?? env.DEV ?? env.NODE_ENV;
+
+const isDevFlag = (() => {
+  if (rawDevFlag === undefined) return false;
+  if (typeof rawDevFlag === "boolean") return rawDevFlag;
+  const value = String(rawDevFlag).toLowerCase();
+  return value === "true" || value === "1" || value === "development";
+})();
+
+let BASE_URL = "https://api.thiering.org/api"; // production default
+if (rawOverride) {
+  BASE_URL = normalizeBase(rawOverride);
+} else if (isDevFlag) {
+  BASE_URL = "http://localhost:5000/api"; // local development
+}
 
 export function setBaseUrl(url: string) {
   BASE_URL = url.replace(/\/$/, "");

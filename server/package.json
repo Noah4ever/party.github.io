@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "dev:local": "PORT=5050 tsx watch src/index.ts",
     "start": "node dist/index.js",
     "build": "tsc -p ."
   },

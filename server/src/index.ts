@@ -1,4 +1,4 @@
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import multer from "multer";
 import { gamesRouter } from "./routes.games.js";
@@ -7,8 +7,43 @@ import { guestsRouter } from "./routes.guests.js";
 
 const upload = multer({ dest: "uploads/" });
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:19000",
+  "http://localhost:19001",
+  "http://localhost:19002",
+  "http://localhost:19006",
+  "http://localhost:8081",
+  "http://localhost:5173",
+  "http://localhost:5000",
+  "https://party.github.io",
+  "https://www.party.github.io",
+];
+
+const envOrigins = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [
+  ...new Set([...DEFAULT_ALLOWED_ORIGINS, ...envOrigins]),
+];
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // mobile apps / curl
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (/^https?:\/\/localhost(:\d+)?$/.test(origin))
+      return callback(null, true);
+    if (/^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin))
+      return callback(null, true);
+    if (origin.endsWith(".thiering.org")) return callback(null, true);
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  },
+  credentials: true,
+};
+
 const app = express();
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json({ limit: "2mb" }));
 app.use("/uploads", express.static("uploads"));
 
