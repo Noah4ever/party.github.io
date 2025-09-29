@@ -13,21 +13,22 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: false,
         tabBarButton: HapticTab,
+        tabBarShowLabel: false,
+        headerShown: false,
+        tabBarStyle: { height: 60 },
+        tabBarIconStyle: { marginTop: 0, justifyContent: "center", alignItems: "center", flex: 1 },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: "Add",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.add" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={32} name="people-outline" color={color} />,
         }}
       />
       <Tabs.Screen
         name="control"
         options={{
-          title: "control",
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="joystick.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={32} name="gamecontroller.fill" color={color} />,
         }}
       />
     </Tabs>

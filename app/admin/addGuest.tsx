@@ -1,29 +1,34 @@
-import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { useState } from "react";
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import GuestForm, { Guest } from "@/components/guest/GuestForm";
+import { useTheme } from "@/constants/theme";
+import { useNavigation, useRouter } from "expo-router";
 
-export default function ModalScreen() {
+export default function AddGuest() {
+  const router = useRouter();
+  const navigation = useNavigation();
+  const theme = useTheme();
+
+  const [name, setName] = useState("");
+  const [clue1, setClue1] = useState("");
+  const [clue2, setClue2] = useState("");
+
+  function handleSubmit() {
+    // You could send this to an API here
+    alert(`Guest added: ${name}\nClue 1: ${clue1}\nClue 2: ${clue2}`);
+    navigation.goBack();
+  }
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
-      </Link>
-    </ThemedView>
+    <GuestForm
+      title="Add new Partymaus"
+      submitLabel="Add Guest"
+      onSubmit={(g: Guest) => {
+        // TODO: API/Create
+        alert(`Guest added: ${g.name}\nClue1: ${g.clue1 ?? ""}\nClue2: ${g.clue2 ?? ""}`);
+        router.back();
+      }}
+      onCancel={() => router.back()}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-});

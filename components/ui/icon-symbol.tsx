@@ -14,16 +14,26 @@ type IconMapping = Record<string, ComponentProps<typeof IconSet>["name"]>;
  * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
  */
 const MAPPING = {
-  "house.fill": "home",
-  "paperplane.fill": "person-add",
-  "chevron.left.forwardslash.chevron.right": "code",
-  "chevron.right": "chevron-forward",
-  "person.add": "person-add",
-  "joystick.fill": "settings",
+  // SF-like name       // Ionicon name
+  "house.fill": "home", // home
+  "paperplane.fill": "paper-plane", // paper-plane
+  "chevron.left.forwardslash.chevron.right": "code", // code
+  "chevron.right": "chevron-forward", // chevron-forward
+  // Newly added custom admin tab icons
+  "person.badge.plus": "person-add", // person-add icon
+  "people-outline": "people-outline", // people-outline icon
+  "gamecontroller.fill": "game-controller", // game-controller icon
+  settings: "cog-outline", // ellipsis-vertical icon
+  "ellipsis.vertical": "ellipsis-horizontal", // ellipsis-vertical
+  "ellipsis.vertical.circle.outline": "ellipsis-horizontal-circle-outline", // ellipsis-vertical
+  "qr-code": "qr-code-outline", // qr-code
 } as const satisfies IconMapping;
 
-// to add new ionicons choose a name for the key and go to https://ionic.io/ionicons and put the name in the right side
-// "test.fill": "accessibility-outline"
+// To add new icons:
+// 1. Pick an SF Symbol-esque key (e.g. "bell.fill").
+// 2. Find an Ionicon name at https://ionic.io/ionicons.
+// 3. Add a mapping: "bell.fill": "notifications".
+// Keep keys stable because they are used throughout the app.
 
 type IconSymbolName = keyof typeof MAPPING;
 
