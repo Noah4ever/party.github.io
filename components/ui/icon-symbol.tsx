@@ -1,12 +1,12 @@
 // Fallback for using MaterialIcons on Android and web.
 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
-import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
+import IconSet from "@expo/vector-icons/Ionicons";
+import { SymbolWeight } from "expo-symbols";
+import { ComponentProps } from "react";
+import { OpaqueColorValue, type StyleProp, type TextStyle } from "react-native";
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
+// Narrow mapping type to just the keys we define instead of every possible SF Symbol name.
+type IconMapping = Record<string, ComponentProps<typeof IconSet>["name"]>;
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
@@ -14,11 +14,18 @@ type IconSymbolName = keyof typeof MAPPING;
  * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
  */
 const MAPPING = {
-  'house.fill': 'home',
-  'paperplane.fill': 'send',
-  'chevron.left.forwardslash.chevron.right': 'code',
-  'chevron.right': 'chevron-right',
-} as IconMapping;
+  "house.fill": "home",
+  "paperplane.fill": "person-add",
+  "chevron.left.forwardslash.chevron.right": "code",
+  "chevron.right": "chevron-forward",
+  "person.add": "person-add",
+  "joystick.fill": "settings",
+} as const satisfies IconMapping;
+
+// to add new ionicons choose a name for the key and go to https://ionic.io/ionicons and put the name in the right side
+// "test.fill": "accessibility-outline"
+
+type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
@@ -37,5 +44,5 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  return <IconSet color={color} size={size} name={MAPPING[name]} style={style} />;
 }
