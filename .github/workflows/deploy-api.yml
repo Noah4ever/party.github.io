@@ -39,16 +39,14 @@ jobs:
           ssh -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<'SSHCMDS'
           set -e
           cd /srv/party-api
-          if command -v pnpm >/dev/null 2>&1; then
-            pnpm i --frozen-lockfile
-            pnpm run build
-          elif command -v yarn >/dev/null 2>&1; then
-            yarn install --frozen-lockfile
-            yarn build
-          else
-            npm ci
-            npm run build
-          fi
+          # make sure we use nvm Node v22 for build
+          export PATH=/root/.nvm/versions/node/v22.19.0/bin:$PATH
+          node -v
+          npm -v
+
+          npm ci
+          npm run build
+
           sudo systemctl restart party-api
           sudo systemctl --no-pager status party-api -n 20 || true
           SSHCMDS
