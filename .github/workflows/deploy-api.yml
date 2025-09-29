@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "server/**" # only run when /server changes
+      - "server/**"
       - ".github/workflows/deploy-api.yml"
 
 jobs:
@@ -19,22 +19,26 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Add known_hosts (optional but recommended)
-        if: ${{ secrets.KNOWN_HOSTS != '' }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
+          if [ -n "${{ secrets.KNOWN_HOSTS }}" ]; then
+            mkdir -p ~/.ssh
+            echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+            chmod 644 ~/.ssh/known_hosts
+            echo "known_hosts added"
+          else
+            echo "KNOWN_HOSTS not set; skipping"
+          fi
 
       - name: Rsync server/ → /srv/party-api
         run: |
           rsync -az --delete \
-            -e "ssh -p ${{ secrets.SSH_PORT || 22 }}" \
+            -e "ssh -p ${{ secrets.SSH_PORT || '22' }}" \
             --exclude=node_modules --exclude='.git' \
             ./server/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/srv/party-api
 
       - name: Install, build, restart
         run: |
-          ssh -p ${{ secrets.SSH_PORT || 22 }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<'SSHCMDS'
+          ssh -p ${{ secrets.SSH_PORT || '22' }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<'SSHCMDS'
           set -e
           cd /srv/party-api
           if command -v pnpm >/dev/null 2>&1; then
