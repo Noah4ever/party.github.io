@@ -17,7 +17,7 @@ app.get("/api/health", (_req, res) =>
 );
 
 app.get("/api/ashlii", (_req, res) =>
-  res.json({ love: true, time: new Date().toISOString() })
+  res.json({ lovingAshlii: true, time: new Date().toISOString() })
 );
 
 app.use("/api/guests", guestsRouter);

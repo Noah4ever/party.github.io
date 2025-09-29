@@ -18,16 +18,14 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Add known_hosts (optional but recommended)
+      - name: Refresh known_hosts (safe)
         run: |
-          if [ -n "${{ secrets.KNOWN_HOSTS }}" ]; then
-            mkdir -p ~/.ssh
-            echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
-            chmod 644 ~/.ssh/known_hosts
-            echo "known_hosts added"
-          else
-            echo "KNOWN_HOSTS not set; skipping"
-          fi
+          mkdir -p ~/.ssh
+          # remove any old key for this host (IP or hostname)
+          ssh-keygen -R "${{ secrets.SSH_HOST }}" || true
+          # add the current host key from the server
+          ssh-keyscan -p "${{ secrets.SSH_PORT || '22' }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Rsync server/ → /srv/party-api
         run: |
