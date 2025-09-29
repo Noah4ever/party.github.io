@@ -1,0 +1,52 @@
+name: Deploy API to server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**" # only run when /server changes
+      - ".github/workflows/deploy-api.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add known_hosts (optional but recommended)
+        if: secrets.KNOWN_HOSTS != ''
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Rsync server/ → /srv/party-api
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${{ secrets.SSH_PORT || 22 }}" \
+            --exclude=node_modules --exclude='.git' \
+            ./server/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/srv/party-api
+
+      - name: Install, build, restart
+        run: |
+          ssh -p ${{ secrets.SSH_PORT || 22 }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} <<'SSHCMDS'
+          set -e
+          cd /srv/party-api
+          if command -v pnpm >/dev/null 2>&1; then
+            pnpm i --frozen-lockfile
+            pnpm run build
+          elif command -v yarn >/dev/null 2>&1; then
+            yarn install --frozen-lockfile
+            yarn build
+          else
+            npm ci
+            npm run build
+          fi
+          sudo systemctl restart party-api
+          sudo systemctl --no-pager status party-api -n 20 || true
+          SSHCMDS
