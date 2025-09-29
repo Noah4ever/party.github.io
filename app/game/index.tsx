@@ -32,7 +32,7 @@ export default function HomeScreen() {
       </ThemedView>
       <ThemedView>
         <ThemedText type="normal">Challenge 1 : Finde deine Person</ThemedText>
-        <ThemedText type="normal" style={styles.skillContainer}>
+        <ThemedText type="normal" style={styles.clueBox}>
           Hinweise:
           <ul className="clueList">
             <li>Clue 1</li>
@@ -53,8 +53,6 @@ export default function HomeScreen() {
             }}
           />
         </ThemedText>
-        <ThemedText>Dein QR Code</ThemedText>
-        <img src="@/assets/images/icon.png" alt="QR Code" />
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -67,7 +65,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   clueBox: {
-    fontSize: 40,
+    // border
   },
   textContainer: {
     top: 10,
@@ -81,5 +79,4 @@ const styles = StyleSheet.create({
     right: 0,
     position: "absolute",
   },
-  skillContainer: {},
 });
