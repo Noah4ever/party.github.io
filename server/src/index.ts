@@ -12,7 +12,9 @@ app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 app.use("/uploads", express.static("uploads"));
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+app.get("/api/health", (_req, res) =>
+  res.json({ ok: true, time: new Date().toISOString() })
+);
 
 app.use("/api/guests", guestsRouter);
 app.use("/api/groups", groupsRouter);
@@ -32,7 +34,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ message: "internal error", error: err?.message });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`API listening on http://localhost:${PORT}`);
 });
