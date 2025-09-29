@@ -24,9 +24,18 @@ type Props = {
   onSubmit: (g: Guest) => void; // upsert
   onCancel?: () => void;
   onDelete?: (id: string) => Promise<void> | void; // optional external delete handler
+  disabled?: boolean; // externally controlled disabled state
 };
 
-export default function GuestForm({ title, initialGuest, submitLabel = "Save", onSubmit, onCancel, onDelete }: Props) {
+export default function GuestForm({
+  title,
+  initialGuest,
+  submitLabel = "Save",
+  onSubmit,
+  onCancel,
+  onDelete,
+  disabled,
+}: Props) {
   const theme = useTheme();
   const [name, setName] = useState(initialGuest?.name ?? "");
   const [clue1, setClue1] = useState(initialGuest?.clue1 ?? "");
@@ -35,7 +44,7 @@ export default function GuestForm({ title, initialGuest, submitLabel = "Save", o
   const [deleting, setDeleting] = useState(false);
 
   async function handleSubmit() {
-    if (submitting || deleting) return;
+    if (submitting || deleting || disabled) return;
     setSubmitting(true);
     try {
       // TODO: call your API for create/update here if needed
@@ -163,7 +172,7 @@ export default function GuestForm({ title, initialGuest, submitLabel = "Save", o
 
                 <TouchableHighlight
                   style={[styles.button, { borderColor: theme.primary, width: "50%", opacity: submitting ? 0.6 : 1 }]}
-                  disabled={submitting || deleting}
+                  disabled={submitting || deleting || disabled}
                   underlayColor={theme.primaryMuted}
                   onPress={handleSubmit}>
                   <ThemedText style={{ color: theme.primary, textAlign: "center" }}>
