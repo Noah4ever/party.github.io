@@ -19,7 +19,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Add known_hosts (optional but recommended)
-        if: secrets.KNOWN_HOSTS != ''
+        if: ${{ secrets.KNOWN_HOSTS != '' }}
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
