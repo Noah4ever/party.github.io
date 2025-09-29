@@ -16,10 +16,15 @@ app.get("/api/health", (_req, res) =>
   res.json({ ok: true, time: new Date().toISOString() })
 );
 
+app.get("/api/ashlii", (_req, res) =>
+  res.json({ ok: true, time: new Date().toISOString() })
+);
+
 app.use("/api/guests", guestsRouter);
 app.use("/api/groups", groupsRouter);
 app.use("/api/games", gamesRouter);
 
+// Add comment so server restarts on change
 // Simple image upload (returns URL). Use field name 'image'.
 app.post("/api/upload", upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ message: "file required" });
