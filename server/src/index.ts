@@ -1,9 +1,11 @@
 import cors, { CorsOptions } from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import multer from "multer";
+import { authRouter, requireAuth } from "./auth.js";
 import { gamesRouter } from "./routes.games.js";
 import { groupsRouter } from "./routes.groups.js";
 import { guestsRouter } from "./routes.guests.js";
+import "./setupEnv.js";
 
 const upload = multer({ dest: "uploads/" });
 
@@ -55,13 +57,14 @@ app.get("/api/ashlii", (_req, res) =>
   res.json({ lovingAshliiALot: true, time: new Date().toISOString() })
 );
 
+app.use("/api/auth", authRouter);
 app.use("/api/guests", guestsRouter);
 app.use("/api/groups", groupsRouter);
 app.use("/api/games", gamesRouter);
 
 // Add comment so server restarts on change
 // Simple image upload (returns URL). Use field name 'image'.
-app.post("/api/upload", upload.single("image"), (req, res) => {
+app.post("/api/upload", requireAuth, upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ message: "file required" });
   const url = `/uploads/${req.file.filename}`;
   res.status(201).json({ url });

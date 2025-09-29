@@ -9,6 +9,12 @@ const env: Record<string, string | undefined> =
   typeof process !== "undefined" && process.env
     ? (process.env as Record<string, string | undefined>)
     : {};
+
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler;
+}
 const rawOverride =
   env.EXPO_PUBLIC_API_BASE ?? env.API_BASE_URL ?? env.NEXT_PUBLIC_API_BASE; // support multiple conventions
 const rawDevFlag = env.EXPO_PUBLIC_DEV ?? env.DEV ?? env.NODE_ENV;
@@ -163,6 +169,9 @@ async function request<TResponse = any, TBody = any>(
   }
 
   if (!res.ok) {
+    if (res.status === 401 && unauthorizedHandler) {
+      unauthorizedHandler();
+    }
     throw new ApiError({
       status: res.status,
       url,
@@ -189,6 +198,7 @@ function mergeSignals(...signals: AbortSignal[]): AbortSignal {
 export const api = {
   request,
   setBaseUrl,
+  onUnauthorized: setUnauthorizedHandler,
   get: <T = any>(
     path: string,
     query?: Record<string, any>,
@@ -234,6 +244,15 @@ export const guestsApi = {
   update: (id: string, data: UpdateGuestInput) =>
     api.put<GuestDTO, UpdateGuestInput>(`/guests/${id}`, data),
   remove: (id: string) => api.delete<void>(`/guests/${id}`),
+};
+
+export const authApi = {
+  login: (password: string) =>
+    api.post<
+      { token: string; expiresAt: number; expiresIn: number },
+      { password: string }
+    >("/auth/login", { password }),
+  logout: () => api.post<void>("/auth/logout"),
 };
 
 // Example usage (remove or comment out in production):

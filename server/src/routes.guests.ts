@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { nanoid } from "nanoid";
+import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
 import { Guest } from "./types.js";
 
@@ -13,7 +14,7 @@ guestsRouter.get("/", async (_req, res) => {
 
 // POST /api/guests
 // body: { name, clue1?, clue2? }
-guestsRouter.post("/", async (req, res) => {
+guestsRouter.post("/", requireAuth, async (req, res) => {
   const { name, clue1, clue2 } = req.body || {};
   if (!name) return res.status(400).json({ message: "name required" });
   const guest: Guest = { id: nanoid(8), name, clue1, clue2 };
@@ -27,7 +28,7 @@ guestsRouter.post("/", async (req, res) => {
 // PUT /api/guests/:id
 // body: { name?, clue1?, clue2? }
 
-guestsRouter.put("/:id", async (req, res) => {
+guestsRouter.put("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
   const { name, clue1, clue2 } = req.body || {};
   const updated = await mutate((d) => {
@@ -44,7 +45,7 @@ guestsRouter.put("/:id", async (req, res) => {
 
 // DELETE /api/guests/:id - remove guest and detach from group
 
-guestsRouter.delete("/:id", async (req, res) => {
+guestsRouter.delete("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
   const removed = await mutate((d) => {
     const idx = d.guests.findIndex((g) => g.id === id);

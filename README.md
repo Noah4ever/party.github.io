@@ -25,6 +25,30 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+### Admin tools & authentication
+
+- The admin area is protected behind a password prompt. The default password is `ashlii`.
+- To change it, set `ADMIN_PASSWORD=<your-secret>` in the root `.env` file (or in `server/.env`).
+- A successful login stores a temporary Bearer token in secure storage and sends it on every mutating request.
+- Tokens expire automatically after 12 hours or when you log out from the **Control** tab.
+
+### Running the API server
+
+```bash
+cd server
+npm install
+npm run dev:local   # serves the API on http://localhost:5050
+```
+
+Environment variables loaded from `.env`:
+
+- `ADMIN_PASSWORD` — required password for `/api/auth/login` (defaults to `ashlii`).
+- `PORT` — override the local server port (defaults to 5000; the `dev:local` script uses 5050).
+- `ALLOWED_ORIGINS` — optional comma-separated list appended to the default CORS whitelist.
+- Client-side `.env` keys:
+  - `EXPO_PUBLIC_DEV` / `DEV` — set to `true` for local development, `false` for production builds.
+  - `EXPO_PUBLIC_API_BASE` — override the API URL used by the Expo app (e.g. `http://localhost:5050/api`).
+
 ## Get a fresh project
 
 When you're ready, run:
