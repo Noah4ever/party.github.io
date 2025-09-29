@@ -4,10 +4,11 @@ import { StyleSheet, TouchableOpacity } from "react-native";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { globalStyles } from "@/constants/styles";
+import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
+  const globalStyles = useGlobalStyles();
   const router = useRouter();
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -41,7 +42,9 @@ export default function HomeScreen() {
               router.navigate("/game/challenge_4");
             }}
           >
-            <ThemedText> Erledigt Button </ThemedText>
+            <ThemedText style={globalStyles.buttonText}>
+              Erledigt Button
+            </ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ParallaxScrollView>

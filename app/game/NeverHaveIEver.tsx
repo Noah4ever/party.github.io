@@ -4,12 +4,13 @@ import { StyleSheet, TouchableOpacity } from "react-native";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { globalStyles } from "@/constants/styles";
+import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const globalStyles = useGlobalStyles();
   const [counter, setCounter] = useState<number>(0);
   const question = ["Penis", "Vagina", "Test"];
 
@@ -47,7 +48,7 @@ export default function HomeScreen() {
               incrementCounter();
             }}
           >
-            <ThemedText style={styles.bubble}>
+            <ThemedText style={globalStyles.buttonText}>
               test {question[counter]}
             </ThemedText>
           </TouchableOpacity>
