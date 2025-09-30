@@ -254,18 +254,24 @@ export default function GroupsTab() {
 
   const confirmDeleteGroup = (group: GroupDTO) => {
     const displayName = group.name?.trim() || "this group";
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       // Use native browser confirm for web so it always appears
-      const ok = window.confirm(`Delete ${displayName}?\nGuests will become unassigned.`);
+      const ok = window.confirm(
+        `Delete ${displayName}?\nGuests will become unassigned.`
+      );
       if (ok) handleDeleteGroup(group.id);
       return;
     }
     Alert.alert(
-      'Delete group',
+      "Delete group",
       `Delete ${displayName}? Any assigned guests will become unassigned.`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteGroup(group.id) },
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => handleDeleteGroup(group.id),
+        },
       ]
     );
   };
