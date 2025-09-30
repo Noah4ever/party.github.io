@@ -1,11 +1,13 @@
 import { Image } from "expo-image";
-import { Button, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-
+import { useTheme } from "@/constants/theme";
+import { Link } from "expo-router";
+import React from "react";
 //TODO: fix picture
 //TODO: change colors
 //TODO: add clue logic
@@ -13,6 +15,7 @@ import { ThemedView } from "@/components/themed-view";
 //TODO: add timer logic
 
 export default function HomeScreen() {
+  const theme = useTheme();
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
@@ -39,11 +42,7 @@ export default function HomeScreen() {
       <ThemedView>
         <ThemedText type="normal">Challenge 1 : Finde deine Person</ThemedText>
         <ThemedText type="normal" style={styles.clueBox}>
-          Hinweise:
-          <ul className="clueList">
-            <li>Clue 1</li>
-            <li>Clue 2</li>
-          </ul>
+          Hinweise: Clue Clue
         </ThemedText>
       </ThemedView>
       <ThemedView className="scan">
@@ -51,14 +50,17 @@ export default function HomeScreen() {
           Wenn du glaubst, deine Person gefunden zu haben, dann scanner ihren QR
           Code
         </ThemedText>
-        <ThemedText>
-          <Button
-            title="Scan"
-            onPress={() => {
-              /* Scan-Logik hier */
+        <Link style={{ paddingTop: 50 }} href={"/game/modal/camera"}>
+          <ThemedText
+            style={{
+              color: theme.primary,
+              textAlign: "center",
+              paddingTop: 10,
             }}
-          />
-        </ThemedText>
+          >
+            Scanne den QR Code
+          </ThemedText>
+        </Link>
       </ThemedView>
     </ParallaxScrollView>
   );
