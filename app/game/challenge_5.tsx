@@ -6,25 +6,10 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
 
 export default function HomeScreen() {
-  const router = useRouter();
   const globalStyles = useGlobalStyles();
-  const [counter, setCounter] = useState<number>(0);
-  const question = ["Penis", "Vagina", "Test"];
-
-  function incrementCounter() {
-    setCounter(counter + 1);
-  }
-
-  // counter updatet sich bei naechsten reload daher useEffect
-  // wird durchgelaufen beim ersten draw und immer wenn sich die dependencies changen (counter)
-  useEffect(() => {
-    if (counter >= 3) {
-      router.navigate("/game/challenge_5");
-    }
-  }, [counter]);
+  const router = useRouter();
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -37,28 +22,28 @@ export default function HomeScreen() {
         }
       >
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Ich hab noch nie! 🍻</ThemedText>
+          <ThemedText type="title">Finale Challenge!</ThemedText>
+          <ThemedText type="defaultSemiBold">
+            Ihr müsst eine Reihe von Fragen per Multiple Choice richtig beantworten um an den Schlüssel fürs Finale zu kommen
+          </ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.midContainer}>
-          <ThemedText style={styles.bubble}>Button Weiter</ThemedText>
           <TouchableOpacity
             style={globalStyles.button}
             onPress={() => {
-              incrementCounter();
+              router.navigate("/game/questions");
             }}
           >
             <ThemedText style={globalStyles.buttonText}>
-              test {question[counter]}
+              Start
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ParallaxScrollView>
-      <ThemedView>
-        <ThemedText style={styles.hintContainer}>
-          PS: Schummeln ist für Loser, es geht hier um Spaß!
-        </ThemedText>
-      </ThemedView>
+      <ThemedText style={styles.hintContainer}>
+        PS: Schummeln ist für Loser, es geht hier um Spaß!
+      </ThemedText>
     </ThemedView>
   );
 }
@@ -87,5 +72,4 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  bubble: {},
 });
