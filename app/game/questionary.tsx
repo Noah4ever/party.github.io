@@ -8,6 +8,9 @@ import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
+//TODO: add question
+//TODO: add save logic of answers plus to control center
+
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
@@ -28,6 +31,7 @@ export default function HomeScreen() {
           <ThemedText type="title">Finale Challenge!</ThemedText>
           <ThemedText type="defaultSemiBold">
             Fast geschafft beantworte noch diese Frage !
+            Frage:
           </ThemedText>
         </ThemedView>
 

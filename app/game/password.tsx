@@ -8,6 +8,9 @@ import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
+//TODO: add button layout
+//TODO: add password logic 
+
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();

@@ -7,6 +7,8 @@ import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 
+//TODO: add Layout button
+
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();

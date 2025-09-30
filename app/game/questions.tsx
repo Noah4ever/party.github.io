@@ -9,6 +9,10 @@ import { Checkbox } from 'expo-checkbox';
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 
+//TODO: style checkboxes
+//TODO: add logic to questions and save right and wrong (maybe need 6 right ones or so and a reset)
+//TODO: maybe add pics to some questions
+
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();

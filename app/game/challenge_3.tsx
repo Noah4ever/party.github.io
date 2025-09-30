@@ -7,6 +7,8 @@ import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 
+//TODO: change button layout
+
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
@@ -34,7 +36,6 @@ export default function HomeScreen() {
 
         <ThemedView style={styles.midContainer}>
           <ThemedText>
-            Macht ein Selfie zusammen und ladet es hier hoch!
           </ThemedText>
           <TouchableOpacity
             style={globalStyles.button}

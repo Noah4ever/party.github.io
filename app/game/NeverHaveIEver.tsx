@@ -8,6 +8,10 @@ import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
+//TODO: add game logic and add questions
+//TODO: add layout button
+//TODO: add round with text and next button
+
 export default function HomeScreen() {
   const router = useRouter();
   const globalStyles = useGlobalStyles();
@@ -41,7 +45,7 @@ export default function HomeScreen() {
         </ThemedView>
 
         <ThemedView style={styles.midContainer}>
-          <ThemedText style={styles.bubble}>Button Weiter</ThemedText>
+          <ThemedText style={styles.bubble}>blablabla  {question[counter]}  rundr</ThemedText>
           <TouchableOpacity
             style={globalStyles.button}
             onPress={() => {
@@ -49,7 +53,7 @@ export default function HomeScreen() {
             }}
           >
             <ThemedText style={globalStyles.buttonText}>
-              test {question[counter]}
+              Weiter
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>

@@ -8,6 +8,8 @@ import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
+//TODO: add timer logic and animation
+
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
