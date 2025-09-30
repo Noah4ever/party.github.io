@@ -5,24 +5,51 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useTheme } from "@/constants/theme";
+import { ApiError, gameApi } from "@/lib/api";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+
+//TODO: add questions
+//TODO: add layout button
+//TODO: add round with text and next button
 
 export default function HomeScreen() {
   const router = useRouter();
   const globalStyles = useGlobalStyles();
+  const theme = useTheme();
   const [counter, setCounter] = useState<number>(0);
-  const question = ["Penis", "Vagina", "Test"];
+  const [questions, setQuestions] = useState<String[]>([]);
+  const [error, setError] = useState<String>();
+  const [loading, setLoading] = useState<Boolean>(true);
 
   function incrementCounter() {
     setCounter(counter + 1);
   }
 
+  const load = useCallback(async () => {
+    try {
+      const data = (await gameApi.getNHIE()) as String[];
+      setQuestions(data);
+      console.log(data);
+    } catch (e) {
+      setError((e as ApiError).message || "Failed to load questions");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
+
   // counter updatet sich bei naechsten reload daher useEffect
   // wird durchgelaufen beim ersten draw und immer wenn sich die dependencies changen (counter)
   useEffect(() => {
-    if (counter >= 3) {
-      router.navigate("/game/challenge_2");
+    if (questions.length > 0 && counter >= questions.length) {
+      router.navigate("/game/challenge_5");
     }
   }, [counter]);
   return (
@@ -37,20 +64,23 @@ export default function HomeScreen() {
         }
       >
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Ich hab noch nie! 🍻</ThemedText>
+          <ThemedText type="title">Ich hab noch nie... 🍻</ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.midContainer}>
-          <ThemedText style={styles.bubble}>Button Weiter</ThemedText>
+          <ThemedView style={[styles.bubble, { borderColor: theme.primary }]}>
+            <ThemedText type="subtitle">
+              {/* //TODO: add styling */}
+              {loading ? " loading..." : questions[counter]}
+            </ThemedText>
+          </ThemedView>
           <TouchableOpacity
             style={globalStyles.button}
             onPress={() => {
               incrementCounter();
             }}
           >
-            <ThemedText style={globalStyles.buttonText}>
-              test {question[counter]}
-            </ThemedText>
+            <ThemedText style={globalStyles.buttonText}>Weiter</ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ParallaxScrollView>
@@ -78,6 +108,8 @@ const styles = StyleSheet.create({
   midContainer: {
     gap: 20,
     padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   hintContainer: {
     padding: 20,
@@ -87,5 +119,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  bubble: {},
+  bubble: {
+    borderWidth: 4,
+    borderRadius: "50%",
+    width: 230,
+    height: 230,
+    textAlign: "center",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });

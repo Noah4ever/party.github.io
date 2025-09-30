@@ -5,13 +5,18 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
+import { Checkbox } from 'expo-checkbox';
 import { useRouter } from "expo-router";
+import React, { useState } from "react";
 
-//TODO: change button layout
+//TODO: style checkboxes
+//TODO: add logic to questions and save right and wrong (maybe need 6 right ones or so and a reset)
+//TODO: maybe add pics to some questions
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
+  const [isChecked, setChecked] = useState(false);
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -23,31 +28,35 @@ export default function HomeScreen() {
           />
         }
       >
+
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Challenge 3</ThemedText>
-          <ThemedText type="subtitle">Ihr sieht geil aus! 🔥</ThemedText>
+          <ThemedText type="title">Frage 1/15</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Teilt lustige Fakten oder Storys von euch miteinander. Daraufhin
-            muss jeder von euch beiden diese Fakten vor anderen Leuten kurz
-            vorstellen. Es müssen mindestens 2 andere Leute als Zuhörer anwesend
-            sein!
+            Es gibt nur eine Auswahlmöglichkeit!
+          </ThemedText>
+          <ThemedText>
+            Frage: ....
           </ThemedText>
         </ThemedView>
 
-        <ThemedView style={styles.midContainer}>
-          <ThemedText>
-          </ThemedText>
-          <TouchableOpacity
-            style={globalStyles.button}
-            onPress={() => {
-              router.navigate("/game/challenge_4");
-            }}
-          >
-            <ThemedText style={globalStyles.buttonText}>
-              Erledigt Button
-            </ThemedText>
-          </TouchableOpacity>
+  <ThemedView style={styles.checkContainer}>
+            <Checkbox style={globalStyles.checkBox} value={isChecked} onValueChange={setChecked}/>
+            <ThemedText type="normal">Checkbox</ThemedText>
         </ThemedView>
+        
+         <ThemedView>
+                  <TouchableOpacity
+                    style={globalStyles.button}
+                    onPress={() => {
+                      router.navigate("/game/questionary");
+                    }}
+                  >
+                    <ThemedText style={globalStyles.buttonText}>
+                      Check
+                    </ThemedText>
+                  </TouchableOpacity>
+                  </ThemedView>
+        
       </ParallaxScrollView>
       <ThemedText style={styles.hintContainer}>
         PS: Schummeln ist für Loser, es geht hier um Spaß!
@@ -68,9 +77,9 @@ const styles = StyleSheet.create({
   textContainer: {
     gap: 20,
   },
-  midContainer: {
-    gap: 20,
-    padding: 20,
+  checkContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   hintContainer: {
     padding: 20,
@@ -80,4 +89,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
+  
 });

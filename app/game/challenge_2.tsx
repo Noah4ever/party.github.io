@@ -5,6 +5,8 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 
+//TODO: add Scan logic with picture upload
+
 export default function HomeScreen() {
   return (
     <ThemedView style={{ flex: 1 }}>

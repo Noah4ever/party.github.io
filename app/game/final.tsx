@@ -1,17 +1,20 @@
 import { Image } from "expo-image";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet } from "react-native";
 
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 
-//TODO: add layout button
+//TODO: add timer logic and animation
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
+  const [text, setText]= useState('');
+  
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -24,34 +27,17 @@ export default function HomeScreen() {
         }
       >
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Challenge 4</ThemedText>
-          <ThemedText type="subtitle">Ich hab noch nie! 🍻</ThemedText>
+          <ThemedText type="title">Du hast es ins Finale geschafft!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Holt euch beide shots oder andere Getränke, am besten mit Alkohol
-            und spielt ich hab noch nie!
+            Eure Zeit: 00:00
+          </ThemedText>
+          <ThemedText>
+            Ihr seid unter den Top 4 schnellsten Paaren und seid somit im Finale. Sobald die Finalsten fest stehen, müsst ihr in Trinkspielen gegen die anderen antreten um etwas zu gewinnen. Weitere Anweisungen erhaltet ihr vom Geburstagskind!
           </ThemedText>
         </ThemedView>
+     
 
-        <ThemedView style={styles.midContainer}>
-          <ThemedText>Drückt auf Starten wenn ihr ready seid</ThemedText>
-          <TouchableOpacity
-            style={globalStyles.button}
-            onPress={() => {
-              router.navigate("/game/NeverHaveIEver");
-            }}
-          >
-            <ThemedText style={globalStyles.buttonText}>
-              {" "}
-              Starten Button{" "}
-            </ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
       </ParallaxScrollView>
-      <ThemedView>
-        <ThemedText style={styles.hintContainer}>
-          PS: Schummeln ist für Loser, es geht hier um Spaß!
-        </ThemedText>
-      </ThemedView>
     </ThemedView>
   );
 }

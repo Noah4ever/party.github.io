@@ -1,17 +1,22 @@
 import { Image } from "expo-image";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet, TextInput, TouchableOpacity } from "react-native";
 
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
+import { gameApi } from "@/lib/api";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 
-//TODO: add layout button
+//TODO: add question
+//TODO: add save logic of answers plus to control center
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
+  const [text, setText] = useState("");
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -24,34 +29,32 @@ export default function HomeScreen() {
         }
       >
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Challenge 4</ThemedText>
-          <ThemedText type="subtitle">Ich hab noch nie! 🍻</ThemedText>
+          <ThemedText type="title">Finale Challenge!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Holt euch beide shots oder andere Getränke, am besten mit Alkohol
-            und spielt ich hab noch nie!
+            Fast geschafft beantworte noch diese Frage ! Frage:
           </ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.midContainer}>
-          <ThemedText>Drückt auf Starten wenn ihr ready seid</ThemedText>
+          <TextInput
+            style={globalStyles.inputField}
+            onChangeText={setText}
+            value={text}
+          ></TextInput>
           <TouchableOpacity
             style={globalStyles.button}
             onPress={() => {
-              router.navigate("/game/NeverHaveIEver");
+              gameApi.createFunnyAnswer("penis", text);
+              router.navigate("/game/password");
             }}
           >
-            <ThemedText style={globalStyles.buttonText}>
-              {" "}
-              Starten Button{" "}
-            </ThemedText>
+            <ThemedText style={globalStyles.buttonText}>abgeben</ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ParallaxScrollView>
-      <ThemedView>
-        <ThemedText style={styles.hintContainer}>
-          PS: Schummeln ist für Loser, es geht hier um Spaß!
-        </ThemedText>
-      </ThemedView>
+      <ThemedText style={styles.hintContainer}>
+        PS: Schummeln ist für Loser, es geht hier um Spaß!
+      </ThemedText>
     </ThemedView>
   );
 }
@@ -69,7 +72,6 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   midContainer: {
-    gap: 20,
     padding: 20,
   },
   hintContainer: {

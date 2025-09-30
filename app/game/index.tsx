@@ -6,6 +6,12 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 
+//TODO: fix picture
+//TODO: change colors
+//TODO: add clue logic
+//TODO: add scan logic and qr logic
+//TODO: add timer logic
+
 export default function HomeScreen() {
   return (
     <ParallaxScrollView

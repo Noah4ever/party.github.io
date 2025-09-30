@@ -292,6 +292,12 @@ export const authApi = {
   logout: () => api.post<void>("/auth/logout"),
 };
 
+export const gameApi = {
+  getNHIE: () => api.get<String[]>("/games/never-have-i-ever"),
+  createFunnyAnswer: (id: String, answer: String) =>
+    api.post(`/games/funny-answers/${id}`, { answer }),
+};
+
 // Example usage (remove or comment out in production):
 // api.get('/health').then(console.log).catch(console.error);
 

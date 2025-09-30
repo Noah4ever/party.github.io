@@ -7,7 +7,7 @@ import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 
-//TODO: add layout button
+//TODO: add Layout button
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
@@ -24,34 +24,28 @@ export default function HomeScreen() {
         }
       >
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Challenge 4</ThemedText>
-          <ThemedText type="subtitle">Ich hab noch nie! 🍻</ThemedText>
+          <ThemedText type="title">Finale Challenge!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Holt euch beide shots oder andere Getränke, am besten mit Alkohol
-            und spielt ich hab noch nie!
+            Ihr müsst eine Reihe von Fragen per Multiple Choice richtig beantworten um an den Schlüssel fürs Finale zu kommen
           </ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.midContainer}>
-          <ThemedText>Drückt auf Starten wenn ihr ready seid</ThemedText>
           <TouchableOpacity
             style={globalStyles.button}
             onPress={() => {
-              router.navigate("/game/NeverHaveIEver");
+              router.navigate("/game/questions");
             }}
           >
             <ThemedText style={globalStyles.buttonText}>
-              {" "}
-              Starten Button{" "}
+              Start
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ParallaxScrollView>
-      <ThemedView>
-        <ThemedText style={styles.hintContainer}>
-          PS: Schummeln ist für Loser, es geht hier um Spaß!
-        </ThemedText>
-      </ThemedView>
+      <ThemedText style={styles.hintContainer}>
+        PS: Schummeln ist für Loser, es geht hier um Spaß!
+      </ThemedText>
     </ThemedView>
   );
 }
