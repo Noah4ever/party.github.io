@@ -17,18 +17,36 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         headerShown: false,
         tabBarStyle: { height: 60 },
-        tabBarIconStyle: { marginTop: 0, justifyContent: "center", alignItems: "center", flex: 1 },
-      }}>
+        tabBarIconStyle: {
+          marginTop: 0,
+          justifyContent: "center",
+          alignItems: "center",
+          flex: 1,
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ color }) => <IconSymbol size={32} name="people-outline" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={32} name="people-outline" color={color} />
+          ),
         }}
       />
       <Tabs.Screen
         name="control"
         options={{
-          tabBarIcon: ({ color }) => <IconSymbol size={32} name="gamecontroller.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={32} name="gamecontroller.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="groups"
+        options={{
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={32} name="person.2.square.stack" color={color} />
+          ),
         }}
       />
     </Tabs>

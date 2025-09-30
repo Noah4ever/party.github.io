@@ -60,16 +60,33 @@ groupsRouter.put("/:id", requireAuth, async (req, res) => {
     if (name !== undefined) group.name = name;
     if (guestIds) {
       if (!Array.isArray(guestIds) || guestIds.length > 2) return null;
-      // detach old
+      // ensure all guest ids exist
+      for (const gid of guestIds) {
+        const guest = d.guests.find((gs) => gs.id === gid);
+        if (!guest) return null;
+      }
+      // detach old assignments
       group.guestIds.forEach((gid) => {
-        const g = d.guests.find((gs) => gs.id === gid);
-        if (g) delete g.groupId;
+        const guest = d.guests.find((gs) => gs.id === gid);
+        if (guest) delete guest.groupId;
       });
+
+      // update guests to new group and capture their previous groups
+      guestIds.forEach((gid) => {
+        const guest = d.guests.find((gs) => gs.id === gid);
+        if (!guest) return;
+        const previousGroup = guest.groupId
+          ? d.groups.find((grp) => grp.id === guest.groupId)
+          : undefined;
+        if (previousGroup && previousGroup.id !== group.id) {
+          previousGroup.guestIds = previousGroup.guestIds.filter(
+            (existing) => existing !== gid
+          );
+        }
+        guest.groupId = group.id;
+      });
+
       group.guestIds = [...guestIds];
-      group.guestIds.forEach((gid) => {
-        const g = d.guests.find((gs) => gs.id === gid);
-        if (g) g.groupId = group.id;
-      });
     }
     return group;
   });

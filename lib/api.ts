@@ -246,6 +246,43 @@ export const guestsApi = {
   remove: (id: string) => api.delete<void>(`/guests/${id}`),
 };
 
+export interface GroupProgressDTO {
+  completedGames: string[];
+  currentGame?: string;
+  quizScore?: number;
+  attempts?: number;
+}
+
+export interface GroupDTO {
+  id: string;
+  name: string;
+  guestIds: string[];
+  progress: GroupProgressDTO;
+  startedAt?: string;
+  finishedAt?: string;
+  passwordSolved?: boolean;
+  guests?: GuestDTO[];
+}
+
+export type CreateGroupInput = {
+  name: string;
+  guestIds?: string[];
+};
+
+export type UpdateGroupInput = Partial<
+  Pick<GroupDTO, "name" | "guestIds" | "progress">
+>;
+
+export const groupsApi = {
+  list: (options?: { expand?: boolean }) =>
+    api.get<GroupDTO[]>("/groups", options?.expand ? { expand: 1 } : undefined),
+  create: (data: CreateGroupInput) =>
+    api.post<GroupDTO, CreateGroupInput>("/groups", data),
+  update: (id: string, data: UpdateGroupInput) =>
+    api.put<GroupDTO, UpdateGroupInput>(`/groups/${id}`, data),
+  remove: (id: string) => api.delete<void>(`/groups/${id}`),
+};
+
 export const authApi = {
   login: (password: string) =>
     api.post<

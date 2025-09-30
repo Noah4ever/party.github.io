@@ -28,6 +28,8 @@ const MAPPING = {
   "ellipsis.vertical.circle.outline": "ellipsis-horizontal-circle-outline", // ellipsis-vertical
   "qr-code": "qr-code-outline", // qr-code
   "reload-data": "refresh-outline",
+  "person.2.square.stack": "people-circle-outline",
+  "trash.fill": "trash",
 } as const satisfies IconMapping;
 
 // To add new icons:
@@ -55,5 +57,7 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <IconSet color={color} size={size} name={MAPPING[name]} style={style} />;
+  return (
+    <IconSet color={color} size={size} name={MAPPING[name]} style={style} />
+  );
 }
