@@ -16,17 +16,18 @@ export function useGlobalStyles() {
     buttonText: {
       color: theme.text,
     },
-    inputField:{
-    padding: 10,
-    height: 40,
-    borderWidth: 1,
-    borderColor:theme.inputBorder,
-    color:theme.inputText,
-    backgroundColor:theme.inputBackground,
+    inputField: {
+      padding: 10,
+      height: 40,
+      borderWidth: 1,
+      borderColor: theme.inputBorder,
+      color: theme.inputText,
+      backgroundColor: theme.inputBackground,
     },
-    checkBox:{
-    margin:8,
-    // TODO: add color checkbox
-    }
+    checkBox: {
+      margin: 8,
+      // TODO: add color checkbox
+    },
+    //TODO: add layout that is on every site
   });
 }

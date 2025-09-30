@@ -1,7 +1,26 @@
 {
   "guests": [],
   "groups": [],
-  "neverHaveIEverPacks": [],
+  "neverHaveIEverPacks": [
+    "noah gekuesst",
+    "Hummel gekuesst",
+    "NochNie3",
+    "NochNie4"
+  ],
   "quizPacks": [],
-  "passwordGames": []
+  "passwordGames": [],
+  "funnyAnswers": [
+    {
+      "id": "penis",
+      "answer": "hallo"
+    },
+    {
+      "id": "penis",
+      "answer": "halloadad"
+    },
+    {
+      "id": "penis",
+      "answer": "adad"
+    }
+  ]
 }

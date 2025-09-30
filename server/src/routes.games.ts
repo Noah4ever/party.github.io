@@ -207,3 +207,16 @@ gamesRouter.post("/password-game/:id/attempt", async (req, res) => {
   if ("error" in result) return res.status(400).json({ message: result.error });
   res.json(result);
 });
+
+gamesRouter.post("/funny-answers/:id", async (req, res) => {
+  const { id } = req.params;
+  const { answer } = req.body || {};
+  if (!answer) {
+    return res.status(400).json({ message: "answer required" });
+  }
+  const result = await mutate((d) => {
+    d.funnyAnswers.push({ id, answer });
+    return { answer, id };
+  });
+  res.status(201).json(result);
+});

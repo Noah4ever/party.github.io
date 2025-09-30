@@ -53,12 +53,18 @@ export interface PasswordGameConfig {
   endedAt?: string;
 }
 
+export interface FunnyAnswers {
+  id: string;
+  answer: string;
+}
+
 export interface DataShape {
   guests: Guest[];
   groups: Group[];
   neverHaveIEverPacks: NeverHaveIEverPack[];
   quizPacks: QuizPack[];
   passwordGames: PasswordGameConfig[];
+  funnyAnswers: FunnyAnswers[];
 }
 
 export const DEFAULT_DATA: DataShape = {
@@ -67,4 +73,5 @@ export const DEFAULT_DATA: DataShape = {
   neverHaveIEverPacks: [],
   quizPacks: [],
   passwordGames: [],
+  funnyAnswers: [],
 };

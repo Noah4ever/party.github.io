@@ -5,6 +5,7 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
+import { gameApi } from "@/lib/api";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
@@ -14,8 +15,8 @@ import { useState } from "react";
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
-  const [text, setText]= useState('');
-  
+  const [text, setText] = useState("");
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -30,25 +31,26 @@ export default function HomeScreen() {
         <ThemedView style={styles.textContainer}>
           <ThemedText type="title">Finale Challenge!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Fast geschafft beantworte noch diese Frage !
-            Frage:
+            Fast geschafft beantworte noch diese Frage ! Frage:
           </ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.midContainer}>
-        <TextInput  style={globalStyles.inputField} onChangeText={setText} value={text}></TextInput>
-        <TouchableOpacity
-                    style={globalStyles.button}
-                    onPress={() => {
-                      router.navigate("/game/password");
-                    }}
-                  >
-                    <ThemedText style={globalStyles.buttonText}>
-                      abgeben
-                    </ThemedText>
-                  </TouchableOpacity>
+          <TextInput
+            style={globalStyles.inputField}
+            onChangeText={setText}
+            value={text}
+          ></TextInput>
+          <TouchableOpacity
+            style={globalStyles.button}
+            onPress={() => {
+              gameApi.createFunnyAnswer("penis", text);
+              router.navigate("/game/password");
+            }}
+          >
+            <ThemedText style={globalStyles.buttonText}>abgeben</ThemedText>
+          </TouchableOpacity>
         </ThemedView>
-
       </ParallaxScrollView>
       <ThemedText style={styles.hintContainer}>
         PS: Schummeln ist für Loser, es geht hier um Spaß!
