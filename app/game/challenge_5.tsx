@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, TouchableOpacity } from "react-native";
 
+import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -26,7 +27,8 @@ export default function HomeScreen() {
         <ThemedView style={styles.textContainer}>
           <ThemedText type="title">Finale Challenge!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Ihr müsst eine Reihe von Fragen per Multiple Choice richtig beantworten um an den Schlüssel fürs Finale zu kommen
+            Ihr müsst eine Reihe von Fragen per Multiple Choice richtig
+            beantworten um an den Schlüssel fürs Finale zu kommen
           </ThemedText>
         </ThemedView>
 
@@ -37,15 +39,11 @@ export default function HomeScreen() {
               router.navigate("/game/questions");
             }}
           >
-            <ThemedText style={globalStyles.buttonText}>
-              Start
-            </ThemedText>
+            <ThemedText style={globalStyles.buttonText}>Start</ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ParallaxScrollView>
-      <ThemedText style={styles.hintContainer}>
-        PS: Schummeln ist für Loser, es geht hier um Spaß!
-      </ThemedText>
+      <HintBox />
     </ThemedView>
   );
 }

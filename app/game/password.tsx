@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, TextInput, TouchableOpacity } from "react-native";
 
+import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -9,13 +10,13 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 
 //TODO: add button layout
-//TODO: add password logic 
+//TODO: add password logic
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
-  const [text, setText]= useState('');
-  
+  const [text, setText] = useState("");
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -30,27 +31,27 @@ export default function HomeScreen() {
         <ThemedView style={styles.textContainer}>
           <ThemedText type="title">Fast am Ziel!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Bringt nun den Gastgeber einen Shot und trinkt mit ihn, mit etwas Glück und Charm wird er euch den Schlüssel verraten!
+            Bringt nun den Gastgeber einen Shot und trinkt mit ihn, mit etwas
+            Glück und Charm wird er euch den Schlüssel verraten!
           </ThemedText>
         </ThemedView>
         <ThemedView style={styles.midContainer}>
-        <TextInput style={globalStyles.inputField} onChangeText={setText} value={text}></TextInput>
-        <TouchableOpacity
-                    style={globalStyles.button}
-                    onPress={() => {
-                      router.navigate("/game/password");
-                    }}
-                  >
-                    <ThemedText style={globalStyles.buttonText}>
-                      abgeben
-                    </ThemedText>
-                  </TouchableOpacity>
+          <TextInput
+            style={globalStyles.inputField}
+            onChangeText={setText}
+            value={text}
+          ></TextInput>
+          <TouchableOpacity
+            style={globalStyles.button}
+            onPress={() => {
+              router.navigate("/game/password");
+            }}
+          >
+            <ThemedText style={globalStyles.buttonText}>abgeben</ThemedText>
+          </TouchableOpacity>
         </ThemedView>
-
       </ParallaxScrollView>
-      <ThemedText style={styles.hintContainer}>
-        PS: Schummeln ist für Loser, es geht hier um Spaß!
-      </ThemedText>
+      <HintBox />
     </ThemedView>
   );
 }
@@ -67,8 +68,7 @@ const styles = StyleSheet.create({
   textContainer: {
     gap: 20,
   },
-  midContainer: {
-  },
+  midContainer: {},
   hintContainer: {
     padding: 20,
     textAlign: "center",

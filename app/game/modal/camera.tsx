@@ -47,6 +47,7 @@ export default function CameraModal() {
             onBarcodeScanned={(scanningResult: BarcodeScanningResult) => {
               // TODO: Green border or something so the user knows that it was correct
               // TODO: in scanningResult.data is the content of the qr code
+              router.back();
               router.navigate("/game/challenge_2");
             }}
           />
