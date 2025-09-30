@@ -8,7 +8,7 @@ export function useGlobalStyles() {
       marginTop: 80,
       alignSelf: "center",
       paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingVertical: 5,
       borderRadius: 8,
       borderWidth: 2,
       borderColor: theme.primary,
@@ -16,5 +16,17 @@ export function useGlobalStyles() {
     buttonText: {
       color: theme.text,
     },
+    inputField:{
+    padding: 10,
+    height: 40,
+    borderWidth: 1,
+    borderColor:theme.inputBorder,
+    color:theme.inputText,
+    backgroundColor:theme.inputBackground,
+    },
+    checkBox:{
+    margin:8,
+    // TODO: add color checkbox
+    }
   });
 }

@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { StyleSheet } from "react-native";
 
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -25,30 +25,17 @@ export default function HomeScreen() {
         }
       >
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Finale Challenge!</ThemedText>
+          <ThemedText type="title">Du hast es ins Finale geschafft!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Fast geschafft beantworte noch diese Frage !
+            Eure Zeit: 00:00
+          </ThemedText>
+          <ThemedText>
+            Ihr seid unter den Top 4 schnellsten Paaren und seid somit im Finale. Sobald die Finalsten fest stehen, müsst ihr in Trinkspielen gegen die anderen antreten um etwas zu gewinnen. Weitere Anweisungen erhaltet ihr vom Geburstagskind!
           </ThemedText>
         </ThemedView>
-
-        <ThemedView style={styles.midContainer}>
-        <TextInput  style={globalStyles.inputField} onChangeText={setText} value={text}></TextInput>
-        <TouchableOpacity
-                    style={globalStyles.button}
-                    onPress={() => {
-                      router.navigate("/game/password");
-                    }}
-                  >
-                    <ThemedText style={globalStyles.buttonText}>
-                      abgeben
-                    </ThemedText>
-                  </TouchableOpacity>
-        </ThemedView>
+     
 
       </ParallaxScrollView>
-      <ThemedText style={styles.hintContainer}>
-        PS: Schummeln ist für Loser, es geht hier um Spaß!
-      </ThemedText>
     </ThemedView>
   );
 }
@@ -66,6 +53,7 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   midContainer: {
+    gap: 20,
     padding: 20,
   },
   hintContainer: {

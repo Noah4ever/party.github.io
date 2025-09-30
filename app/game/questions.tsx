@@ -36,7 +36,7 @@ export default function HomeScreen() {
         </ThemedView>
 
   <ThemedView style={styles.checkContainer}>
-            <Checkbox style={styles.checkBox} value={isChecked} onValueChange={setChecked}/>
+            <Checkbox style={globalStyles.checkBox} value={isChecked} onValueChange={setChecked}/>
             <ThemedText type="normal">Checkbox</ThemedText>
         </ThemedView>
         
@@ -85,7 +85,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  checkBox:{
-    margin:8,
-  }
+  
 });

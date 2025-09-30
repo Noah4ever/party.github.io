@@ -25,14 +25,13 @@ export default function HomeScreen() {
         }
       >
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Finale Challenge!</ThemedText>
+          <ThemedText type="title">Fast am Ziel!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Fast geschafft beantworte noch diese Frage !
+            Bringt nun den Gastgeber einen Shot und trinkt mit ihn, mit etwas Glück und Charm wird er euch den Schlüssel verraten!
           </ThemedText>
         </ThemedView>
-
         <ThemedView style={styles.midContainer}>
-        <TextInput  style={globalStyles.inputField} onChangeText={setText} value={text}></TextInput>
+        <TextInput style={globalStyles.inputField} onChangeText={setText} value={text}></TextInput>
         <TouchableOpacity
                     style={globalStyles.button}
                     onPress={() => {
@@ -66,7 +65,6 @@ const styles = StyleSheet.create({
     gap: 20,
   },
   midContainer: {
-    padding: 20,
   },
   hintContainer: {
     padding: 20,
