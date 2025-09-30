@@ -20,6 +20,7 @@ export default function RootLayout() {
           name="modal/camera"
           options={{ presentation: "modal", title: "Modal" }}
         />
+        <Stack.Screen name="challenge_2" options={{ headerShown: false }} />
       </Stack>
 
       <StatusBar style="auto" />

@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, TouchableOpacity } from "react-native";
 
+import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -47,11 +48,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </ThemedView>
       </ParallaxScrollView>
-      <ThemedView>
-        <ThemedText style={styles.hintContainer}>
-          PS: Schummeln ist für Loser, es geht hier um Spaß!
-        </ThemedText>
-      </ThemedView>
+      <HintBox />
     </ThemedView>
   );
 }

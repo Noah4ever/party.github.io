@@ -1,13 +1,17 @@
 import { Image } from "expo-image";
 import { Button, StyleSheet } from "react-native";
 
+import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { useTheme } from "@/constants/theme";
+import { Link } from "expo-router";
 
 //TODO: add Scan logic with picture upload
 
 export default function HomeScreen() {
+  const theme = useTheme();
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -26,7 +30,7 @@ export default function HomeScreen() {
             Challenges!
           </ThemedText>
         </ThemedView>
-
+        <Link href={"/game/challenge_3"}>3sssssssss</Link>
         <ThemedView style={styles.midContainer}>
           <ThemedText>
             Macht ein Selfie zusammen und ladet es hier hoch!
@@ -39,9 +43,10 @@ export default function HomeScreen() {
           />
         </ThemedView>
       </ParallaxScrollView>
-      <ThemedText style={styles.hintContainer}>
+
+      <HintBox>
         Hinweis: Ab diesem Zeitpunkt braucht ihr beiden nur noch ein Handy!
-      </ThemedText>
+      </HintBox>
     </ThemedView>
   );
 }
@@ -65,9 +70,7 @@ const styles = StyleSheet.create({
   hintContainer: {
     padding: 20,
     textAlign: "center",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    borderRadius: 10,
+    borderWidth: 2,
   },
 });

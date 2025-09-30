@@ -1,11 +1,12 @@
 import { Image } from "expo-image";
 import { StyleSheet, TouchableOpacity } from "react-native";
 
+import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
-import { Checkbox } from 'expo-checkbox';
+import { Checkbox } from "expo-checkbox";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 
@@ -17,6 +18,31 @@ export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
   const [isChecked, setChecked] = useState(false);
+
+  const [questionCounter, setQuestionCounter] = useState(0);
+  const questions = [
+    {
+      question: "Frage?",
+      answers: [
+        { id: 1, text: "Answer1" },
+        { id: 2, text: "Answer2" },
+        { id: 3, text: "Answer3" },
+        { id: 4, text: "Answer4" },
+      ],
+      correct: 1,
+    },
+    {
+      question: "Frage2?",
+      answers: [
+        { id: 1, text: "Answers21" },
+        { id: 2, text: "Answers22" },
+        { id: 3, text: "Answers23" },
+        { id: 4, text: "Answers24" },
+      ],
+      correct: 2,
+    },
+  ];
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -28,39 +54,42 @@ export default function HomeScreen() {
           />
         }
       >
-
         <ThemedView style={styles.textContainer}>
           <ThemedText type="title">Frage 1/15</ThemedText>
           <ThemedText type="defaultSemiBold">
             Es gibt nur eine Auswahlmöglichkeit!
           </ThemedText>
-          <ThemedText>
-            Frage: ....
-          </ThemedText>
+          <ThemedText>Frage: {questions[questionCounter].question}</ThemedText>
         </ThemedView>
 
-  <ThemedView style={styles.checkContainer}>
-            <Checkbox style={globalStyles.checkBox} value={isChecked} onValueChange={setChecked}/>
-            <ThemedText type="normal">Checkbox</ThemedText>
+        <ThemedView style={styles.answerList}>
+          {questions[questionCounter].answers.map((question) => {
+            return (
+              <ThemedView key={question.id} style={styles.checkContainer}>
+                <Checkbox
+                  style={globalStyles.checkBox}
+                  value={isChecked}
+                  onValueChange={setChecked}
+                />
+                <ThemedText type="normal">{question.text}</ThemedText>
+              </ThemedView>
+            );
+          })}
         </ThemedView>
-        
-         <ThemedView>
-                  <TouchableOpacity
-                    style={globalStyles.button}
-                    onPress={() => {
-                      router.navigate("/game/questionary");
-                    }}
-                  >
-                    <ThemedText style={globalStyles.buttonText}>
-                      Check
-                    </ThemedText>
-                  </TouchableOpacity>
-                  </ThemedView>
-        
+
+        <ThemedView>
+          <TouchableOpacity
+            style={globalStyles.button}
+            onPress={() => {
+              // TODO: check if correct question is picked
+              router.navigate("/game/questionary");
+            }}
+          >
+            <ThemedText style={globalStyles.buttonText}>Check</ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
       </ParallaxScrollView>
-      <ThemedText style={styles.hintContainer}>
-        PS: Schummeln ist für Loser, es geht hier um Spaß!
-      </ThemedText>
+      <HintBox />
     </ThemedView>
   );
 }
@@ -77,17 +106,12 @@ const styles = StyleSheet.create({
   textContainer: {
     gap: 20,
   },
+  answerList: {
+    flexDirection: "column",
+    alignItems: "center",
+  },
   checkContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
-  hintContainer: {
-    padding: 20,
-    textAlign: "center",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  
 });
