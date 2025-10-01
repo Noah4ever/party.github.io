@@ -1,5 +1,14 @@
 import React, { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -87,9 +96,11 @@ export default function TabTwoScreen() {
 
   const confirmClearAllData = useCallback(() => {
     if (Platform.OS === "web") {
-      const confirmed = typeof window !== "undefined" && window.confirm(
-        "This will permanently delete all guests, groups, questions, and progress. This action cannot be undone."
-      );
+      const confirmed =
+        typeof window !== "undefined" &&
+        window.confirm(
+          "This will permanently delete all guests, groups, questions, and progress. This action cannot be undone."
+        );
       if (confirmed) {
         void handleClearAllData();
       }

@@ -27,18 +27,14 @@ const envOrigins = (process.env.ALLOWED_ORIGINS || "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-const allowedOrigins = [
-  ...new Set([...DEFAULT_ALLOWED_ORIGINS, ...envOrigins]),
-];
+const allowedOrigins = [...new Set([...DEFAULT_ALLOWED_ORIGINS, ...envOrigins])];
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true); // mobile apps / curl
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    if (/^https?:\/\/localhost(:\d+)?$/.test(origin))
-      return callback(null, true);
-    if (/^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin))
-      return callback(null, true);
+    if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+    if (/^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)) return callback(null, true);
     if (origin.endsWith(".thiering.org")) return callback(null, true);
     return callback(new Error(`Origin not allowed by CORS: ${origin}`));
   },
@@ -50,13 +46,9 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "2mb" }));
 app.use("/uploads", express.static("uploads"));
 
-app.get("/api/health", (_req, res) =>
-  res.json({ ok: true, time: new Date().toISOString() })
-);
+app.get("/api/health", (_req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
-app.get("/api/ashlii", (_req, res) =>
-  res.json({ lovingAshliiALot: true, time: new Date().toISOString() })
-);
+app.get("/api/ashlii", (_req, res) => res.json({ lovingAshliiALot: true, time: new Date().toISOString() }));
 
 app.use("/api/auth", authRouter);
 app.use("/api/admin", adminRouter);
