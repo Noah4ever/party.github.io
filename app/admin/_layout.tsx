@@ -1,11 +1,8 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
+import type { ViewStyle } from "react-native";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -37,8 +34,7 @@ export default function RootLayout() {
 function RootLayoutInner() {
   const colorScheme = useColorScheme();
   const theme = useTheme();
-  const { token, initializing, authenticating, login, error, clearError } =
-    useAdminAuth();
+  const { token, initializing, authenticating, login, error, clearError } = useAdminAuth();
   const [password, setPassword] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -67,23 +63,12 @@ function RootLayoutInner() {
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={[
-            styles.centeredContainer,
-            { backgroundColor: theme.background },
-          ]}
-        >
-          <ThemedView
-            style={[
-              styles.loginCard,
-              { borderColor: theme.border, backgroundColor: theme.card },
-            ]}
-          >
+          style={[styles.centeredContainer, { backgroundColor: theme.background }]}>
+          <ThemedView style={[styles.loginCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
             <ThemedText type="title" style={styles.loginTitle}>
               Admin Access
             </ThemedText>
-            <ThemedText style={styles.loginDescription}>
-              Enter the password to manage guests and games.
-            </ThemedText>
+            <ThemedText style={styles.loginDescription}>Enter the password to manage guests and games.</ThemedText>
             <TextInput
               value={password}
               onChangeText={(text) => {
@@ -96,16 +81,9 @@ function RootLayoutInner() {
               secureTextEntry
               onSubmitEditing={handleSubmit}
               editable={!authenticating}
-              style={[
-                styles.input,
-                { borderColor: theme.primary, color: theme.text },
-              ]}
+              style={[styles.input, { borderColor: theme.primary, color: theme.text }]}
             />
-            {error ? (
-              <ThemedText style={[styles.errorText, { color: theme.danger }]}>
-                {error}
-              </ThemedText>
-            ) : null}
+            {error ? <ThemedText style={[styles.errorText, { color: theme.danger }]}>{error}</ThemedText> : null}
             <View style={styles.loginButtonRow}>
               <TouchableOpacity
                 accessibilityRole="button"
@@ -115,17 +93,13 @@ function RootLayoutInner() {
                   styles.loginButton,
                   {
                     backgroundColor: theme.primary,
-                    opacity:
-                      authenticating || password.trim().length === 0 ? 0.6 : 1,
+                    opacity: authenticating || password.trim().length === 0 ? 0.6 : 1,
                   },
-                ]}
-              >
+                ]}>
                 {authenticating ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <ThemedText style={styles.loginButtonText}>
-                    Sign in
-                  </ThemedText>
+                  <ThemedText style={styles.loginButtonText}>Sign in</ThemedText>
                 )}
               </TouchableOpacity>
             </View>
@@ -140,23 +114,31 @@ function RootLayoutInner() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="addGuest"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-        <Stack.Screen
-          name="guest/[guestId]"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-        <Stack.Screen
-          name="qr/[guestId]"
-          options={{ presentation: "modal", title: "QR Code" }}
-        />
+        <Stack.Screen name="addGuest" options={{ presentation: "modal", title: "Modal" }} />
+        <Stack.Screen name="guest/[guestId]" options={{ presentation: "modal", title: "Modal" }} />
+        <Stack.Screen name="qr/[guestId]" options={{ presentation: "modal", title: "QR Code" }} />
+        <Stack.Screen name="control/never-have-i-ever" options={{ title: "Never Have I Ever", presentation: "card" }} />
+        <Stack.Screen name="control/quiz-questions" options={{ title: "Quiz Question" }} />
+        <Stack.Screen name="control/funny-questions" options={{ title: "Funny Question" }} />
+        <Stack.Screen name="control/passwords" options={{ title: "Passwords" }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
   );
 }
+
+type ShadowStyle = ViewStyle & { boxShadow?: string };
+
+const loginCardShadow: ShadowStyle =
+  Platform.OS === "web"
+    ? { boxShadow: "0 18px 38px rgba(15, 23, 42, 0.18)" }
+    : {
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 4,
+      };
 
 const styles = StyleSheet.create({
   centeredContainer: {
@@ -171,12 +153,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     borderWidth: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
     gap: 16,
+    ...loginCardShadow,
   },
   loginTitle: {
     textAlign: "center",

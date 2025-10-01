@@ -2,6 +2,7 @@ import cors, { CorsOptions } from "cors";
 import express, { NextFunction, Request, Response } from "express";
 import multer from "multer";
 import { authRouter, requireAuth } from "./auth.js";
+import { adminRouter } from "./routes.admin.js";
 import { gamesRouter } from "./routes.games.js";
 import { groupsRouter } from "./routes.groups.js";
 import { guestsRouter } from "./routes.guests.js";
@@ -58,6 +59,7 @@ app.get("/api/ashlii", (_req, res) =>
 );
 
 app.use("/api/auth", authRouter);
+app.use("/api/admin", adminRouter);
 app.use("/api/guests", guestsRouter);
 app.use("/api/groups", groupsRouter);
 app.use("/api/games", gamesRouter);

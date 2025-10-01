@@ -9,7 +9,7 @@ export function useGlobalStyles() {
       alignSelf: "center",
       paddingHorizontal: 16,
       paddingVertical: 5,
-      borderRadius: 8,
+      borderRadius: 10,
       borderWidth: 2,
       borderColor: theme.primary,
     },

@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -11,83 +11,52 @@ export default function HomeScreen() {
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/game">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction
-              title="Action"
-              icon="cube"
-              onPress={() => alert("Action pressed")}
-            />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert("Share pressed")}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert("Delete pressed")}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
+      headerImage={<Image source={require("@/assets/images/partial-react-logo.png")} style={styles.reactLogo} />}>
+      <ThemedView>
+        <ThemedView style={styles.titleContainer}>
+          <ThemedText type="title">Welcome!</ThemedText>
+          <HelloWave />
+        </ThemedView>
+        {/* Links for admin, and each game (game/index game/challenge_2 game/challenge_3 game/challenge_4 game/challenge_5 game/final) */}
+        <ThemedView style={styles.mainContainer}>
+          <Link href="/admin" style={styles.linkItem}>
+            <ThemedText style={styles.linkText}>Go to Admin Panel</ThemedText>
+          </Link>
+          <Link href="/game" style={styles.linkItem}>
+            <ThemedText style={styles.linkText}>Start Game</ThemedText>
+          </Link>
+          <ThemedView style={styles.stepContainer}>
+            <ThemedText type="subtitle">Game Steps:</ThemedText>
+            <Link href="/game" style={styles.linkItem}>
+              <ThemedText style={styles.linkText}>Challenge 1 - Never Have I Ever</ThemedText>
+            </Link>
+            <Link href="/game/challenge_2" style={styles.linkItem}>
+              <ThemedText style={styles.linkText}>Challenge 2 - Quiz Questions</ThemedText>
+            </Link>
+            <Link href="/game/challenge_3" style={styles.linkItem}>
+              <ThemedText style={styles.linkText}>Challenge 3 - Funny Questions</ThemedText>
+            </Link>
+            <Link href="/game/challenge_4" style={styles.linkItem}>
+              <ThemedText style={styles.linkText}>Challenge 4 - Passwords</ThemedText>
+            </Link>
+            <Link href="/game/challenge_5" style={styles.linkItem}>
+              <ThemedText style={styles.linkText}>Final Challenge - Group Photo</ThemedText>
+            </Link>
+          </ThemedView>
+        </ThemedView>
       </ThemedView>
     </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  reactLogo: {
+    height: 178,
+    width: 290,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+  },
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -97,11 +66,16 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  mainContainer: {
+    flexDirection: "column",
+    gap: 12,
+    marginTop: 20,
+  },
+  linkItem: {
+    display: "flex",
+  },
+  linkText: {
+    fontSize: 18,
+    color: "#1E90FF",
   },
 });

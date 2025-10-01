@@ -16,7 +16,7 @@ const successDark = "#4ade80";
 const warningLight = "#f59e0b";
 const warningDark = "#fbbf24";
 const dangerLight = "#ef4444";
-const dangerDark = "#f87171";
+const dangerDark = "#ef4444";
 const infoLight = "#3b82f6";
 const infoDark = "#60a5fa";
 const neutral100 = "#ffffff";
@@ -135,8 +135,7 @@ export const Fonts = Platform.select({
   web: {
     sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
-    rounded:
-      "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
+    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });

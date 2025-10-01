@@ -47,15 +47,26 @@ export interface QuizPack {
 export interface PasswordGameConfig {
   id: string; // single active maybe
   validPasswords: string[]; // 5 possible
-  requiredCorrectGroups: number; // e.g. 4 groups to end
+  requiredCorrectGroups?: number; // e.g. 4 groups to end (optional now)
   active: boolean;
   startedAt?: string;
   endedAt?: string;
+  updatedAt?: string;
 }
 
-export interface FunnyAnswers {
+export interface FunnyQuestion {
   id: string;
+  question: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface FunnyAnswer {
+  id: string;
+  questionId: string;
+  guestId: string;
   answer: string;
+  createdAt: string;
 }
 
 export interface DataShape {
@@ -64,7 +75,8 @@ export interface DataShape {
   neverHaveIEverPacks: NeverHaveIEverPack[];
   quizPacks: QuizPack[];
   passwordGames: PasswordGameConfig[];
-  funnyAnswers: FunnyAnswers[];
+  funnyQuestions: FunnyQuestion[];
+  funnyAnswers: FunnyAnswer[];
 }
 
 export const DEFAULT_DATA: DataShape = {
@@ -73,5 +85,6 @@ export const DEFAULT_DATA: DataShape = {
   neverHaveIEverPacks: [],
   quizPacks: [],
   passwordGames: [],
+  funnyQuestions: [],
   funnyAnswers: [],
 };

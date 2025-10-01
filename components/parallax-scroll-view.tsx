@@ -3,6 +3,7 @@ import { StyleSheet } from "react-native";
 import Animated, { interpolate, useAnimatedRef, useAnimatedStyle, useScrollOffset } from "react-native-reanimated";
 
 import { ThemedView } from "@/components/themed-view";
+import { useAdminTabContentPadding } from "@/hooks/use-admin-tab-padding";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useThemeColor } from "@/hooks/use-theme-color";
 
@@ -22,6 +23,7 @@ export default function ParallaxScrollView({ children, headerImage, headerBackgr
   const colorScheme = useColorScheme() ?? "light";
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
+  const bottomPadding = useAdminTabContentPadding(40);
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -49,7 +51,7 @@ export default function ParallaxScrollView({ children, headerImage, headerBackgr
         ]}>
         {headerImage}
       </Animated.View>
-      <ThemedView style={styles.content}>{children}</ThemedView>
+      <ThemedView style={[styles.content, { paddingBottom: bottomPadding }]}>{children}</ThemedView>
     </Animated.ScrollView>
   );
 }

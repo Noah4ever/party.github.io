@@ -1,73 +1,9 @@
 {
-  "guests": [
-    {
-      "id": "leCL0omE",
-      "name": "adas",
-      "clue1": "",
-      "clue2": ""
-    },
-    {
-      "id": "IBWIIrJT",
-      "name": "sada",
-      "clue1": "",
-      "clue2": "",
-      "groupId": "NhWPR8po"
-    },
-    {
-      "id": "dEnqF7SL",
-      "name": "asd",
-      "clue1": "sasd",
-      "clue2": "as",
-      "groupId": "NhWPR8po"
-    }
-  ],
-  "groups": [
-    {
-      "id": "NhWPR8po",
-      "name": "Group 1",
-      "guestIds": [
-        "dEnqF7SL",
-        "IBWIIrJT"
-      ],
-      "progress": {
-        "completedGames": [],
-        "attempts": 0
-      }
-    },
-    {
-      "id": "-DMbfRWG",
-      "name": "Group 2",
-      "guestIds": [],
-      "progress": {
-        "completedGames": [],
-        "attempts": 0
-      }
-    }
-  ],
-  "neverHaveIEverPacks": [
-    "noah gekuesst",
-    "Hummel gekuesst",
-    "NochNie3",
-    "NochNie4"
-  ],
+  "guests": [],
+  "groups": [],
+  "neverHaveIEverPacks": [],
   "quizPacks": [],
   "passwordGames": [],
-  "funnyAnswers": [
-    {
-      "id": "penis",
-      "answer": "hallo"
-    },
-    {
-      "id": "penis",
-      "answer": "halloadad"
-    },
-    {
-      "id": "penis",
-      "answer": "adad"
-    },
-    {
-      "answer": "iooi",
-      "id": "penis"
-    }
-  ]
+  "funnyQuestions": [],
+  "funnyAnswers": []
 }

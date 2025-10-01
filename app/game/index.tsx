@@ -19,24 +19,15 @@ export default function HomeScreen() {
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/crown.png")}
-          style={styles.papaLogo}
-        />
-      }
-    >
+      headerImage={<Image source={require("@/assets/images/crown.png")} style={styles.papaLogo} />}>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">
-          Wilkommen zu Ronalds Kennlernspiel!
-        </ThemedText>
+        <ThemedText type="title">Wilkommen zu Ronalds Kennlernspiel!</ThemedText>
         <HelloWave />
       </ThemedView>
       <ThemedView style={styles.textContainer}>
         <ThemedText type="subtitle">
-          In mehreren Schritten wirst du eine bestimmte Person auf dieser Party
-          durch mehrere Steps kennenlernen. Schafft ihr beide alle challenges
-          kommt ihr ins Finale Trinkspiel und könnt was cooles gewinnen!
+          In mehreren Schritten wirst du eine bestimmte Person auf dieser Party durch mehrere Steps kennenlernen.
+          Schafft ihr beide alle challenges kommt ihr ins Finale Trinkspiel und könnt was cooles gewinnen!
         </ThemedText>
       </ThemedView>
       <ThemedView>
@@ -47,17 +38,15 @@ export default function HomeScreen() {
       </ThemedView>
       <ThemedView className="scan">
         <ThemedText type="normal">
-          Wenn du glaubst, deine Person gefunden zu haben, dann scanner ihren QR
-          Code
+          Wenn du glaubst, deine Person gefunden zu haben, dann scanner ihren QR Code
         </ThemedText>
-        <Link style={{ paddingTop: 50 }} href={"/game/modal/camera"}>
+        <Link style={styles.scanLink} href={"/game/modal/camera"}>
           <ThemedText
             style={{
               color: theme.primary,
               textAlign: "center",
               paddingTop: 10,
-            }}
-          >
+            }}>
             Scanne den QR Code
           </ThemedText>
         </Link>
@@ -86,5 +75,8 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     position: "absolute",
+  },
+  scanLink: {
+    paddingTop: 50,
   },
 });

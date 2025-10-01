@@ -2,8 +2,7 @@ import crypto from "crypto";
 import { RequestHandler, Router } from "express";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "ashlii";
-const TOKEN_TTL_MS =
-  parseInt(process.env.ADMIN_TOKEN_TTL || "", 10) || 1000 * 60 * 60 * 12; // 12 hours
+const TOKEN_TTL_MS = parseInt(process.env.ADMIN_TOKEN_TTL || "", 10) || 1000 * 60 * 60 * 12; // 12 hours
 const TOKEN_BYTE_LENGTH = 48;
 
 interface TokenRecord {
@@ -44,14 +43,17 @@ function revokeToken(token: string) {
   tokens.delete(token);
 }
 
+function getTokenRecord(token: string) {
+  cleanupExpired();
+  return tokens.get(token) ?? null;
+}
+
 export const requireAuth: RequestHandler = (req, res, next) => {
   const header = req.headers.authorization || "";
   if (typeof header !== "string") {
     return res.status(401).json({ message: "Unauthorized" });
   }
-  const token = header.startsWith("Bearer ")
-    ? header.slice(7).trim()
-    : header.trim();
+  const token = header.startsWith("Bearer ") ? header.slice(7).trim() : header.trim();
   if (!token || !verifyToken(token)) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -73,10 +75,19 @@ authRouter.post("/login", (req, res) => {
 
 authRouter.post("/logout", requireAuth, (req, res) => {
   const header = req.headers.authorization || "";
-  const token =
-    typeof header === "string" && header.startsWith("Bearer ")
-      ? header.slice(7).trim()
-      : undefined;
+  const token = typeof header === "string" && header.startsWith("Bearer ") ? header.slice(7).trim() : undefined;
   if (token) revokeToken(token);
   res.status(204).end();
+});
+
+authRouter.get("/verify", requireAuth, (req, res) => {
+  const token = (req as any).adminToken as string | undefined;
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const record = getTokenRecord(token);
+  if (!record) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  res.json({ token, expiresAt: record.expiresAt });
 });

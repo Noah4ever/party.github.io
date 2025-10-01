@@ -1,9 +1,10 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
+import { confirm, showError } from "@/lib/dialogs";
 import { useCallback, useMemo, useState } from "react";
+import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 import {
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -48,9 +49,97 @@ export default function GuestForm({
   const [deleting, setDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const inputsDisabled = useMemo(
-    () => submitting || deleting || !!disabled,
-    [submitting, deleting, disabled]
+  const inputsDisabled = useMemo(() => submitting || deleting || !!disabled, [submitting, deleting, disabled]);
+
+  const containerStyle = useMemo<StyleProp<ViewStyle>>(
+    () => [styles.container, { backgroundColor: theme.background }] as StyleProp<ViewStyle>,
+    [theme.background]
+  );
+
+  type CardShadowStyle = ViewStyle & { boxShadow?: string };
+
+  const cardShadow = useMemo<CardShadowStyle>(() => {
+    if (Platform.OS === "web") {
+      return { boxShadow: "0 24px 48px rgba(15, 23, 42, 0.18)" } as CardShadowStyle;
+    }
+    return {
+      shadowColor: theme.shadowColor ?? "#000",
+      shadowOpacity: 0.12,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 6,
+    } as CardShadowStyle;
+  }, [theme.shadowColor]);
+
+  const cardStyle = useMemo<StyleProp<ViewStyle>>(
+    () =>
+      [
+        styles.card,
+        {
+          borderColor: theme.border,
+          backgroundColor: theme.card,
+        } as ViewStyle,
+        cardShadow,
+      ] as StyleProp<ViewStyle>,
+    [cardShadow, theme.border, theme.card]
+  );
+
+  const inputStyle = useMemo<StyleProp<TextStyle>>(
+    () =>
+      [
+        styles.input,
+        {
+          borderColor: theme.inputBorder,
+          backgroundColor: theme.inputBackground,
+          color: theme.inputText,
+        } as TextStyle,
+      ] as StyleProp<TextStyle>,
+    [theme.inputBackground, theme.inputBorder, theme.inputText]
+  );
+
+  const cancelButtonStyle = useMemo<StyleProp<ViewStyle>>(
+    () => [styles.button, { borderColor: theme.textMuted }] as StyleProp<ViewStyle>,
+    [theme.textMuted]
+  );
+
+  const submitButtonStyle = useMemo<StyleProp<ViewStyle>>(
+    () =>
+      [
+        styles.button,
+        {
+          borderColor: theme.primary,
+          backgroundColor: theme.primaryMuted,
+          opacity: submitting ? 0.65 : 1,
+        } as ViewStyle,
+      ] as StyleProp<ViewStyle>,
+    [submitting, theme.primary, theme.primaryMuted]
+  );
+
+  const errorTextStyle = useMemo<StyleProp<TextStyle>>(
+    () => [styles.errorText, { color: theme.danger }] as StyleProp<TextStyle>,
+    [theme.danger]
+  );
+
+  const deleteTextStyle = useMemo<StyleProp<TextStyle>>(
+    () =>
+      [
+        styles.deleteText,
+        {
+          color: theme.danger,
+          opacity: deleting ? 0.5 : 1,
+        } as TextStyle,
+      ] as StyleProp<TextStyle>,
+    [deleting, theme.danger]
+  );
+
+  const buttonTextMuted = useMemo<StyleProp<TextStyle>>(
+    () => [styles.buttonText, { color: theme.textMuted }] as StyleProp<TextStyle>,
+    [theme.textMuted]
+  );
+
+  const buttonTextPrimary = useMemo<StyleProp<TextStyle>>(
+    () => [styles.buttonText, { color: theme.primary }] as StyleProp<TextStyle>,
+    [theme.primary]
   );
 
   async function handleSubmit() {
@@ -68,182 +157,119 @@ export default function GuestForm({
     }
   }
 
-  const confirmDelete = useCallback(() => {
+  const confirmDelete = useCallback(async () => {
     if (!initialGuest?.id || deleting) return;
-    // Web fallback: Alert.alert on web only supports a single OK button, so use window.confirm for multi-button UX.
-    if (Platform.OS === "web") {
-      const confirmed = (globalThis as any).confirm?.(
-        `Delete guest "${initialGuest.name}"? This cannot be undone.`
-      );
-      if (!confirmed) return;
-      (async () => {
-        try {
-          setDeleting(true);
-          if (onDelete) {
-            await onDelete(initialGuest.id!);
-          }
-          onCancel?.();
-        } catch (err: any) {
-          const message = err?.message || "Failed to delete";
-          Alert.alert("Error", message);
-        } finally {
-          setDeleting(false);
-        }
-      })();
-      return;
+    const confirmed = await confirm({
+      title: "Delete Guest",
+      message: `Are you sure you want to delete "${initialGuest.name}"? This cannot be undone.`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      destructive: true,
+    });
+    if (!confirmed) return;
+    try {
+      setDeleting(true);
+      if (onDelete) {
+        await onDelete(initialGuest.id);
+      }
+      onCancel?.();
+    } catch (err: any) {
+      const message = err?.message || "Failed to delete";
+      showError(message);
+    } finally {
+      setDeleting(false);
     }
-
-    // Native / mobile platforms
-    Alert.alert(
-      "Delete Guest",
-      `Are you sure you want to delete \"${initialGuest.name}\"? This cannot be undone.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setDeleting(true);
-              if (onDelete) {
-                await onDelete(initialGuest.id!);
-              }
-              onCancel?.();
-            } catch (err: any) {
-              const message = err?.message || "Failed to delete";
-              Alert.alert("Error", message);
-            } finally {
-              setDeleting(false);
-            }
-          },
-        },
-      ]
-    );
-  }, [initialGuest, onDelete, onCancel, deleting]);
+  }, [initialGuest, deleting, onDelete, onCancel]);
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={containerStyle}>
       <KeyboardAvoidingView
-        style={{ flex: 1, width: "100%" }}
+        style={styles.keyboardAvoider}
         behavior={Platform.select({
           ios: "padding",
           android: undefined,
           default: undefined,
         })}
-        keyboardVerticalOffset={Platform.select({ ios: 80, default: 0 })}
-      >
+        keyboardVerticalOffset={Platform.select({ ios: 80, default: 0 })}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
-          keyboardDismissMode={
-            Platform.OS === "ios" ? "interactive" : "on-drag"
-          }
-          onScrollBeginDrag={Keyboard.dismiss}
-        >
-          <ThemedText type="title" style={styles.heading}>
-            {title}
-          </ThemedText>
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+          onScrollBeginDrag={Keyboard.dismiss}>
+          <ThemedView style={cardStyle}>
+            <ThemedText type="title" style={styles.heading}>
+              {title}
+            </ThemedText>
 
-          <View style={styles.form}>
-            <TextInput
-              placeholder="Name..."
-              value={name}
-              placeholderTextColor={theme.placeholder}
-              onChangeText={(text) => {
-                setName(text);
-                if (formError) setFormError(null);
-              }}
-              style={styles.input}
-              autoCapitalize="words"
-              returnKeyType="next"
-              editable={!inputsDisabled}
-            />
-            <TextInput
-              placeholder="Clue 1..."
-              value={clue1}
-              placeholderTextColor={theme.placeholder}
-              onChangeText={(text) => {
-                setClue1(text);
-                if (formError) setFormError(null);
-              }}
-              style={styles.input}
-              returnKeyType="next"
-              editable={!inputsDisabled}
-            />
-            <TextInput
-              placeholder="Clue 2..."
-              value={clue2}
-              placeholderTextColor={theme.placeholder}
-              onChangeText={(text) => {
-                setClue2(text);
-                if (formError) setFormError(null);
-              }}
-              style={styles.input}
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
-              editable={!inputsDisabled}
-            />
-            {formError ? (
-              <ThemedText style={{ color: theme.danger, textAlign: "center" }}>
-                {formError}
-              </ThemedText>
-            ) : null}
-            {initialGuest && (
-              <ThemedText
-                onPress={confirmDelete}
-                style={{
-                  textAlign: "center",
-                  color: theme.danger,
-                  opacity: deleting ? 0.5 : 1,
-                  textDecorationLine: "underline",
+            <View style={styles.form}>
+              <TextInput
+                placeholder="Name..."
+                value={name}
+                placeholderTextColor={theme.placeholder}
+                onChangeText={(text) => {
+                  setName(text);
+                  if (formError) setFormError(null);
                 }}
-              >
-                {deleting ? "Deleting..." : "Remove"}
-              </ThemedText>
-            )}
-
-            <ThemedView
-              style={{
-                marginTop: 20,
-                gap: 12,
-                alignItems: "center",
-                justifyContent: "space-evenly",
-                flexDirection: "row",
-              }}
-            >
-              {onCancel && (
-                <TouchableHighlight
-                  style={[styles.button, { borderColor: theme.textMuted }]}
-                  underlayColor={theme.textMuted + "22"}
-                  onPress={onCancel}
-                >
-                  <ThemedText style={{ color: theme.textMuted }}>
-                    Cancel
-                  </ThemedText>
-                </TouchableHighlight>
+                style={inputStyle}
+                autoCapitalize="words"
+                returnKeyType="next"
+                editable={!inputsDisabled}
+                selectionColor={theme.primary}
+              />
+              <TextInput
+                placeholder="Clue 1..."
+                value={clue1}
+                placeholderTextColor={theme.placeholder}
+                onChangeText={(text) => {
+                  setClue1(text);
+                  if (formError) setFormError(null);
+                }}
+                style={inputStyle}
+                returnKeyType="next"
+                editable={!inputsDisabled}
+                selectionColor={theme.primary}
+              />
+              <TextInput
+                placeholder="Clue 2..."
+                value={clue2}
+                placeholderTextColor={theme.placeholder}
+                onChangeText={(text) => {
+                  setClue2(text);
+                  if (formError) setFormError(null);
+                }}
+                style={inputStyle}
+                returnKeyType="done"
+                onSubmitEditing={handleSubmit}
+                editable={!inputsDisabled}
+                selectionColor={theme.primary}
+              />
+              {formError ? <ThemedText style={errorTextStyle}>{formError}</ThemedText> : null}
+              {initialGuest && (
+                <ThemedText onPress={confirmDelete} style={deleteTextStyle}>
+                  {deleting ? "Deleting..." : "Remove"}
+                </ThemedText>
               )}
 
-              <TouchableHighlight
-                style={[
-                  styles.button,
-                  {
-                    borderColor: theme.primary,
-                    width: "50%",
-                    opacity: submitting ? 0.6 : 1,
-                  },
-                ]}
-                disabled={inputsDisabled}
-                underlayColor={theme.primaryMuted}
-                onPress={handleSubmit}
-              >
-                <ThemedText
-                  style={{ color: theme.primary, textAlign: "center" }}
-                >
-                  {submitting ? "Saving..." : submitLabel}
-                </ThemedText>
-              </TouchableHighlight>
-            </ThemedView>
-          </View>
+              <ThemedView style={[styles.actions, { backgroundColor: theme.backgroundAlt }]}>
+                {onCancel && (
+                  <TouchableHighlight
+                    style={cancelButtonStyle}
+                    underlayColor={`${theme.textMuted}22`}
+                    onPress={onCancel}>
+                    <ThemedText style={buttonTextMuted}>Cancel</ThemedText>
+                  </TouchableHighlight>
+                )}
+
+                <TouchableHighlight
+                  style={submitButtonStyle}
+                  disabled={inputsDisabled}
+                  underlayColor={theme.primaryMuted}
+                  onPress={handleSubmit}>
+                  <ThemedText style={buttonTextPrimary}>{submitting ? "Saving..." : submitLabel}</ThemedText>
+                </TouchableHighlight>
+              </ThemedView>
+            </View>
+          </ThemedView>
         </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
@@ -255,34 +281,69 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 32,
   },
-  heading: { marginTop: 20, marginBottom: 60 },
-  scrollContent: { flexGrow: 1, alignItems: "center", paddingBottom: 40 },
-  form: { width: "100%", maxWidth: 420, gap: 16 },
+  keyboardAvoider: {
+    flex: 1,
+    width: "100%",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: "center",
+    paddingBottom: 40,
+    paddingHorizontal: 12,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 480,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    gap: 24,
+  },
+  heading: {
+    textAlign: "center",
+  },
+  form: {
+    gap: 16,
+  },
   input: {
-    alignSelf: "center",
-    width: "80%",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#cfd3d6",
+    width: "100%",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
     fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#111",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
   },
   button: {
-    marginTop: 40,
-    alignSelf: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 1,
+    flex: 1,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  buttonText: {},
+  buttonText: {
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  actions: {
+    marginTop: 12,
+    gap: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  errorText: {
+    textAlign: "center",
+    fontWeight: "500",
+  },
+  deleteText: {
+    textAlign: "center",
+    textDecorationLine: "underline",
+  },
 });

@@ -13,7 +13,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -41,10 +40,7 @@ export default function GroupsTab() {
     setLoading(true);
     setError(null);
     try {
-      const [groupList, guestList] = await Promise.all([
-        groupsApi.list({ expand: true }),
-        guestsApi.list(),
-      ]);
+      const [groupList, guestList] = await Promise.all([groupsApi.list({ expand: true }), guestsApi.list()]);
       setGroups(groupList as GroupDTO[]);
       setGuests(guestList as GuestDTO[]);
     } catch (err: any) {
@@ -92,16 +88,6 @@ export default function GroupsTab() {
 
   const closePicker = () => setActiveSlot(null);
 
-  const refreshAfterMutation = async () => {
-    setPending(true);
-    try {
-      await load();
-    } finally {
-      setPending(false);
-      closePicker();
-    }
-  };
-
   const assignGuestToSlot = async (
     guest: GuestDTO,
     targetGroup: GroupDTO,
@@ -113,17 +99,12 @@ export default function GroupsTab() {
       if (originGroupId && originGroupId !== targetGroup.id) {
         const originGroup = groups.find((g) => g.id === originGroupId);
         if (originGroup) {
-          const originGuestIds = originGroup.guestIds.filter(
-            (id) => id !== guest.id
-          );
+          const originGuestIds = originGroup.guestIds.filter((id) => id !== guest.id);
           await groupsApi.update(originGroup.id, { guestIds: originGuestIds });
         }
       }
 
-      const slots: (string | null)[] = [
-        targetGroup.guestIds[0] ?? null,
-        targetGroup.guestIds[1] ?? null,
-      ];
+      const slots: (string | null)[] = [targetGroup.guestIds[0] ?? null, targetGroup.guestIds[1] ?? null];
       slots[slotIndex] = guest.id;
       const updatedGuestIds = slots.filter((id): id is string => !!id);
       await groupsApi.update(targetGroup.id, { guestIds: updatedGuestIds });
@@ -149,27 +130,17 @@ export default function GroupsTab() {
 
     const originGroupId = guest.groupId;
 
-    const proceed = () =>
-      assignGuestToSlot(
-        guest,
-        targetGroup,
-        activeSlot.slotIndex,
-        originGroupId
-      );
+    const proceed = () => assignGuestToSlot(guest, targetGroup, activeSlot.slotIndex, originGroupId);
 
     if (originGroupId && originGroupId !== targetGroup.id) {
       const originGroupName = groupNameMap[originGroupId] || "another group";
-      Alert.alert(
-        "Move guest",
-        `${guest.name} is currently in ${originGroupName}. Move them to ${targetGroup.name}?`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Move",
-            onPress: () => proceed(),
-          },
-        ]
-      );
+      Alert.alert("Move guest", `${guest.name} is currently in ${originGroupName}. Move them to ${targetGroup.name}?`, [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Move",
+          onPress: () => proceed(),
+        },
+      ]);
       return;
     }
 
@@ -182,10 +153,7 @@ export default function GroupsTab() {
     if (!targetGroup.guestIds[slotIndex]) return;
     setPending(true);
     try {
-      const slots: (string | null)[] = [
-        targetGroup.guestIds[0] ?? null,
-        targetGroup.guestIds[1] ?? null,
-      ];
+      const slots: (string | null)[] = [targetGroup.guestIds[0] ?? null, targetGroup.guestIds[1] ?? null];
       slots[slotIndex] = null;
       const updatedGuestIds = slots.filter((id): id is string => !!id);
       await groupsApi.update(targetGroup.id, {
@@ -256,24 +224,18 @@ export default function GroupsTab() {
     const displayName = group.name?.trim() || "this group";
     if (Platform.OS === "web") {
       // Use native browser confirm for web so it always appears
-      const ok = window.confirm(
-        `Delete ${displayName}?\nGuests will become unassigned.`
-      );
+      const ok = window.confirm(`Delete ${displayName}?\nGuests will become unassigned.`);
       if (ok) handleDeleteGroup(group.id);
       return;
     }
-    Alert.alert(
-      "Delete group",
-      `Delete ${displayName}? Any assigned guests will become unassigned.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => handleDeleteGroup(group.id),
-        },
-      ]
-    );
+    Alert.alert("Delete group", `Delete ${displayName}? Any assigned guests will become unassigned.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => handleDeleteGroup(group.id),
+      },
+    ]);
   };
 
   const handleSlotPress = (group: GroupDTO, slotIndex: 0 | 1) => {
@@ -285,25 +247,21 @@ export default function GroupsTab() {
     const guest = guestId ? guests.find((g) => g.id === guestId) : undefined;
     const isFilled = !!guest;
     const label = isFilled ? guest!.name : "Add guest";
+    const slotBorderColor = isFilled ? theme.border : theme.icon;
+    const slotBackground = isFilled ? theme.backgroundAlt : theme.backgroundAlt;
 
     return (
       <TouchableOpacity
         key={`${group.id}-slot-${slotIndex}`}
-        style={[
-          styles.slot,
-          { borderColor: theme.border, backgroundColor: theme.card },
-        ]}
+        style={[styles.slot, { borderColor: slotBorderColor, backgroundColor: slotBackground }]}
         onPress={() => handleSlotPress(group, slotIndex)}
-        disabled={pending}
-      >
+        disabled={pending}>
         {isFilled ? (
-          <ThemedText style={styles.slotGuest}>{label}</ThemedText>
+          <ThemedText style={[styles.slotGuest, { color: theme.text }]} numberOfLines={1}>
+            {label}
+          </ThemedText>
         ) : (
-          <IconSymbol
-            name="person.badge.plus"
-            size={32}
-            color={theme.primary}
-          />
+          <IconSymbol name="person.badge.plus" size={32} color={theme.primary} />
         )}
       </TouchableOpacity>
     );
@@ -314,23 +272,14 @@ export default function GroupsTab() {
     return (
       <ThemedView
         key={group.id}
-        style={[
-          styles.groupCard,
-          { borderColor: theme.border, backgroundColor: theme.surface },
-        ]}
-      >
+        style={[styles.groupCard, { borderColor: theme.border, backgroundColor: theme.surface }]}>
         <View style={styles.groupHeader}>
           <TextInput
-            style={[
-              styles.groupNameInput,
-              { borderColor: theme.border, color: theme.text },
-            ]}
+            style={[styles.groupNameInput, { borderColor: theme.border, color: theme.text }]}
             placeholder="Group name"
             placeholderTextColor={theme.placeholder}
             value={nameDrafts[group.id] ?? ""}
-            onChangeText={(text) =>
-              setNameDrafts((prev) => ({ ...prev, [group.id]: text }))
-            }
+            onChangeText={(text) => setNameDrafts((prev) => ({ ...prev, [group.id]: text }))}
             onBlur={() => handleNameBlur(group)}
             editable={!pending}
           />
@@ -346,8 +295,7 @@ export default function GroupsTab() {
               },
             ]}
             disabled={!!deletingId && deletingId !== group.id}
-            onPress={() => confirmDeleteGroup(group)}
-          >
+            onPress={() => confirmDeleteGroup(group)}>
             {deletingId === group.id ? (
               <ActivityIndicator size={18} color={theme.danger} />
             ) : (
@@ -357,9 +305,9 @@ export default function GroupsTab() {
         </View>
         <View style={styles.groupRow}>
           {renderSlot(group, 0)}
-          <View style={[styles.progressCircle, { borderColor: theme.primary }]}>
-            <ThemedText style={styles.progressText}>{progressCount}</ThemedText>
-            <ThemedText style={styles.progressLabel}>Games</ThemedText>
+          <View style={[styles.progressCircle, { borderColor: theme.icon, backgroundColor: theme.backgroundAlt }]}>
+            <ThemedText style={[styles.progressText, { color: theme.icon }]}>{progressCount}</ThemedText>
+            <ThemedText style={[styles.progressLabel, { color: theme.textMuted }]}>Games</ThemedText>
           </View>
           {renderSlot(group, 1)}
         </View>
@@ -385,74 +333,59 @@ export default function GroupsTab() {
       <ParallaxScrollView
         headerHeight={200}
         headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-        headerImage={
-          <IconSymbol
-            name="people-outline"
-            size={220}
-            color="#ffffff55"
-            style={styles.headerIcon}
-          />
-        }
-      >
+        headerImage={<IconSymbol name="people-outline" size={220} color="#ffffff55" style={styles.headerIcon} />}>
         <ThemedView style={styles.container}>
           <View style={styles.headingRow}>
             <ThemedText type="title">Groups</ThemedText>
             <TouchableOpacity
-              style={[styles.createButton, { borderColor: theme.primary }]}
+              style={[styles.createButton, { backgroundColor: theme.accent, borderColor: theme.accent }]}
               onPress={handleCreateGroup}
-              disabled={pending}
-            >
+              disabled={pending}>
               {pending ? (
-                <ActivityIndicator color={theme.primary} />
+                <ActivityIndicator color={theme.background} />
               ) : (
-                <ThemedText style={{ color: theme.primary }}>
-                  New group
-                </ThemedText>
+                <>
+                  <IconSymbol name="plus" size={16} color={theme.background} />
+                  <ThemedText style={{ color: theme.background, fontWeight: "600" }}>New Group</ThemedText>
+                </>
               )}
             </TouchableOpacity>
           </View>
-          {error && (
-            <ThemedText style={{ color: theme.danger, marginBottom: 12 }}>
-              {error}
-            </ThemedText>
-          )}
-          {loading ? (
-            <View style={styles.loadingState}>
-              <ActivityIndicator size="large" color={theme.primary} />
-              <ThemedText style={{ marginTop: 12 }}>
-                Loading groups...
-              </ThemedText>
-            </View>
-          ) : (
-            <ScrollView contentContainerStyle={styles.groupsList}>
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search group or participant..."
-                placeholderTextColor={theme.placeholder}
-                style={[
-                  styles.searchInput,
-                  {
-                    borderColor: theme.border,
-                    color: theme.text,
-                    backgroundColor: theme.inputBackground,
-                  },
-                ]}
-                autoCorrect={false}
-                autoCapitalize="none"
-                clearButtonMode="while-editing"
-              />
-              {filteredGroups.length === 0 ? (
-                <ThemedText style={{ opacity: 0.7 }}>
-                  {search
-                    ? "No matching groups."
-                    : "No groups yet. Create one to get started."}
+          <ThemedView style={[styles.listCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <TextInput
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search group or guest..."
+              placeholderTextColor={theme.placeholder}
+              style={[
+                styles.searchInput,
+                {
+                  borderColor: theme.border,
+                  color: theme.text,
+                  backgroundColor: theme.inputBackground,
+                },
+              ]}
+              autoCorrect={false}
+              autoCapitalize="none"
+              clearButtonMode="while-editing"
+            />
+            {error ? <ThemedText style={[styles.errorText, { color: theme.danger }]}>{error}</ThemedText> : null}
+            {loading ? (
+              <View style={styles.loadingState}>
+                <ActivityIndicator size="large" color={theme.accent} />
+                <ThemedText style={{ color: theme.textMuted }}>Loading groups…</ThemedText>
+              </View>
+            ) : filteredGroups.length === 0 ? (
+              <View style={styles.stateContainer}>
+                <IconSymbol name="person.crop.circle.badge.plus" size={32} color={theme.icon} />
+                <ThemedText style={[styles.emptyStateText, { color: theme.textMuted }]}>
+                  {search ? "No matching groups." : "No groups yet. Create one to get started."}
                 </ThemedText>
-              ) : (
-                filteredGroups.map((group) => renderGroupCard(group))
-              )}
-            </ScrollView>
-          )}
+              </View>
+            ) : (
+              <View style={styles.groupList}>{filteredGroups.map((group) => renderGroupCard(group))}</View>
+            )}
+          </ThemedView>
         </ThemedView>
       </ParallaxScrollView>
 
@@ -460,34 +393,24 @@ export default function GroupsTab() {
         transparent
         animationType={Platform.OS === "ios" ? "slide" : "fade"}
         visible={!!activeSlot}
-        onRequestClose={closePicker}
-      >
+        onRequestClose={closePicker}>
         <Pressable style={styles.modalOverlay} onPress={closePicker}>
           <Pressable
             style={[styles.modalContent, { backgroundColor: theme.card }]}
-            onPress={(event) => event.stopPropagation()}
-          >
+            onPress={(event) => event.stopPropagation()}>
             <ThemedText type="subtitle" style={{ marginBottom: 12 }}>
               Select guest
             </ThemedText>
             {guestOptions.length === 0 ? (
-              <ThemedText style={{ opacity: 0.7 }}>
-                No guests yet. Add guests from the Guests tab first.
-              </ThemedText>
+              <ThemedText style={{ opacity: 0.7 }}>No guests yet. Add guests from the Guests tab first.</ThemedText>
             ) : (
               <FlatList
                 data={guestOptions}
                 keyExtractor={(guest) => guest.id}
                 renderItem={({ item }) => {
-                  const targetGroup = activeSlot
-                    ? groups.find((g) => g.id === activeSlot.groupId)
-                    : undefined;
-                  const occupantId = targetGroup
-                    ? targetGroup.guestIds[activeSlot!.slotIndex]
-                    : undefined;
-                  const assignedGroupName = item.groupId
-                    ? groupNameMap[item.groupId]
-                    : undefined;
+                  const targetGroup = activeSlot ? groups.find((g) => g.id === activeSlot.groupId) : undefined;
+                  const occupantId = targetGroup ? targetGroup.guestIds[activeSlot!.slotIndex] : undefined;
+                  const assignedGroupName = item.groupId ? groupNameMap[item.groupId] : undefined;
                   const isInTargetGroup = item.groupId === activeSlot?.groupId;
                   const badgeLabel = assignedGroupName
                     ? isInTargetGroup
@@ -507,13 +430,9 @@ export default function GroupsTab() {
                         isCurrentOccupant && { opacity: 0.6 },
                       ]}
                       onPress={() => handleAssignGuest(item)}
-                      disabled={pending}
-                    >
+                      disabled={pending}>
                       <View style={styles.guestOptionRow}>
-                        <ThemedText
-                          style={{ color: theme.text, flex: 1 }}
-                          numberOfLines={1}
-                        >
+                        <ThemedText style={{ color: theme.text, flex: 1 }} numberOfLines={1}>
                           {item.name}
                         </ThemedText>
                         <View
@@ -528,16 +447,12 @@ export default function GroupsTab() {
                                   backgroundColor: theme.overlay,
                                   borderColor: theme.border,
                                 },
-                          ]}
-                        >
+                          ]}>
                           <ThemedText
                             style={{
-                              color: isInTargetGroup
-                                ? theme.primary
-                                : theme.textMuted,
+                              color: isInTargetGroup ? theme.primary : theme.textMuted,
                               fontSize: 12,
-                            }}
-                          >
+                            }}>
                             {badgeLabel}
                           </ThemedText>
                         </View>
@@ -549,15 +464,10 @@ export default function GroupsTab() {
             )}
             {activeSlot &&
               (() => {
-                const currentGroup = groups.find(
-                  (g) => g.id === activeSlot.groupId
-                );
-                const currentGuestId =
-                  currentGroup?.guestIds[activeSlot.slotIndex];
+                const currentGroup = groups.find((g) => g.id === activeSlot.groupId);
+                const currentGuestId = currentGroup?.guestIds[activeSlot.slotIndex];
                 if (!currentGroup || !currentGuestId) return null;
-                const currentGuest = guests.find(
-                  (g) => g.id === currentGuestId
-                );
+                const currentGuest = guests.find((g) => g.id === currentGuestId);
                 if (!currentGuest) return null;
                 return (
                   <View
@@ -567,11 +477,8 @@ export default function GroupsTab() {
                         borderColor: theme.border,
                         backgroundColor: theme.backgroundAlt,
                       },
-                    ]}
-                  >
-                    <ThemedText style={{ flex: 1 }}>
-                      Current: {currentGuest.name}
-                    </ThemedText>
+                    ]}>
+                    <ThemedText style={{ flex: 1 }}>Current: {currentGuest.name}</ThemedText>
                     <TouchableOpacity
                       style={[
                         styles.unassignButton,
@@ -581,13 +488,8 @@ export default function GroupsTab() {
                         },
                       ]}
                       disabled={pending}
-                      onPress={() =>
-                        handleRemoveGuest(currentGroup.id, activeSlot.slotIndex)
-                      }
-                    >
-                      <ThemedText style={{ color: theme.danger }}>
-                        Unassign
-                      </ThemedText>
+                      onPress={() => handleRemoveGuest(currentGroup.id, activeSlot.slotIndex)}>
+                      <ThemedText style={{ color: theme.danger }}>Unassign</ThemedText>
                     </TouchableOpacity>
                   </View>
                 );
@@ -601,7 +503,7 @@ export default function GroupsTab() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    padding: 0,
     gap: 16,
   },
   headerIcon: {
@@ -615,23 +517,31 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   createButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  listCard: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 16,
+    gap: 16,
   },
   loadingState: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 40,
-    gap: 8,
+    paddingVertical: 32,
+    gap: 12,
   },
-  groupsList: {
-    gap: 18,
-    paddingBottom: 80,
+  groupList: {
+    gap: 16,
   },
   groupCard: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 16,
     padding: 16,
     gap: 16,
@@ -642,7 +552,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   groupNameInput: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -653,7 +563,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -665,9 +575,10 @@ const styles = StyleSheet.create({
   },
   slot: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 14,
-    paddingVertical: 24,
+    paddingVertical: 22,
+    paddingHorizontal: 8,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -676,10 +587,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   progressCircle: {
-    width: 84,
-    height: 84,
-    borderWidth: 3,
-    borderRadius: 42,
+    width: 80,
+    height: 80,
+    borderWidth: 2,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
     gap: 2,
@@ -690,7 +601,18 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 12,
-    opacity: 0.7,
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  stateContainer: {
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 16,
+  },
+  emptyStateText: {
+    textAlign: "center",
   },
   modalOverlay: {
     flex: 1,

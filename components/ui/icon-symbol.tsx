@@ -26,10 +26,21 @@ const MAPPING = {
   settings: "cog-outline", // ellipsis-vertical icon
   "ellipsis.vertical": "ellipsis-horizontal", // ellipsis-vertical
   "ellipsis.vertical.circle.outline": "ellipsis-horizontal-circle-outline", // ellipsis-vertical
+  "ellipsis.vertical.circle": "ellipsis-horizontal-circle", // ellipsis-vertical filled
   "qr-code": "qr-code-outline", // qr-code
   "reload-data": "refresh-outline",
   "person.2.square.stack": "people-circle-outline",
   "trash.fill": "trash",
+  "list.bullet": "list",
+  "questionmark.circle": "help-circle-outline",
+  "text.bubble": "chatbubble-ellipses-outline",
+  "lock.circle": "lock-closed-outline",
+  "checkmark.circle": "checkmark-circle",
+  plus: "add",
+  "person.fill": "person",
+  "person.crop.circle.badge.plus": "person-add",
+  circle: "ellipse-outline",
+  logout: "log-out",
 } as const satisfies IconMapping;
 
 // To add new icons:
@@ -38,7 +49,7 @@ const MAPPING = {
 // 3. Add a mapping: "bell.fill": "notifications".
 // Keep keys stable because they are used throughout the app.
 
-type IconSymbolName = keyof typeof MAPPING;
+export type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
@@ -57,7 +68,5 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return (
-    <IconSet color={color} size={size} name={MAPPING[name]} style={style} />
-  );
+  return <IconSet color={color} size={size} name={MAPPING[name]} style={style} />;
 }
