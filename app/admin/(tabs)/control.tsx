@@ -1,14 +1,5 @@
-import React, { useCallback, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { Fragment, useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -275,20 +266,8 @@ export default function TabTwoScreen() {
       </ThemedView>
 
       <ThemedView style={[styles.listContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <FlatList
-          data={NAVIGATION_ITEMS}
-          scrollEnabled={false}
-          keyExtractor={(item) => item.key}
-          ItemSeparatorComponent={() => (
-            <View
-              style={{
-                height: StyleSheet.hairlineWidth,
-                backgroundColor: theme.border,
-                marginLeft: 60,
-              }}
-            />
-          )}
-          renderItem={({ item }) => (
+        {NAVIGATION_ITEMS.map((item, index) => (
+          <Fragment key={item.key}>
             <Pressable
               onPress={() => handleItemPress(item)}
               style={({ pressed }) => [
@@ -315,25 +294,22 @@ export default function TabTwoScreen() {
               </View>
               <IconSymbol name="chevron.right" size={16} color={theme.icon} />
             </Pressable>
-          )}
-        />
+            {index < NAVIGATION_ITEMS.length - 1 ? (
+              <View
+                style={{
+                  height: StyleSheet.hairlineWidth,
+                  backgroundColor: theme.border,
+                  marginLeft: 60,
+                }}
+              />
+            ) : null}
+          </Fragment>
+        ))}
       </ThemedView>
 
       <ThemedView style={[styles.listContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <FlatList
-          data={GAME_FLOW_ITEMS}
-          scrollEnabled={false}
-          keyExtractor={(item) => item.key}
-          ItemSeparatorComponent={() => (
-            <View
-              style={{
-                height: StyleSheet.hairlineWidth,
-                backgroundColor: theme.border,
-                marginLeft: 60,
-              }}
-            />
-          )}
-          renderItem={({ item }) => (
+        {GAME_FLOW_ITEMS.map((item, index) => (
+          <Fragment key={item.key}>
             <Pressable
               onPress={() => handleItemPress(item)}
               style={({ pressed }) => [
@@ -360,8 +336,17 @@ export default function TabTwoScreen() {
               </View>
               <IconSymbol name="chevron.right" size={16} color={theme.icon} />
             </Pressable>
-          )}
-        />
+            {index < GAME_FLOW_ITEMS.length - 1 ? (
+              <View
+                style={{
+                  height: StyleSheet.hairlineWidth,
+                  backgroundColor: theme.border,
+                  marginLeft: 60,
+                }}
+              />
+            ) : null}
+          </Fragment>
+        ))}
       </ThemedView>
 
       <ThemedView
@@ -370,23 +355,17 @@ export default function TabTwoScreen() {
           styles.actionsListContainer,
           { backgroundColor: theme.card, borderColor: theme.border },
         ]}>
-        <FlatList
-          data={controlItems}
-          scrollEnabled={false}
-          keyExtractor={(item) => item.key}
-          ItemSeparatorComponent={() => (
-            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: theme.border, marginLeft: 60 }} />
-          )}
-          renderItem={({ item }) => {
-            const isDanger = item.type === "danger";
-            const isAction = item.type === "action";
-            const disabled = item.disabled ?? false;
-            const iconBackground = isDanger ? theme.danger : isAction ? theme.accentMuted : theme.primaryMuted;
-            const iconBorder = isDanger ? theme.danger : theme.border;
-            const iconColor = isDanger ? theme.text : isAction ? theme.accent : theme.primary;
-            const rightIconColor = isDanger ? theme.danger : theme.icon;
+        {controlItems.map((item, index) => {
+          const isDanger = item.type === "danger";
+          const isAction = item.type === "action";
+          const disabled = item.disabled ?? false;
+          const iconBackground = isDanger ? theme.danger : isAction ? theme.accentMuted : theme.primaryMuted;
+          const iconBorder = isDanger ? theme.danger : theme.border;
+          const iconColor = isDanger ? theme.text : isAction ? theme.accent : theme.primary;
+          const rightIconColor = isDanger ? theme.danger : theme.icon;
 
-            return (
+          return (
+            <Fragment key={item.key}>
               <Pressable
                 accessibilityRole="button"
                 disabled={disabled}
@@ -424,9 +403,12 @@ export default function TabTwoScreen() {
                 </View>
                 <IconSymbol name="chevron.right" size={16} color={rightIconColor} />
               </Pressable>
-            );
-          }}
-        />
+              {index < controlItems.length - 1 ? (
+                <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: theme.border, marginLeft: 60 }} />
+              ) : null}
+            </Fragment>
+          );
+        })}
       </ThemedView>
     </ParallaxScrollView>
   );
