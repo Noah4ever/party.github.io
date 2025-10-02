@@ -249,7 +249,20 @@ export const groupsApi = {
   remove: (id: string) => api.delete<void>(`/groups/${id}`),
 };
 
+export interface AdminDataDump {
+  guests: GuestDTO[];
+  groups: GroupDTO[];
+  neverHaveIEverPacks: NeverHaveIEverPackDTO[];
+  quizPacks: QuizPackDTO[];
+  passwordGames: PasswordGameConfigDTO[];
+  funnyQuestions: FunnyQuestionDTO[];
+  funnyAnswers: FunnyAnswerDTO[];
+}
+
 export const adminApi = {
+  downloadData: () => api.get<AdminDataDump>("/admin/data"),
+  importData: (data: AdminDataDump) =>
+    api.post<{ success: boolean; importedAt: string }, AdminDataDump>("/admin/data", data),
   clearAllData: () => api.post<{ success: boolean; clearedAt: string }>("/admin/clear-data"),
 };
 

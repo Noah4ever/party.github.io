@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol, type IconSymbolName } from "@/components/ui/icon-symbol";
 import { Fonts, useTheme } from "@/constants/theme";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
+import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import { ApiError, adminApi } from "@/lib/api";
 import { useRouter } from "expo-router";
 
@@ -24,16 +25,21 @@ type ControlItem = {
   title: string;
   description: string;
   icon: IconSymbolName;
-  route: string;
+  type: "navigation" | "action" | "danger";
+  route?: string;
+  onPress?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
 };
 
-const ITEMS: ControlItem[] = [
+const NAVIGATION_ITEMS: ControlItem[] = [
   {
     key: "never-have-i-ever",
     title: "Never Have I Ever",
     description: "Manage statements",
     icon: "list.bullet", // SF Symbol style mapped via IconSymbol
     route: "/admin/control/never-have-i-ever",
+    type: "navigation",
   },
   {
     key: "quiz-questions",
@@ -41,6 +47,7 @@ const ITEMS: ControlItem[] = [
     description: "Manage questions & answers",
     icon: "questionmark.circle",
     route: "/admin/control/quiz-questions",
+    type: "navigation",
   },
   {
     key: "funny-question",
@@ -48,6 +55,7 @@ const ITEMS: ControlItem[] = [
     description: "Questions & guest answers",
     icon: "text.bubble",
     route: "/admin/control/funny-questions",
+    type: "navigation",
   },
   {
     key: "passwords",
@@ -55,6 +63,7 @@ const ITEMS: ControlItem[] = [
     description: "Configure game passwords",
     icon: "lock.circle",
     route: "/admin/control/passwords",
+    type: "navigation",
   },
 ];
 
@@ -62,7 +71,10 @@ export default function TabTwoScreen() {
   const theme = useTheme();
   const { logout, ensureSession } = useAdminAuth();
   const router = useRouter();
-  const [clearing, setClearing] = useState(false);
+  const isWeb = Platform.OS === "web";
+  const [downloading, setDownloading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const { colorScheme: activeScheme, toggleTheme, isUsingSystem } = useThemePreference();
 
   const showAlert = useCallback((title: string, message?: string) => {
     if (Platform.OS === "web") {
@@ -75,53 +87,153 @@ export default function TabTwoScreen() {
     Alert.alert(title, message);
   }, []);
 
-  const handleClearAllData = useCallback(async () => {
+  const handleDownloadData = useCallback(async () => {
+    if (!isWeb) {
+      showAlert("Not available", "Downloading a JSON backup is currently supported on the web dashboard.");
+      return;
+    }
+
     const ok = await ensureSession({ silent: true });
     if (!ok) {
-      showAlert("Session expired", "Please sign in again to clear all data.");
+      showAlert("Session expired", "Please sign in again to export data.");
       return;
     }
-    setClearing(true);
+
+    setDownloading(true);
     try {
-      await adminApi.clearAllData();
-      showAlert("Data cleared", "All guests, groups, and game progress data have been removed.");
+      const data = await adminApi.downloadData();
+      if (typeof window === "undefined" || typeof document === "undefined") {
+        showAlert("Download unavailable", "Unable to access browser download functionality.");
+        return;
+      }
+      const fileName = `party-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = fileName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      URL.revokeObjectURL(url);
+      showAlert("Download started", "Your JSON backup should begin downloading shortly.");
     } catch (error) {
       const apiError = error as ApiError;
-      const message = apiError?.message || "Unable to clear data right now.";
-      showAlert("Failed to clear data", message);
+      const message = apiError?.message || "Unable to download the dataset.";
+      showAlert("Export failed", message);
     } finally {
-      setClearing(false);
+      setDownloading(false);
     }
-  }, [ensureSession, showAlert]);
+  }, [ensureSession, isWeb, showAlert]);
 
-  const confirmClearAllData = useCallback(() => {
-    if (Platform.OS === "web") {
-      const confirmed =
-        typeof window !== "undefined" &&
-        window.confirm(
-          "This will permanently delete all guests, groups, questions, and progress. This action cannot be undone."
-        );
-      if (confirmed) {
-        void handleClearAllData();
-      }
+  const handleImportData = useCallback(() => {
+    if (!isWeb) {
+      showAlert("Not available", "Importing a JSON backup is currently supported on the web dashboard.");
+      return;
+    }
+    if (typeof document === "undefined") {
+      showAlert("Import unavailable", "Unable to access the file picker in this environment.");
       return;
     }
 
-    Alert.alert(
-      "Clear all data?",
-      "This will permanently delete all guests, groups, questions, and progress. This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete everything",
-          style: "destructive",
-          onPress: () => {
-            void handleClearAllData();
-          },
-        },
-      ]
-    );
-  }, [handleClearAllData]);
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json";
+    input.onchange = async (event) => {
+      const target = event.target as HTMLInputElement | null;
+      const file = target?.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const ok = await ensureSession({ silent: true });
+        if (!ok) {
+          showAlert("Session expired", "Please sign in again to import data.");
+          return;
+        }
+        setImporting(true);
+        await adminApi.importData(parsed);
+        showAlert("Import complete", "The dataset has been replaced successfully.");
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          showAlert("Invalid file", "The selected file does not contain valid JSON.");
+        } else {
+          const apiError = error as ApiError;
+          const message = apiError?.message || "Unable to import the dataset.";
+          showAlert("Import failed", message);
+        }
+      } finally {
+        setImporting(false);
+      }
+      if (target) {
+        target.value = "";
+      }
+    };
+
+    input.click();
+  }, [ensureSession, isWeb, showAlert]);
+
+  const controlItems = useMemo<ControlItem[]>(() => {
+    const isDark = activeScheme === "dark";
+    const themeToggle: ControlItem = {
+      key: "toggle-theme",
+      title: isDark ? "Switch to light theme" : "Switch to dark theme",
+      description: isUsingSystem
+        ? "Currently following your device settings"
+        : `Currently using the ${activeScheme} theme`,
+      icon: isDark ? "sun.max.fill" : "moon.fill",
+      type: "action",
+      onPress: toggleTheme,
+    };
+
+    const downloadItem: ControlItem = {
+      key: "download-data",
+      title: "Download backup (.json)",
+      description: isWeb ? "Exports the full dataset as a JSON file." : "Available on the web dashboard.",
+      icon: "arrow.down.circle",
+      type: "action",
+      onPress: handleDownloadData,
+      disabled: downloading,
+      loading: downloading,
+    };
+
+    const importItem: ControlItem = {
+      key: "import-data",
+      title: "Import dataset (.json)",
+      description: isWeb ? "Replaces all data with the contents of a JSON backup." : "Available on the web dashboard.",
+      icon: "arrow.up.circle",
+      type: "action",
+      onPress: handleImportData,
+      disabled: importing,
+      loading: importing,
+    };
+
+    const clearAll: ControlItem = {
+      key: "clear-all-data",
+      title: "Clear all data",
+      description: "Requires confirmation code before wiping everything.",
+      icon: "trash.fill",
+      type: "danger",
+      route: "/admin/control/clear-data",
+    };
+
+    return [themeToggle, downloadItem, importItem, clearAll];
+  }, [activeScheme, downloading, handleDownloadData, handleImportData, importing, isUsingSystem, isWeb, toggleTheme]);
+
+  const handleItemPress = useCallback(
+    (item: ControlItem) => {
+      if (item.disabled) return;
+      if (item.route) {
+        router.push(item.route as any);
+        return;
+      }
+      if (item.onPress) {
+        item.onPress();
+      }
+    },
+    [router]
+  );
 
   return (
     <ParallaxScrollView
@@ -162,7 +274,7 @@ export default function TabTwoScreen() {
 
       <ThemedView style={[styles.listContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <FlatList
-          data={ITEMS}
+          data={NAVIGATION_ITEMS}
           scrollEnabled={false}
           keyExtractor={(item) => item.key}
           ItemSeparatorComponent={() => (
@@ -176,7 +288,7 @@ export default function TabTwoScreen() {
           )}
           renderItem={({ item }) => (
             <Pressable
-              onPress={() => router.push(item.route as any)}
+              onPress={() => handleItemPress(item)}
               style={({ pressed }) => [
                 styles.row,
                 {
@@ -208,43 +320,66 @@ export default function TabTwoScreen() {
       <ThemedView
         style={[
           styles.listContainer,
-          styles.dangerListContainer,
-          { backgroundColor: theme.card, borderColor: theme.danger },
+          styles.actionsListContainer,
+          { backgroundColor: theme.card, borderColor: theme.border },
         ]}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={confirmClearAllData}
-          disabled={clearing}
-          style={({ pressed }) => [
-            styles.row,
-            styles.dangerRow,
-            {
-              backgroundColor: pressed ? theme.backgroundAlt : theme.card,
-              opacity: clearing ? 0.6 : 1,
-            },
-          ]}>
-          <ThemedView
-            style={[
-              styles.iconWrapper,
-              styles.dangerIconWrapper,
-              { backgroundColor: theme.danger, borderColor: theme.danger },
-            ]}>
-            {clearing ? (
-              <ActivityIndicator size="small" color={theme.background} />
-            ) : (
-              <IconSymbol name="trash.fill" size={20} color={theme.background} />
-            )}
-          </ThemedView>
-          <View style={styles.rowContent}>
-            <ThemedText type="defaultSemiBold" style={{ color: theme.danger }}>
-              Clear all data
-            </ThemedText>
-            <ThemedText style={{ color: theme.textMuted, fontSize: 13, lineHeight: 18 }}>
-              Deletes all guests, groups, questions, passwords, and funny answers.
-            </ThemedText>
-          </View>
-          <IconSymbol name="chevron.right" size={16} color={theme.danger} />
-        </Pressable>
+        <FlatList
+          data={controlItems}
+          scrollEnabled={false}
+          keyExtractor={(item) => item.key}
+          ItemSeparatorComponent={() => (
+            <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: theme.border, marginLeft: 60 }} />
+          )}
+          renderItem={({ item }) => {
+            const isDanger = item.type === "danger";
+            const isAction = item.type === "action";
+            const disabled = item.disabled ?? false;
+            const iconBackground = isDanger ? theme.danger : isAction ? theme.accentMuted : theme.primaryMuted;
+            const iconBorder = isDanger ? theme.danger : theme.border;
+            const iconColor = isDanger ? theme.text : isAction ? theme.accent : theme.primary;
+            const rightIconColor = isDanger ? theme.danger : theme.icon;
+
+            return (
+              <Pressable
+                accessibilityRole="button"
+                disabled={disabled}
+                onPress={() => handleItemPress(item)}
+                style={({ pressed }) => [
+                  styles.row,
+                  isDanger && styles.dangerRow,
+                  {
+                    backgroundColor: pressed ? theme.backgroundAlt : theme.card,
+                    opacity: disabled ? 0.6 : 1,
+                  },
+                ]}>
+                <ThemedView
+                  style={[
+                    styles.iconWrapper,
+                    isDanger && styles.dangerIconWrapper,
+                    {
+                      backgroundColor: iconBackground,
+                      borderColor: iconBorder,
+                    },
+                  ]}>
+                  {item.loading ? (
+                    <ActivityIndicator size="small" color={iconColor} />
+                  ) : (
+                    <IconSymbol name={item.icon} size={isDanger ? 20 : 22} color={iconColor} />
+                  )}
+                </ThemedView>
+                <View style={styles.rowContent}>
+                  <ThemedText type="defaultSemiBold" style={isDanger ? { color: theme.danger } : undefined}>
+                    {item.title}
+                  </ThemedText>
+                  <ThemedText style={{ color: theme.textMuted, fontSize: 13, lineHeight: 18 }}>
+                    {item.description}
+                  </ThemedText>
+                </View>
+                <IconSymbol name="chevron.right" size={16} color={rightIconColor} />
+              </Pressable>
+            );
+          }}
+        />
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -268,7 +403,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
   },
-  dangerListContainer: {
+  actionsListContainer: {
     marginTop: 32,
   },
   row: {
