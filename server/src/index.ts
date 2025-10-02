@@ -1,5 +1,6 @@
 import cors, { CorsOptions } from "cors";
 import express, { NextFunction, Request, Response } from "express";
+import { createServer } from "http";
 import multer from "multer";
 import { authRouter, requireAuth } from "./auth.js";
 import { adminRouter } from "./routes.admin.js";
@@ -7,6 +8,7 @@ import { gamesRouter } from "./routes.games.js";
 import { groupsRouter } from "./routes.groups.js";
 import { guestsRouter } from "./routes.guests.js";
 import "./setupEnv.js";
+import { initWebsocket } from "./websocket.js";
 
 const upload = multer({ dest: "uploads/" });
 
@@ -72,6 +74,9 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = createServer(app);
+initWebsocket(server);
+
+server.listen(PORT, () => {
   console.log(`API listening on http://localhost:${PORT}`);
 });

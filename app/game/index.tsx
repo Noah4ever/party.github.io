@@ -6,6 +6,7 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
+import { useGameStateSubscription } from "@/hooks/use-game-state";
 import { Link } from "expo-router";
 import React from "react";
 //TODO: fix picture
@@ -16,6 +17,7 @@ import React from "react";
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const { started, connected, cluesUnlockedAt } = useGameStateSubscription();
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
@@ -31,6 +33,18 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView>
+        <ThemedText type="subtitle" style={{ marginBottom: 4 }}>
+          {started ? "Das Spiel läuft!" : "Warte bis das Spiel startet"}
+        </ThemedText>
+        <ThemedText style={{ color: theme.textMuted, marginBottom: 16 }}>
+          {connected
+            ? started
+              ? cluesUnlockedAt
+                ? `Hinweise seit ${new Date(cluesUnlockedAt).toLocaleTimeString()}`
+                : "Hinweise sind verfügbar."
+              : "Wir benachrichtigen dich automatisch, sobald das Spiel beginnt."
+            : "Verbindung zum Server wird hergestellt…"}
+        </ThemedText>
         <ThemedText type="normal">Challenge 1 : Finde deine Person</ThemedText>
         <ThemedText type="normal" style={styles.clueBox}>
           Hinweise: Clue Clue

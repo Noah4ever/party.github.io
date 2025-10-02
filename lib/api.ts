@@ -36,6 +36,10 @@ export function setBaseUrl(url: string) {
   BASE_URL = url.replace(/\/$/, "");
 }
 
+export function getBaseUrl() {
+  return BASE_URL;
+}
+
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface RequestOptions<TBody = any> {
@@ -183,6 +187,7 @@ function mergeSignals(...signals: AbortSignal[]): AbortSignal {
 export const api = {
   request,
   setBaseUrl,
+  getBaseUrl,
   onUnauthorized: setUnauthorizedHandler,
   get: <T = any>(path: string, query?: Record<string, any>, opts: Partial<RequestOptions> = {}) =>
     request<T>({ path, query, method: "GET", ...opts }),

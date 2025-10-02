@@ -45,6 +45,8 @@ Environment variables loaded from `.env`:
 - `ADMIN_PASSWORD` — required password for `/api/auth/login` (defaults to `ashlii`).
 - `PORT` — override the local server port (defaults to 5000; the `dev:local` script uses 5050).
 - `ALLOWED_ORIGINS` — optional comma-separated list appended to the default CORS whitelist.
+- Websocket clients connect to `ws(s)://<api-host>/api/ws` for real-time game state updates. The Expo app uses this
+  channel to learn when the party has started without polling.
 - Client-side `.env` keys:
   - `EXPO_PUBLIC_DEV` / `DEV` — set to `true` for local development, `false` for production builds.
   - `EXPO_PUBLIC_API_BASE` — override the API URL used by the Expo app (e.g. `http://localhost:5050/api`).

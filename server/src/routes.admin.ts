@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
 import { DataShape, GameState } from "./types.js";
+import { broadcastGameState } from "./websocket.js";
 
 export const adminRouter = Router();
 
@@ -72,6 +73,8 @@ adminRouter.post("/data", requireAuth, async (req, res) => {
     return true;
   });
 
+  broadcastGameState(sanitized.gameState);
+
   res.json({ success: true, importedAt: new Date().toISOString() });
 });
 
@@ -113,6 +116,7 @@ adminRouter.post("/game/start", requireAuth, async (_req, res) => {
     }
     return { ...current };
   });
+  broadcastGameState(state);
   res.json({ success: true, state });
 });
 
@@ -134,6 +138,7 @@ adminRouter.post("/game/reset", requireAuth, async (_req, res) => {
     current.cluesUnlockedAt = undefined;
     return { ...current };
   });
+  broadcastGameState(state);
   res.json({ success: true, state });
 });
 
@@ -157,6 +162,8 @@ adminRouter.post("/clear-data", requireAuth, async (_req, res) => {
     d.gameState = { started: false };
     return true;
   });
+
+  broadcastGameState({ started: false });
 
   res.json({ success: true, clearedAt: new Date().toISOString() });
 });
