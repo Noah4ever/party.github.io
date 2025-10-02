@@ -433,7 +433,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   listContainer: {
     borderRadius: 16,
