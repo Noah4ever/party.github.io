@@ -15,7 +15,7 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 }
 const rawOverride = env.EXPO_PUBLIC_API_BASE ?? env.API_BASE_URL ?? env.NEXT_PUBLIC_API_BASE; // support multiple conventions
 const rawDevFlag = env.EXPO_PUBLIC_DEV_PARTY ?? false;
-console.log("EXPO_PUBLIC_DEV_PARTY:", env.EXPO_PUBLIC_DEV_PARTY);
+
 const isDevFlag = (() => {
   if (rawDevFlag === undefined) return false;
   if (typeof rawDevFlag === "boolean") return rawDevFlag;
@@ -29,7 +29,9 @@ if (rawOverride) {
 } else if (isDevFlag) {
   BASE_URL = "http://localhost:5000/api"; // local development
 }
+
 console.log(`[api] base URL: ${BASE_URL} (dev=${isDevFlag})`);
+
 export function setBaseUrl(url: string) {
   BASE_URL = url.replace(/\/$/, "");
 }
