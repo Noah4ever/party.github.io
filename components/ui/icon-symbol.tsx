@@ -38,6 +38,7 @@ const MAPPING = {
   "arrow.down.circle": "arrow-down-circle-outline",
   "arrow.up.circle": "arrow-up-circle-outline",
   "checkmark.circle": "checkmark-circle",
+  "play.circle.fill": "play-circle",
   "moon.fill": "moon",
   "sun.max.fill": "sunny",
   plus: "add",

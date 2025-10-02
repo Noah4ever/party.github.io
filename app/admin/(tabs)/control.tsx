@@ -14,7 +14,7 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol, type IconSymbolName } from "@/components/ui/icon-symbol";
-import { Fonts, useTheme } from "@/constants/theme";
+import { useTheme } from "@/constants/theme";
 import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { useThemePreference } from "@/contexts/ThemePreferenceContext";
 import { ApiError, adminApi } from "@/lib/api";
@@ -63,6 +63,17 @@ const NAVIGATION_ITEMS: ControlItem[] = [
     description: "Configure game passwords",
     icon: "lock.circle",
     route: "/admin/control/passwords",
+    type: "navigation",
+  },
+];
+
+const GAME_FLOW_ITEMS: ControlItem[] = [
+  {
+    key: "start-games",
+    title: "Start or reset games",
+    description: "Launch the party or roll back the game state",
+    icon: "play.circle.fill",
+    route: "/admin/control/start-games",
     type: "navigation",
   },
 ];
@@ -247,26 +258,17 @@ export default function TabTwoScreen() {
         />
       }>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Control Center
-        </ThemedText>
+        <ThemedText type="title">Control</ThemedText>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => void logout()}
-          style={{
-            marginLeft: "auto",
-            borderRadius: 10,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            backgroundColor: theme.danger,
-            flexDirection: "row",
-            justifyContent: "center",
-            alignItems: "center",
-          }}>
+          style={[
+            styles.primaryButton,
+            {
+              marginLeft: "auto",
+              backgroundColor: theme.danger,
+            },
+          ]}>
           <IconSymbol name="logout" size={18} color={"#fff"} style={{ marginRight: 8 }} />
           <ThemedText style={{ color: "#fff", fontWeight: "600" }}>Logout</ThemedText>
         </TouchableOpacity>
@@ -304,6 +306,51 @@ export default function TabTwoScreen() {
                   },
                 ]}>
                 <IconSymbol name={item.icon} size={22} color={theme.primary} />
+              </ThemedView>
+              <View style={styles.rowContent}>
+                <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
+                <ThemedText style={{ color: theme.textMuted, fontSize: 13, lineHeight: 18 }}>
+                  {item.description}
+                </ThemedText>
+              </View>
+              <IconSymbol name="chevron.right" size={16} color={theme.icon} />
+            </Pressable>
+          )}
+        />
+      </ThemedView>
+
+      <ThemedView style={[styles.listContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <FlatList
+          data={GAME_FLOW_ITEMS}
+          scrollEnabled={false}
+          keyExtractor={(item) => item.key}
+          ItemSeparatorComponent={() => (
+            <View
+              style={{
+                height: StyleSheet.hairlineWidth,
+                backgroundColor: theme.border,
+                marginLeft: 60,
+              }}
+            />
+          )}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => handleItemPress(item)}
+              style={({ pressed }) => [
+                styles.row,
+                {
+                  backgroundColor: pressed ? theme.backgroundAlt : theme.card,
+                },
+              ]}>
+              <ThemedView
+                style={[
+                  styles.iconWrapper,
+                  {
+                    backgroundColor: theme.accentMuted,
+                    borderColor: theme.border,
+                  },
+                ]}>
+                <IconSymbol name={item.icon} size={24} color={theme.accent} />
               </ThemedView>
               <View style={styles.rowContent}>
                 <ThemedText type="defaultSemiBold">{item.title}</ThemedText>
@@ -394,9 +441,17 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flexDirection: "row",
-    gap: 8,
     alignItems: "center",
     marginBottom: 16,
+  },
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   listContainer: {
     borderRadius: 16,
@@ -404,7 +459,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   actionsListContainer: {
-    marginTop: 32,
+    marginTop: 0,
   },
   row: {
     flexDirection: "row",

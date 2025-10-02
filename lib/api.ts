@@ -224,6 +224,12 @@ export interface GroupProgressDTO {
   attempts?: number;
 }
 
+export interface GameStateDTO {
+  started: boolean;
+  startedAt?: string;
+  cluesUnlockedAt?: string;
+}
+
 export interface GroupDTO {
   id: string;
   name: string;
@@ -264,6 +270,9 @@ export const adminApi = {
   importData: (data: AdminDataDump) =>
     api.post<{ success: boolean; importedAt: string }, AdminDataDump>("/admin/data", data),
   clearAllData: () => api.post<{ success: boolean; clearedAt: string }>("/admin/clear-data"),
+  getGameState: () => api.get<GameStateDTO>("/admin/game-state"),
+  startGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/start"),
+  resetGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/reset"),
 };
 
 export const authApi = {
@@ -396,6 +405,37 @@ export const gameApi = {
       answer,
       guestId,
     }),
+  getGameState: () => api.get<GameStateDTO>("/games/state"),
+  getPartnerClues: (guestId: string) =>
+    api.get<{
+      unlocked: boolean;
+      clues: string[];
+      partnerId: string | null;
+      partnerName: string | null;
+      groupId?: string | null;
+      groupName?: string | null;
+    }>(`/games/guests/${guestId}/clues`),
+  verifyPartner: (guestId: string, partnerId: string) =>
+    api.post<
+      {
+        match: boolean;
+        groupId?: string;
+        groupName?: string;
+        partner?: { id: string; name: string };
+        completedGames?: string[];
+        completedCount?: number;
+      },
+      { guestId: string; partnerId: string }
+    >("/games/partner/verify", { guestId, partnerId }),
+  recordProgress: (groupId: string, gameId: string) =>
+    api.post<
+      {
+        success: boolean;
+        completedGames: string[];
+        completedCount: number;
+      },
+      { gameId: string }
+    >(`/games/groups/${groupId}/progress`, { gameId }),
 };
 
 // Example usage (remove or comment out in production):

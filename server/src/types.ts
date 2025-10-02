@@ -69,6 +69,12 @@ export interface FunnyAnswer {
   createdAt: string;
 }
 
+export interface GameState {
+  started: boolean;
+  startedAt?: string;
+  cluesUnlockedAt?: string;
+}
+
 export interface DataShape {
   guests: Guest[];
   groups: Group[];
@@ -77,6 +83,7 @@ export interface DataShape {
   passwordGames: PasswordGameConfig[];
   funnyQuestions: FunnyQuestion[];
   funnyAnswers: FunnyAnswer[];
+  gameState: GameState;
 }
 
 export const DEFAULT_DATA: DataShape = {
@@ -87,4 +94,7 @@ export const DEFAULT_DATA: DataShape = {
   passwordGames: [],
   funnyQuestions: [],
   funnyAnswers: [],
+  gameState: {
+    started: false,
+  },
 };

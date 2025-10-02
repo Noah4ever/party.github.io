@@ -1,9 +1,41 @@
 {
-  "guests": [],
-  "groups": [],
+  "guests": [
+    {
+      "id": "ks5K-ZDm",
+      "name": "Noah",
+      "clue1": "",
+      "clue2": "",
+      "groupId": "zFdDQCO6"
+    },
+    {
+      "id": "QixtJLqi",
+      "name": "Ashlii",
+      "clue1": "",
+      "clue2": "",
+      "groupId": "zFdDQCO6"
+    }
+  ],
+  "groups": [
+    {
+      "id": "zFdDQCO6",
+      "name": "Group 1",
+      "guestIds": [
+        "ks5K-ZDm",
+        "QixtJLqi"
+      ],
+      "progress": {
+        "completedGames": [],
+        "attempts": 0
+      }
+    }
+  ],
   "neverHaveIEverPacks": [],
   "quizPacks": [],
   "passwordGames": [],
   "funnyQuestions": [],
-  "funnyAnswers": []
+  "funnyAnswers": [],
+  "gameState": {
+    "started": false,
+    "startedAt": "2025-10-02T11:36:10.445Z"
+  }
 }

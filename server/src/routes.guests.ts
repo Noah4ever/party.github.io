@@ -7,6 +7,14 @@ import { Guest } from "./types.js";
 export const guestsRouter = Router();
 
 // GET /api/guests
+/**
+ * GET /api/guests
+ *
+ * Returns every registered guest. No authentication required because the public app
+ * needs read-only access. Used by admin dashboards as well.
+ *
+ * Response: Guest[]
+ */
 guestsRouter.get("/", async (_req, res) => {
   const data = await loadData();
   res.json(data.guests);
@@ -14,6 +22,15 @@ guestsRouter.get("/", async (_req, res) => {
 
 // POST /api/guests
 // body: { name, clue1?, clue2? }
+/**
+ * POST /api/guests
+ *
+ * Creates a new guest record. Requires admin authentication. Clues are optional and can be
+ * provided later. On success the newly created guest is returned.
+ *
+ * Body: { name: string; clue1?: string; clue2?: string }
+ * Response: Guest (201 Created)
+ */
 guestsRouter.post("/", requireAuth, async (req, res) => {
   const { name, clue1, clue2 } = req.body || {};
   if (!name) return res.status(400).json({ message: "name required" });
@@ -28,6 +45,15 @@ guestsRouter.post("/", requireAuth, async (req, res) => {
 // PUT /api/guests/:id
 // body: { name?, clue1?, clue2? }
 
+/**
+ * PUT /api/guests/:id
+ *
+ * Updates an existing guest. Requires admin authentication. Only fields supplied in the
+ * payload are overwritten. Returns 404 if the guest does not exist.
+ *
+ * Body: { name?: string; clue1?: string; clue2?: string }
+ * Response: Guest
+ */
 guestsRouter.put("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
   const { name, clue1, clue2 } = req.body || {};
@@ -45,6 +71,12 @@ guestsRouter.put("/:id", requireAuth, async (req, res) => {
 
 // DELETE /api/guests/:id - remove guest and detach from group
 
+/**
+ * DELETE /api/guests/:id
+ *
+ * Deletes a guest by id and removes references from any groups. Requires admin authentication.
+ * Returns 204 on success or 404 if the guest cannot be found.
+ */
 guestsRouter.delete("/:id", requireAuth, async (req, res) => {
   const { id } = req.params;
   const removed = await mutate((d) => {

@@ -2,33 +2,50 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
 import { useLocalSearchParams } from "expo-router";
+import React, { useMemo } from "react";
 import { StyleSheet } from "react-native";
 import { QrCodeSvg, defaultRenderer as renderer } from "react-native-qr-svg";
 
 export default function GuestQRCode() {
   const theme = useTheme();
-  const { guestId } = useLocalSearchParams<{ guestId?: string }>();
+  const params = useLocalSearchParams<{ guestId?: string | string[] }>();
+
+  const guestId = useMemo(() => {
+    const value = params.guestId;
+    if (Array.isArray(value)) return value[0];
+    return typeof value === "string" ? value : undefined;
+  }, [params.guestId]);
+
+  const qrUrl = useMemo(() => {
+    if (!guestId) return "https://party.thiering.org/game";
+    const encoded = encodeURIComponent(guestId);
+    return `https://party.thiering.org/game?guestId=${encoded}`;
+  }, [guestId]);
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title">QR Code for (ID: {guestId})</ThemedText>
-      <ThemedView style={{ justifyContent: "center", alignItems: "center", marginTop: 20, flex: 1 }}>
-        {/* Add correct value for QR Code */}
+      <ThemedText type="title" style={{ textAlign: "center" }}>
+        {guestId ? `Show this QR to ${guestId}` : "QR code unavailable"}
+      </ThemedText>
+      <ThemedText type="subtitle" style={{ color: theme.textMuted, marginTop: 12, textAlign: "center" }}>
+        Guests should scan this code with their phone camera to open the game and automatically identify themselves.
+      </ThemedText>
+
+      <ThemedView style={{ justifyContent: "center", alignItems: "center", marginTop: 0, flex: 1 }}>
         <QrCodeSvg
-          value={`https://www.youtube.com/watch?v=xvFZjo5PgG0`}
-          content={
-            <ThemedText style={{ fontSize: 20, alignItems: "center", justifyContent: "center", flex: 1 }}>
-              😉
-            </ThemedText>
-          }
-          contentCells={5}
-          frameSize={200}
+          value={qrUrl}
+          frameSize={300}
           renderer={renderer}
           dotColor={theme.text}
           backgroundColor={theme.background}
           errorCorrectionLevel="M"
         />
       </ThemedView>
+
+      <ThemedText
+        style={{ marginTop: 12, textAlign: "center", color: theme.textMuted, fontSize: 13, paddingHorizontal: 12 }}>
+        {qrUrl}
+      </ThemedText>
     </ThemedView>
   );
 }
