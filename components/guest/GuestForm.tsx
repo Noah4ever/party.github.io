@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
 import { confirm, showError } from "@/lib/dialogs";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 import {
   Keyboard,
@@ -48,6 +48,7 @@ export default function GuestForm({
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const nameInputRef = useRef<TextInput | null>(null);
 
   const inputsDisabled = useMemo(() => submitting || deleting || !!disabled, [submitting, deleting, disabled]);
 
@@ -142,6 +143,18 @@ export default function GuestForm({
     [theme.primary]
   );
 
+  useEffect(() => {
+    const input = nameInputRef.current;
+    if (!input) return;
+
+    const blurTimer = setTimeout(() => {
+      input.blur();
+      Keyboard.dismiss();
+    }, 120);
+
+    return () => clearTimeout(blurTimer);
+  }, [initialGuest]);
+
   async function handleSubmit() {
     if (inputsDisabled) return;
     setSubmitting(true);
@@ -214,6 +227,7 @@ export default function GuestForm({
                 autoCapitalize="words"
                 returnKeyType="next"
                 editable={!inputsDisabled}
+                ref={nameInputRef}
                 selectionColor={theme.primary}
               />
               <TextInput
