@@ -1,9 +1,7 @@
 import type { GameStateDTO } from "./api";
 import { api } from "./api";
 
-export type GameSocketMessage =
-  | { type: "connected"; time: string }
-  | { type: "game-state"; payload: GameStateDTO };
+export type GameSocketMessage = { type: "connected"; time: string } | { type: "game-state"; payload: GameStateDTO };
 
 export interface GameSocketOptions {
   debug?: boolean;
