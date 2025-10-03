@@ -6,12 +6,26 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
-import { Link } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { QrCodeSvg, defaultRenderer as renderer } from "react-native-qr-svg";
 
-//TODO: add Scan logic with picture upload
+//TODO: NOAH add Scan logic with picture upload
+//TODO: NOAH pretty picture button
+//TODO: ASHLI component add modal for hint
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const [guestId, setGuestId] = useState("error");
+  useEffect(() => {
+    (async () => {
+      const guestId = await AsyncStorage.getItem("guestId");
+      if (guestId) {
+        setGuestId(guestId);
+      }
+    })();
+  }, []);
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -29,8 +43,15 @@ export default function HomeScreen() {
             Treffer! Du hast deinen Partner gefunden Jetzt gehts weiter mit den
             Challenges!
           </ThemedText>
+          <QrCodeSvg
+            value={guestId}
+            frameSize={300}
+            renderer={renderer}
+            dotColor={theme.text}
+            backgroundColor={theme.background}
+            errorCorrectionLevel="M"
+          />
         </ThemedView>
-        <Link href={"/game/challenge_3"}>3sssssssss</Link>
         <ThemedView style={styles.midContainer}>
           <ThemedText>
             Macht ein Selfie zusammen und ladet es hier hoch!

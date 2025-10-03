@@ -37,8 +37,11 @@ const MAPPING = {
   "lock.circle": "lock-closed-outline",
   "arrow.down.circle": "arrow-down-circle-outline",
   "arrow.up.circle": "arrow-up-circle-outline",
+  "arrow.right.circle": "arrow-forward-circle-outline",
   "checkmark.circle": "checkmark-circle",
+  "checkmark.circle.outline": "checkmark-circle-outline",
   "play.circle.fill": "play-circle",
+  "scanner.circle": "scan-outline",
   "moon.fill": "moon",
   "sun.max.fill": "sunny",
   plus: "add",
@@ -73,5 +76,7 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <IconSet color={color} size={size} name={MAPPING[name]} style={style} />;
+  return (
+    <IconSet color={color} size={size} name={MAPPING[name]} style={style} />
+  );
 }

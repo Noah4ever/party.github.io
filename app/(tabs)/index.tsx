@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
+import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -27,54 +28,98 @@ export default function HomeScreen() {
         <View style={styles.partyHeader}>
           <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
           <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-          <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="cover" />
+          <Image
+            source={require("@/assets/images/crown.png")}
+            style={styles.partyCrown}
+            contentFit="cover"
+          />
           <View style={[styles.confetti, styles.confettiOne]} />
           <View style={[styles.confetti, styles.confettiTwo]} />
           <View style={[styles.confetti, styles.confettiThree]} />
           <View style={[styles.confetti, styles.confettiFour]} />
         </View>
       }
-      headerHeight={180}>
-      <ThemedView style={[styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      headerHeight={180}
+    >
+      <ThemedView
+        style={[
+          styles.heroCard,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
         <ThemedText type="title" style={styles.heroTitle}>
           Party Central
         </ThemedText>
-        <ThemedText style={styles.heroSubtitle}>Launch the festivities or hop into the control center.</ThemedText>
+        <ThemedText style={styles.heroSubtitle}>
+          Launch the festivities or hop into the control center.
+        </ThemedText>
         <View style={styles.heroActions}>
+          <Button
+            onPress={() => router.navigate("/game")}
+            iconText="play.circle.fill"
+          >
+            Start the Game!
+          </Button>
           <TouchableOpacity
             activeOpacity={0.9}
-            style={[styles.primaryAction, { backgroundColor: theme.primary }]}
-            onPress={() => router.push("/game")}>
-            <IconSymbol name="play.circle.fill" size={22} color="#fff" />
-            <ThemedText style={[styles.primaryActionText, { color: "#fff" }]}>Start the Game</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={[styles.secondaryAction, { borderColor: theme.border, backgroundColor: theme.backgroundAlt }]}
-            onPress={() => router.push("/admin")}>
+            style={[
+              styles.secondaryAction,
+              {
+                borderColor: theme.border,
+                backgroundColor: theme.backgroundAlt,
+              },
+            ]}
+            onPress={() => router.push("/admin")}
+          >
             <IconSymbol name="settings" size={20} color={theme.icon} />
-            <ThemedText style={[styles.secondaryActionText, { color: theme.text }]}>Admin Dashboard</ThemedText>
+            <ThemedText
+              style={[styles.secondaryActionText, { color: theme.text }]}
+            >
+              Admin Dashboard
+            </ThemedText>
           </TouchableOpacity>
         </View>
       </ThemedView>
 
-      <ThemedView style={[styles.sectionCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      <ThemedView
+        style={[
+          styles.sectionCard,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
         <ThemedText type="subtitle" style={styles.sectionTitle}>
           Development shortcuts
         </ThemedText>
-        <ThemedText style={[styles.sectionSubtitle, { color: theme.textMuted }]}>Current flow checkpoints</ThemedText>
+        <ThemedText
+          style={[styles.sectionSubtitle, { color: theme.textMuted }]}
+        >
+          Current flow checkpoints
+        </ThemedText>
         <View style={styles.stepList}>
           {GAME_STEPS.map((step) => (
             <Link
               key={step.href}
               href={step.href as any}
-              style={[styles.stepLink, { backgroundColor: theme.backgroundAlt }]}>
+              style={[
+                styles.stepLink,
+                { backgroundColor: theme.backgroundAlt },
+              ]}
+            >
               <View
                 style={[
                   styles.stepIcon,
-                  { backgroundColor: theme.primaryMuted, borderColor: theme.border, marginRight: 12 },
-                ]}>
-                <IconSymbol name="chevron.right" size={14} color={theme.primary} />
+                  {
+                    backgroundColor: theme.primaryMuted,
+                    borderColor: theme.border,
+                    marginRight: 12,
+                  },
+                ]}
+              >
+                <IconSymbol
+                  name="chevron.right"
+                  size={14}
+                  color={theme.primary}
+                />
               </View>
               <ThemedText style={styles.stepText}>{step.label}</ThemedText>
             </Link>
@@ -164,19 +209,6 @@ const styles = StyleSheet.create({
   },
   heroActions: {
     gap: 12,
-  },
-  primaryAction: {
-    borderRadius: 18,
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  primaryActionText: {
-    fontSize: 18,
-    fontWeight: "700",
   },
   secondaryAction: {
     borderRadius: 18,

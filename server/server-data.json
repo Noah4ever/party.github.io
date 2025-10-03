@@ -3,15 +3,15 @@
     {
       "id": "ks5K-ZDm",
       "name": "Noah",
-      "clue1": "",
-      "clue2": "",
+      "clue1": "Psni",
+      "clue2": "psd",
       "groupId": "zFdDQCO6"
     },
     {
       "id": "QixtJLqi",
       "name": "Ashlii",
-      "clue1": "",
-      "clue2": "",
+      "clue1": "Teest",
+      "clue2": "teeeee",
       "groupId": "zFdDQCO6"
     }
   ],
@@ -24,18 +24,154 @@
         "QixtJLqi"
       ],
       "progress": {
-        "completedGames": [],
-        "attempts": 0
+        "completedGames": [
+          "partner-found"
+        ],
+        "attempts": 0,
+        "currentGame": "partner-found"
       }
     }
   ],
-  "neverHaveIEverPacks": [],
-  "quizPacks": [],
-  "passwordGames": [],
+  "neverHaveIEverPacks": [
+    {
+      "id": "nhie-default",
+      "title": "Standard Pack",
+      "statements": [
+        "Test",
+        "Penis",
+        "asdsa"
+      ]
+    }
+  ],
+  "quizPacks": [
+    {
+      "id": "quiz-default",
+      "title": "Standard Quiz",
+      "questions": [
+        {
+          "id": "j1glN3fq",
+          "question": "Ist hummel fett?",
+          "answers": [
+            {
+              "id": "89745vb4",
+              "text": "Ja",
+              "correct": false
+            },
+            {
+              "id": "ge9prgey",
+              "text": "Nein",
+              "correct": false
+            },
+            {
+              "id": "yboedchq",
+              "text": "Sehr",
+              "correct": true
+            }
+          ],
+          "difficulty": 123,
+          "imageUrl": "asdasd"
+        },
+        {
+          "id": "w4726LoF",
+          "question": "Aasd",
+          "answers": [
+            {
+              "id": "f9978wwp",
+              "text": "Ricjtg\\",
+              "correct": true
+            },
+            {
+              "id": "dk4ew9rh",
+              "text": "asd",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "id": "2EnqgGnf",
+          "question": "Tets?",
+          "answers": [
+            {
+              "id": "wzdiyhp4",
+              "text": "123",
+              "correct": true
+            },
+            {
+              "id": "evrsbmg6",
+              "text": "123333",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "id": "_mJXxSxw",
+          "question": "asdasd",
+          "answers": [
+            {
+              "id": "0a7zb9qh",
+              "text": "asd",
+              "correct": true
+            },
+            {
+              "id": "kmy2plv8",
+              "text": "asdddd",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "id": "BBapfUQf",
+          "question": "asdasd",
+          "answers": [
+            {
+              "id": "may2atgv",
+              "text": "asddas",
+              "correct": true
+            },
+            {
+              "id": "s5faazb3",
+              "text": "asd",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "id": "ioyz3vJF",
+          "question": "asdasd",
+          "answers": [
+            {
+              "id": "ldod0pos",
+              "text": "asd",
+              "correct": true
+            },
+            {
+              "id": "gbztptoi",
+              "text": "asddd",
+              "correct": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "passwordGames": [
+    {
+      "id": "password-default",
+      "validPasswords": [
+        "Test",
+        "ASD",
+        "Penis"
+      ],
+      "active": true,
+      "startedAt": "2025-10-03T18:15:16.400Z",
+      "updatedAt": "2025-10-03T18:15:28.455Z"
+    }
+  ],
   "funnyQuestions": [],
   "funnyAnswers": [],
   "gameState": {
-    "started": false,
-    "startedAt": "2025-10-02T11:36:10.445Z"
+    "started": true,
+    "startedAt": "2025-10-02T11:36:10.445Z",
+    "cluesUnlockedAt": "2025-10-03T15:14:21.915Z"
   }
 }

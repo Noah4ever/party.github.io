@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet } from "react-native";
 
+import { Button } from "@/components/game/Button";
 import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -8,7 +9,8 @@ import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 
-//TODO: change button layout
+//TODO: ASH add component general hint popup modal
+//TODO: ASH maybe get signature
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
@@ -37,16 +39,12 @@ export default function HomeScreen() {
 
         <ThemedView style={styles.midContainer}>
           <ThemedText></ThemedText>
-          <TouchableOpacity
-            style={globalStyles.button}
-            onPress={() => {
-              router.navigate("/game/challenge_4");
-            }}
+          <Button
+            onPress={() => router.navigate("/game/challenge_4")}
+            iconText="checkmark.circle.outline"
           >
-            <ThemedText style={globalStyles.buttonText}>
-              Erledigt Button
-            </ThemedText>
-          </TouchableOpacity>
+            Erledigt!
+          </Button>
         </ThemedView>
       </ParallaxScrollView>
       <HintBox></HintBox>

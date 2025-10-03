@@ -1,47 +1,63 @@
-import { Image } from "expo-image";
-import { StyleSheet, TouchableOpacity } from "react-native";
-
+import { Button } from "@/components/game/Button";
 import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
-import { Checkbox } from "expo-checkbox";
+import { gameApi, QuizQuestionDTO } from "@/lib/api";
+import Checkbox from "expo-checkbox";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { StyleSheet } from "react-native";
 
-//TODO: style checkboxes
-//TODO: add logic to questions and save right and wrong (maybe need 6 right ones or so and a reset)
-//TODO: maybe add pics to some questions
+//TODO: NOAH implement Modal
+//TODO: TG maybe add pics to some questions
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
-  const [isChecked, setChecked] = useState(false);
+  const [questions, setQuestions] = useState<QuizQuestionDTO[]>([]);
+  const [checkedAnswers, setCheckedAnswers] = useState<boolean[][]>([]);
+  const [questionCounter, setQuestionCounter] = useState<number>(0);
+  const [correctCounter, setCorrectCounter] = useState<number>(0);
 
-  const [questionCounter, setQuestionCounter] = useState(0);
-  const questions = [
-    {
-      question: "Frage?",
-      answers: [
-        { id: 1, text: "Answer1" },
-        { id: 2, text: "Answer2" },
-        { id: 3, text: "Answer3" },
-        { id: 4, text: "Answer4" },
-      ],
-      correct: 1,
-    },
-    {
-      question: "Frage2?",
-      answers: [
-        { id: 1, text: "Answers21" },
-        { id: 2, text: "Answers22" },
-        { id: 3, text: "Answers23" },
-        { id: 4, text: "Answers24" },
-      ],
-      correct: 2,
-    },
-  ];
+  useEffect(() => {
+    gameApi.getQuizQuestions().then((res) => {
+      if (res && Array.isArray(res) && res[0].questions) {
+        const qs: QuizQuestionDTO[] = res[0].questions;
+        const shuffled = shuffleArray(qs);
+        setQuestions(shuffled);
+        console.log(shuffled);
+        const initial = shuffled.map((q) =>
+          new Array(q.answers.length).fill(false)
+        );
+        setCheckedAnswers(initial);
+      }
+    });
+  }, []);
+
+  const currentQuestion = questions[questionCounter];
+
+  function shuffleArray<T>(array: T[]): T[] {
+    // Erstelle eine Kopie, damit das Original nicht verändert wird
+    const arr = array.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1)); // Zufälliger Index zwischen 0 und i
+      [arr[i], arr[j]] = [arr[j], arr[i]]; // Elemente tauschen
+    }
+    return arr;
+  }
+
+  const toggleCheckbox = (answerIndex: number) => {
+    setCheckedAnswers((prev) => {
+      const updated = [...prev];
+      const questionAnswers = [...updated[questionCounter]];
+      questionAnswers[answerIndex] = !questionAnswers[answerIndex];
+      updated[questionCounter] = questionAnswers;
+      return updated;
+    });
+  };
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -55,38 +71,68 @@ export default function HomeScreen() {
         }
       >
         <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Frage 1/15</ThemedText>
-          <ThemedText type="defaultSemiBold">
-            Es gibt nur eine Auswahlmöglichkeit!
+          <ThemedText type="title">
+            Frage {questionCounter + 1}/{questions && questions.length}
           </ThemedText>
-          <ThemedText>Frage: {questions[questionCounter].question}</ThemedText>
+          <ThemedText>
+            Frage: {questions.length > 0 && currentQuestion.question}
+          </ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.answerList}>
-          {questions[questionCounter].answers.map((question) => {
-            return (
-              <ThemedView key={question.id} style={styles.checkContainer}>
+          {questions.length > 0 &&
+            currentQuestion.answers.map((answer, index) => (
+              <ThemedView
+                key={answer.id}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+              >
                 <Checkbox
-                  style={globalStyles.checkBox}
-                  value={isChecked}
-                  onValueChange={setChecked}
+                  value={checkedAnswers[questionCounter]?.[index] || false}
+                  onValueChange={() => toggleCheckbox(index)}
                 />
-                <ThemedText type="normal">{question.text}</ThemedText>
+                <ThemedText style={{ marginLeft: 8 }}>{answer.text}</ThemedText>
               </ThemedView>
-            );
-          })}
+            ))}
         </ThemedView>
 
         <ThemedView>
-          <TouchableOpacity
-            style={globalStyles.button}
+          <Button
             onPress={() => {
-              // TODO: check if correct question is picked
-              router.navigate("/game/questionary");
+              let allCorrect = true;
+              currentQuestion.answers.forEach((answer, index) => {
+                if (answer.correct != checkedAnswers[questionCounter][index]) {
+                  allCorrect = false;
+                  // question with id: index is wrong
+                } else {
+                  // question with id: index is correct
+                }
+              });
+              // TODO: NOAH show red or green border for correct or false answer
+
+              if (allCorrect) {
+                // TODO: NOAH setTimout for delay so user sees what was wrong
+                setCorrectCounter((prev) => prev + 1);
+              }
+
+              if (questionCounter + 1 >= questions.length) {
+                if (correctCounter > questions.length / 4) {
+                  // TODO: NOAH set time penalty route 25%
+                } else if (correctCounter > questions.length / 2) {
+                  // TODO: NOAH set time penalty route 50%
+                }
+                router.navigate("/game/questionary");
+              } else {
+                setQuestionCounter((prev) => prev + 1);
+              }
             }}
+            iconText="arrow.right.circle"
           >
-            <ThemedText style={globalStyles.buttonText}>Check</ThemedText>
-          </TouchableOpacity>
+            Abgeben!
+          </Button>
         </ThemedView>
       </ParallaxScrollView>
       <HintBox />

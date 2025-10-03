@@ -54,14 +54,23 @@ gamesRouter.get("/guests/:guestId/clues", async (req, res) => {
 
   const group = data.groups.find((g) => g.guestIds.includes(guestId));
   if (!group) {
-    return res.json({ unlocked: true, clues: [], groupId: null, groupName: null, partnerId: null });
+    return res.json({
+      unlocked: true,
+      clues: [],
+      groupId: null,
+      groupName: null,
+      partnerId: null,
+    });
   }
 
   const partnerId = group.guestIds.find((id) => id !== guestId) ?? null;
-  const partner = partnerId ? data.guests.find((g) => g.id === partnerId) : null;
+  const partner = partnerId
+    ? data.guests.find((g) => g.id === partnerId)
+    : null;
   const clues = partner
     ? [partner.clue1, partner.clue2].filter(
-        (value): value is string => typeof value === "string" && value.trim().length > 0
+        (value): value is string =>
+          typeof value === "string" && value.trim().length > 0
       )
     : [];
 
@@ -213,14 +222,22 @@ async function ensureSingleNeverHaveIEverPack(): Promise<NeverHaveIEverPack> {
     let primary: NeverHaveIEverPack | null = null;
 
     for (const entry of entries) {
-      if (entry && typeof entry === "object" && "statements" in (entry as any)) {
+      if (
+        entry &&
+        typeof entry === "object" &&
+        "statements" in (entry as any)
+      ) {
         const pack = entry as Partial<NeverHaveIEverPack> & {
           statements?: unknown;
         };
         if (!primary) {
           primary = {
-            id: typeof pack.id === "string" && pack.id ? pack.id : "nhie-default",
-            title: typeof pack.title === "string" && pack.title ? pack.title : "Standard Pack",
+            id:
+              typeof pack.id === "string" && pack.id ? pack.id : "nhie-default",
+            title:
+              typeof pack.title === "string" && pack.title
+                ? pack.title
+                : "Standard Pack",
             statements: [],
           };
         }
@@ -268,7 +285,9 @@ async function ensureSingleQuizPack(): Promise<QuizPack> {
     const [primary, ...rest] = d.quizPacks;
     rest.forEach((pack) => {
       pack.questions.forEach((question) => {
-        if (!primary.questions.some((existing) => existing.id === question.id)) {
+        if (
+          !primary.questions.some((existing) => existing.id === question.id)
+        ) {
           primary.questions.push(question);
         }
       });
@@ -289,6 +308,7 @@ async function ensureSingleQuizPack(): Promise<QuizPack> {
  */
 gamesRouter.get("/quiz", async (_req, res) => {
   const pack = await ensureSingleQuizPack();
+  console.log(pack);
   res.json([pack]);
 });
 
@@ -370,7 +390,8 @@ gamesRouter.post("/quiz/:packId/questions", requireAuth, async (req, res) => {
   const { packId } = req.params;
   const { question, answers, difficulty, imageUrl } = req.body || {};
   if (!question) return res.status(400).json({ message: "question required" });
-  if (!Array.isArray(answers) || answers.length < 2) return res.status(400).json({ message: "answers min 2" });
+  if (!Array.isArray(answers) || answers.length < 2)
+    return res.status(400).json({ message: "answers min 2" });
   const q: QuizQuestion = {
     id: nanoid(8),
     question,
@@ -398,23 +419,28 @@ gamesRouter.post("/quiz/:packId/questions", requireAuth, async (req, res) => {
  * Body: { question?: string; answers?: string[]; difficulty?: QuizQuestion['difficulty']; imageUrl?: string }
  * Response: QuizQuestion
  */
-gamesRouter.put("/quiz/:packId/questions/:qid", requireAuth, async (req, res) => {
-  const { packId, qid } = req.params;
-  const { question, answers, difficulty, imageUrl } = req.body || {};
-  const updated = await mutate((d) => {
-    const pack = d.quizPacks.find((p) => p.id === packId);
-    if (!pack) return null;
-    const q = pack.questions.find((item) => item.id === qid);
-    if (!q) return null;
-    if (question !== undefined) q.question = question;
-    if (answers) q.answers = answers as QuizQuestion["answers"];
-    if (difficulty !== undefined) q.difficulty = difficulty;
-    if (imageUrl !== undefined) q.imageUrl = imageUrl;
-    return q;
-  });
-  if (!updated) return res.status(404).json({ message: "question not found" });
-  res.json(updated);
-});
+gamesRouter.put(
+  "/quiz/:packId/questions/:qid",
+  requireAuth,
+  async (req, res) => {
+    const { packId, qid } = req.params;
+    const { question, answers, difficulty, imageUrl } = req.body || {};
+    const updated = await mutate((d) => {
+      const pack = d.quizPacks.find((p) => p.id === packId);
+      if (!pack) return null;
+      const q = pack.questions.find((item) => item.id === qid);
+      if (!q) return null;
+      if (question !== undefined) q.question = question;
+      if (answers) q.answers = answers as QuizQuestion["answers"];
+      if (difficulty !== undefined) q.difficulty = difficulty;
+      if (imageUrl !== undefined) q.imageUrl = imageUrl;
+      return q;
+    });
+    if (!updated)
+      return res.status(404).json({ message: "question not found" });
+    res.json(updated);
+  }
+);
 
 /**
  * DELETE /api/games/quiz/:packId/questions/:qid
@@ -422,19 +448,23 @@ gamesRouter.put("/quiz/:packId/questions/:qid", requireAuth, async (req, res) =>
  * Deletes a question from the specified quiz pack. Requires admin authentication.
  * Returns 204 when removed or 404 if the question is missing.
  */
-gamesRouter.delete("/quiz/:packId/questions/:qid", requireAuth, async (req, res) => {
-  const { packId, qid } = req.params;
-  const ok = await mutate((d) => {
-    const pack = d.quizPacks.find((p) => p.id === packId);
-    if (!pack) return false;
-    const idx = pack.questions.findIndex((question) => question.id === qid);
-    if (idx === -1) return false;
-    pack.questions.splice(idx, 1);
-    return true;
-  });
-  if (!ok) return res.status(404).json({ message: "question not found" });
-  res.status(204).end();
-});
+gamesRouter.delete(
+  "/quiz/:packId/questions/:qid",
+  requireAuth,
+  async (req, res) => {
+    const { packId, qid } = req.params;
+    const ok = await mutate((d) => {
+      const pack = d.quizPacks.find((p) => p.id === packId);
+      if (!pack) return false;
+      const idx = pack.questions.findIndex((question) => question.id === qid);
+      if (idx === -1) return false;
+      pack.questions.splice(idx, 1);
+      return true;
+    });
+    if (!ok) return res.status(404).json({ message: "question not found" });
+    res.status(204).end();
+  }
+);
 
 async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
   return mutate((d) => {
@@ -471,7 +501,11 @@ async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
     };
 
     for (const entry of entries) {
-      if (entry && typeof entry === "object" && Array.isArray((entry as any).validPasswords)) {
+      if (
+        entry &&
+        typeof entry === "object" &&
+        Array.isArray((entry as any).validPasswords)
+      ) {
         const cfg = entry as Partial<PasswordGameConfig> & {
           validPasswords: unknown[];
         };
@@ -482,7 +516,10 @@ async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
         aggregatedStartedAt = pickEarliest(aggregatedStartedAt, cfg.startedAt);
         aggregatedEndedAt = pickLatest(aggregatedEndedAt, cfg.endedAt);
         aggregatedUpdatedAt = pickLatest(aggregatedUpdatedAt, cfg.updatedAt);
-        if (aggregatedRequired === undefined && typeof cfg.requiredCorrectGroups === "number") {
+        if (
+          aggregatedRequired === undefined &&
+          typeof cfg.requiredCorrectGroups === "number"
+        ) {
           aggregatedRequired = cfg.requiredCorrectGroups;
         }
         for (const pwd of cfg.validPasswords) {
@@ -494,14 +531,24 @@ async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
     }
 
     if (!firstConfig) {
-      firstConfig = { id: "password-default", validPasswords: [], active: false };
+      firstConfig = {
+        id: "password-default",
+        validPasswords: [],
+        active: false,
+      };
     }
 
     const primary: PasswordGameConfig = {
-      id: typeof firstConfig.id === "string" && firstConfig.id ? firstConfig.id : "password-default",
+      id:
+        typeof firstConfig.id === "string" && firstConfig.id
+          ? firstConfig.id
+          : "password-default",
       validPasswords: collected,
       active: aggregatedActive || !!firstConfig.active,
-      requiredCorrectGroups: aggregatedRequired !== undefined ? aggregatedRequired : firstConfig.requiredCorrectGroups,
+      requiredCorrectGroups:
+        aggregatedRequired !== undefined
+          ? aggregatedRequired
+          : firstConfig.requiredCorrectGroups,
       startedAt: aggregatedStartedAt ?? firstConfig.startedAt,
       endedAt: aggregatedEndedAt ?? firstConfig.endedAt,
       updatedAt: aggregatedUpdatedAt ?? firstConfig.updatedAt,
@@ -547,7 +594,9 @@ gamesRouter.get("/never-have-i-ever", async (_req, res) => {
 gamesRouter.post("/never-have-i-ever", requireAuth, async (req, res) => {
   const { title, statements } = req.body || {};
   if (!title) return res.status(400).json({ message: "title required" });
-  const sanitizedStatements = Array.isArray(statements) ? statements.map((s: unknown) => String(s)) : [];
+  const sanitizedStatements = Array.isArray(statements)
+    ? statements.map((s: unknown) => String(s))
+    : [];
   const pack: NeverHaveIEverPack = {
     id: nanoid(8),
     title,
@@ -593,17 +642,21 @@ gamesRouter.put("/never-have-i-ever/:packId", requireAuth, async (req, res) => {
  * Removes the specified Never Have I Ever pack. Requires admin authentication. Returns
  * 204 on success or 404 if the pack cannot be found.
  */
-gamesRouter.delete("/never-have-i-ever/:packId", requireAuth, async (req, res) => {
-  const { packId } = req.params;
-  const ok = await mutate((d) => {
-    const idx = d.neverHaveIEverPacks.findIndex((p) => p.id === packId);
-    if (idx === -1) return false;
-    d.neverHaveIEverPacks.splice(idx, 1);
-    return true;
-  });
-  if (!ok) return res.status(404).json({ message: "pack not found" });
-  res.status(204).end();
-});
+gamesRouter.delete(
+  "/never-have-i-ever/:packId",
+  requireAuth,
+  async (req, res) => {
+    const { packId } = req.params;
+    const ok = await mutate((d) => {
+      const idx = d.neverHaveIEverPacks.findIndex((p) => p.id === packId);
+      if (idx === -1) return false;
+      d.neverHaveIEverPacks.splice(idx, 1);
+      return true;
+    });
+    if (!ok) return res.status(404).json({ message: "pack not found" });
+    res.status(204).end();
+  }
+);
 
 /**
  * GET /api/games/password-game
@@ -637,7 +690,9 @@ gamesRouter.post("/password-game", requireAuth, async (req, res) => {
       d.passwordGames = [cfg];
     }
     if (Array.isArray(validPasswords)) {
-      const sanitized = validPasswords.map((value) => (value != null ? String(value).trim() : "")).filter(Boolean);
+      const sanitized = validPasswords
+        .map((value) => (value != null ? String(value).trim() : ""))
+        .filter(Boolean);
       cfg.validPasswords = Array.from(new Set(sanitized));
     }
     if (typeof active === "boolean") {
@@ -670,7 +725,9 @@ gamesRouter.patch("/password-game", requireAuth, async (req, res) => {
   const updated = await mutate((d) => {
     const cfg = d.passwordGames[0]!;
     if (Array.isArray(validPasswords)) {
-      const sanitized = validPasswords.map((value) => (value != null ? String(value).trim() : "")).filter(Boolean);
+      const sanitized = validPasswords
+        .map((value) => (value != null ? String(value).trim() : ""))
+        .filter(Boolean);
       cfg.validPasswords = Array.from(new Set(sanitized));
     }
     if (typeof active === "boolean") {
@@ -711,7 +768,10 @@ gamesRouter.post(passwordStartPaths, requireAuth, async (_req, res) => {
   res.json(updated);
 });
 
-const passwordAttemptPaths = ["/password-game/attempt", "/password-game/:id/attempt"];
+const passwordAttemptPaths = [
+  "/password-game/attempt",
+  "/password-game/:id/attempt",
+];
 /**
  * POST /api/games/password-game/attempt
  * POST /api/games/password-game/:id/attempt
@@ -725,7 +785,8 @@ const passwordAttemptPaths = ["/password-game/attempt", "/password-game/:id/atte
  */
 gamesRouter.post(passwordAttemptPaths, async (req, res) => {
   const { groupId, password } = req.body || {};
-  if (!groupId || !password) return res.status(400).json({ message: "groupId & password required" });
+  if (!groupId || !password)
+    return res.status(400).json({ message: "groupId & password required" });
   const result = await mutate((d) => {
     const configs = d.passwordGames;
     const pathId = req.params.id;
@@ -742,7 +803,10 @@ gamesRouter.post(passwordAttemptPaths, async (req, res) => {
       group.passwordSolved = true;
       group.finishedAt = new Date().toISOString();
       const solved = d.groups.filter((g) => g.passwordSolved).length;
-      const required = typeof cfg.requiredCorrectGroups === "number" ? cfg.requiredCorrectGroups : Infinity;
+      const required =
+        typeof cfg.requiredCorrectGroups === "number"
+          ? cfg.requiredCorrectGroups
+          : Infinity;
       if (required !== Infinity && solved >= required && !cfg.endedAt) {
         cfg.endedAt = new Date().toISOString();
         cfg.active = false;
@@ -754,7 +818,10 @@ gamesRouter.post(passwordAttemptPaths, async (req, res) => {
   res.json(result);
 });
 
-const passwordAddPaths = ["/password-game/passwords", "/password-game/:id/passwords"];
+const passwordAddPaths = [
+  "/password-game/passwords",
+  "/password-game/:id/passwords",
+];
 /**
  * POST /api/games/password-game/passwords
  * POST /api/games/password-game/:id/passwords
@@ -767,7 +834,10 @@ const passwordAddPaths = ["/password-game/passwords", "/password-game/:id/passwo
  */
 gamesRouter.post(passwordAddPaths, requireAuth, async (req, res) => {
   const { password } = req.body || {};
-  const value = typeof password === "string" ? password.trim() : String(password ?? "").trim();
+  const value =
+    typeof password === "string"
+      ? password.trim()
+      : String(password ?? "").trim();
   if (!value) return res.status(400).json({ message: "password required" });
   await ensureSinglePasswordConfig();
   const updated = await mutate((d) => {
@@ -781,7 +851,10 @@ gamesRouter.post(passwordAddPaths, requireAuth, async (req, res) => {
   res.json(updated);
 });
 
-const passwordRemovePaths = ["/password-game/passwords/:password", "/password-game/:id/passwords/:password"];
+const passwordRemovePaths = [
+  "/password-game/passwords/:password",
+  "/password-game/:id/passwords/:password",
+];
 /**
  * DELETE /api/games/password-game/passwords/:password
  * DELETE /api/games/password-game/:id/passwords/:password
@@ -875,7 +948,8 @@ gamesRouter.put(
       }
       return fq;
     });
-    if (!updated) return res.status(404).json({ message: "question not found" });
+    if (!updated)
+      return res.status(404).json({ message: "question not found" });
     res.json(updated);
   }
 );
@@ -921,7 +995,8 @@ gamesRouter.get(
     const { id } = req.params;
     const data = await loadData();
     const question = data.funnyQuestions.find((q) => q.id === id);
-    if (!question) return res.status(404).json({ message: "question not found" });
+    if (!question)
+      return res.status(404).json({ message: "question not found" });
     const answers = data.funnyAnswers.filter((a) => a.questionId === id);
     res.json({ question, answers });
   }
@@ -942,7 +1017,9 @@ gamesRouter.delete(
     const ok = await mutate((d) => {
       const question = d.funnyQuestions.find((q) => q.id === id);
       if (!question) return false;
-      const idx = d.funnyAnswers.findIndex((a) => a.id === answerId && a.questionId === id);
+      const idx = d.funnyAnswers.findIndex(
+        (a) => a.id === answerId && a.questionId === id
+      );
       if (idx === -1) return false;
       d.funnyAnswers.splice(idx, 1);
       return true;

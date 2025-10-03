@@ -1,21 +1,30 @@
 import { Image } from "expo-image";
-import { StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { StyleSheet, TextInput } from "react-native";
 
+import { Button } from "@/components/game/Button";
 import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
+import { passwordGameApi } from "@/lib/api";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-//TODO: add button layout
-//TODO: add password logic
+//TODO: NOAH Button spacing
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
-  const [text, setText] = useState("");
+  const [validPasswords, setValidPasswords] = useState<String[]>([]);
+  const [input, setInput] = useState("");
+  useEffect(() => {
+    passwordGameApi.get().then((res) => {
+      console.log(res);
+      if (res && "validPasswords" in res && res.validPasswords)
+        setValidPasswords(res.validPasswords);
+    });
+  }, []);
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -38,17 +47,26 @@ export default function HomeScreen() {
         <ThemedView style={styles.midContainer}>
           <TextInput
             style={globalStyles.inputField}
-            onChangeText={setText}
-            value={text}
+            onChangeText={setInput}
+            value={input}
           ></TextInput>
-          <TouchableOpacity
-            style={globalStyles.button}
+          <Button
             onPress={() => {
-              router.navigate("/game/password");
+              for (const password of validPasswords) {
+                if (
+                  password.toUpperCase().trim() == input.toUpperCase().trim()
+                ) {
+                  router.navigate("/game/final");
+                  //TODO: NOAH add cool input field
+                }
+              }
+              console.log("FALSE");
+              // TODO: NOAH shake and red border WRONG PASSWORD
             }}
+            iconText="arrow.right.circle"
           >
-            <ThemedText style={globalStyles.buttonText}>abgeben</ThemedText>
-          </TouchableOpacity>
+            Abgeben!
+          </Button>
         </ThemedView>
       </ParallaxScrollView>
       <HintBox />

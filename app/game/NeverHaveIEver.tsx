@@ -1,19 +1,20 @@
 import { Image } from "expo-image";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet } from "react-native";
 
-import { HintBox } from "@/components/game/HintBox";
+import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useTheme } from "@/constants/theme";
-import { ApiError, gameApi } from "@/lib/api";
+import { ApiError, gameApi, NeverHaveIEverPackDTO } from "@/lib/api";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 
-//TODO: add questions
-//TODO: add layout button
-//TODO: add round with text and next button
+//TODO: ASH add questions
+//TODO: ASH add round with text and next button
+//TODO: ASH layout change
+//TODO: ASH add funny style
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -30,8 +31,8 @@ export default function HomeScreen() {
 
   const load = useCallback(async () => {
     try {
-      const data = (await gameApi.getNHIE()) as String[];
-      setQuestions(data);
+      const data = (await gameApi.getNHIE()) as NeverHaveIEverPackDTO[];
+      setQuestions(data[0].statements);
       console.log(data);
     } catch (e) {
       setError((e as ApiError).message || "Failed to load questions");
@@ -75,17 +76,14 @@ export default function HomeScreen() {
               {loading ? " loading..." : questions[counter]}
             </ThemedText>
           </ThemedView>
-          <TouchableOpacity
-            style={globalStyles.button}
-            onPress={() => {
-              incrementCounter();
-            }}
+          <Button
+            onPress={() => incrementCounter()}
+            iconText="arrow.right.circle"
           >
-            <ThemedText style={globalStyles.buttonText}>Weiter</ThemedText>
-          </TouchableOpacity>
+            Weiter
+          </Button>
         </ThemedView>
       </ParallaxScrollView>
-      <HintBox />
     </ThemedView>
   );
 }

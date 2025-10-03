@@ -8,13 +8,13 @@ import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
-//TODO: add timer logic and animation
+//TODO: NOAH add timer logic and animation confetti
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
-  const [text, setText]= useState('');
-  
+  const [text, setText] = useState("");
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
@@ -28,15 +28,14 @@ export default function HomeScreen() {
       >
         <ThemedView style={styles.textContainer}>
           <ThemedText type="title">Du hast es ins Finale geschafft!</ThemedText>
-          <ThemedText type="defaultSemiBold">
-            Eure Zeit: 00:00
-          </ThemedText>
+          <ThemedText type="defaultSemiBold">Eure Zeit: 00:00</ThemedText>
           <ThemedText>
-            Ihr seid unter den Top 4 schnellsten Paaren und seid somit im Finale. Sobald die Finalsten fest stehen, müsst ihr in Trinkspielen gegen die anderen antreten um etwas zu gewinnen. Weitere Anweisungen erhaltet ihr vom Geburstagskind!
+            Ihr seid unter den Top 4 schnellsten Paaren und seid somit im
+            Finale. Sobald die Finalsten fest stehen, müsst ihr in Trinkspielen
+            gegen die anderen antreten um etwas zu gewinnen. Weitere Anweisungen
+            erhaltet ihr vom Geburstagskind!
           </ThemedText>
         </ThemedView>
-     
-
       </ParallaxScrollView>
     </ThemedView>
   );

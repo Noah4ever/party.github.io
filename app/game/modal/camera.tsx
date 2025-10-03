@@ -1,5 +1,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { gameApi } from "@/lib/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   BarcodeScanningResult,
   CameraView,
@@ -7,6 +9,8 @@ import {
 } from "expo-camera";
 import { useRouter } from "expo-router";
 import { Button } from "react-native";
+
+//TODO: NOAH fix access Button
 
 export default function CameraModal() {
   const router = useRouter();
@@ -44,11 +48,19 @@ export default function CameraModal() {
             barcodeScannerSettings={{
               barcodeTypes: ["qr"],
             }}
-            onBarcodeScanned={(scanningResult: BarcodeScanningResult) => {
+            onBarcodeScanned={async (scanningResult: BarcodeScanningResult) => {
               // TODO: Green border or something so the user knows that it was correct
               // TODO: in scanningResult.data is the content of the qr code
-              router.back();
-              router.navigate("/game/challenge_2");
+              const guestId = await AsyncStorage.getItem("guestId");
+              if (guestId) {
+                const partnerId = scanningResult.data;
+                const result = await gameApi.verifyPartner(guestId, partnerId);
+                if ("match" in result && result.match && result.groupId) {
+                  AsyncStorage.setItem("groupId", result.groupId);
+                  router.back();
+                  router.navigate("/game/challenge_2");
+                }
+              }
             }}
           />
         </ThemedView>

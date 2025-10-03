@@ -1,18 +1,19 @@
 import { Image } from "expo-image";
-import { StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import { StyleSheet, TextInput } from "react-native";
 
+import { Button } from "@/components/game/Button";
 import { HintBox } from "@/components/game/HintBox";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
-import { gameApi } from "@/lib/api";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
-//TODO: add question
-//TODO: add save logic of answers plus to control center
-
+//TODO: ASH add questions
+//TODO: ASH add save logic of answers in API hint routes.games.ts line 1043 post and at api.ts line 433 add method to post a answer
+//TODO: ASH have logic so multiple question work
+//TODO: ASH get funny questions list in FunnyQuestionApi list 434 and implement in text with useEffect and .then
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
@@ -42,15 +43,16 @@ export default function HomeScreen() {
             onChangeText={setText}
             value={text}
           ></TextInput>
-          <TouchableOpacity
-            style={globalStyles.button}
+          <Button
             onPress={() => {
-              gameApi.createFunnyAnswer("penis", text);
+              // gameApi.createFunnyAnswer()
+              // TODO: ASH implement correct api calll
               router.navigate("/game/password");
             }}
+            iconText="arrow.right.circle"
           >
-            <ThemedText style={globalStyles.buttonText}>abgeben</ThemedText>
-          </TouchableOpacity>
+            Abgeben!
+          </Button>
         </ThemedView>
       </ParallaxScrollView>
       <HintBox />

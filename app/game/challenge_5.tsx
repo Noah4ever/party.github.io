@@ -1,14 +1,14 @@
 import { Image } from "expo-image";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet } from "react-native";
 
-import { HintBox } from "@/components/game/HintBox";
+import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 
-//TODO: add Layout button
+//TODO: ASH rechange into modal as popup in questions as view
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
@@ -33,17 +33,14 @@ export default function HomeScreen() {
         </ThemedView>
 
         <ThemedView style={styles.midContainer}>
-          <TouchableOpacity
-            style={globalStyles.button}
-            onPress={() => {
-              router.navigate("/game/questions");
-            }}
+          <Button
+            onPress={() => router.navigate("/game/questions")}
+            iconText="arrow.right.circle"
           >
-            <ThemedText style={globalStyles.buttonText}>Start</ThemedText>
-          </TouchableOpacity>
+            Starten!
+          </Button>
         </ThemedView>
       </ParallaxScrollView>
-      <HintBox />
     </ThemedView>
   );
 }

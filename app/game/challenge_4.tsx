@@ -1,14 +1,12 @@
 import { Image } from "expo-image";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet } from "react-native";
 
-import { HintBox } from "@/components/game/HintBox";
+import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
-
-//TODO: add layout button
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
@@ -35,20 +33,14 @@ export default function HomeScreen() {
 
         <ThemedView style={styles.midContainer}>
           <ThemedText>Drückt auf Starten wenn ihr ready seid</ThemedText>
-          <TouchableOpacity
-            style={globalStyles.button}
-            onPress={() => {
-              router.navigate("/game/NeverHaveIEver");
-            }}
+          <Button
+            onPress={() => router.navigate("/game/NeverHaveIEver")}
+            iconText="arrow.right.circle"
           >
-            <ThemedText style={globalStyles.buttonText}>
-              {" "}
-              Starten Button{" "}
-            </ThemedText>
-          </TouchableOpacity>
+            Starten!
+          </Button>
         </ThemedView>
       </ParallaxScrollView>
-      <HintBox />
     </ThemedView>
   );
 }
