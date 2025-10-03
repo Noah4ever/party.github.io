@@ -18,7 +18,8 @@ export function useGlobalStyles() {
     },
     inputField: {
       padding: 10,
-      height: 40,
+      borderRadius: 6,
+      height: 45,
       borderWidth: 1,
       borderColor: theme.inputBorder,
       color: theme.inputText,
