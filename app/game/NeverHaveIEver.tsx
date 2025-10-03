@@ -47,7 +47,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (questions.length > 0 && counter >= questions.length) {
-      router.navigate("/game/challenge_5");
+      router.navigate("/game/questions");
     }
   }, [counter]);
 
