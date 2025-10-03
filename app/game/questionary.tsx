@@ -7,17 +7,42 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
+import { funnyQuestionApi, FunnyQuestionDTO } from "@/lib/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 //TODO: ASH add questions
-//TODO: ASH add save logic of answers in API hint routes.games.ts line 1043 post and at api.ts line 433 add method to post a answer
-//TODO: ASH have logic so multiple question work
-//TODO: ASH get funny questions list in FunnyQuestionApi list 434 and implement in text with useEffect and .then
+
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
   const [text, setText] = useState("");
+  const [questions, setQuestions] = useState<FunnyQuestionDTO[]>([]);
+  const [questionCounter, setQuestionCounter] = useState<number>(0);
+  const [guestId, setGuestId] = useState("");
+
+  const textInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    (async () => {
+      const guestId = await AsyncStorage.getItem("guestId");
+      if (guestId) {
+        setGuestId(guestId);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    funnyQuestionApi.list().then((res) => {
+      if (res && Array.isArray(res)) {
+        setQuestions(res);
+        console.log(res);
+      }
+    });
+  }, []);
+
+  const currentQuestion = questions[questionCounter];
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -33,21 +58,50 @@ export default function HomeScreen() {
         <ThemedView style={styles.textContainer}>
           <ThemedText type="title">Finale Challenge!</ThemedText>
           <ThemedText type="defaultSemiBold">
-            Fast geschafft beantworte noch diese Frage ! Frage:
+            Fast geschafft beantworte noch diese Fragen ! Frage:{" "}
+            {questions && questions.length > 0 && currentQuestion.question}
           </ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.midContainer}>
           <TextInput
+            ref={textInputRef}
             style={globalStyles.inputField}
             onChangeText={setText}
             value={text}
           ></TextInput>
           <Button
-            onPress={() => {
-              // gameApi.createFunnyAnswer()
-              // TODO: ASH implement correct api calll
-              router.navigate("/game/password");
+            onPress={async () => {
+              if (!text.trim()) {
+                alert("Bitte gebe etwas ein");
+                textInputRef.current?.focus;
+                return;
+              }
+
+              if (!currentQuestion?.id) {
+                return;
+              }
+
+              try {
+                await funnyQuestionApi.addAnswer(
+                  currentQuestion.id,
+                  text,
+                  guestId
+                );
+                console.log("Antwort erfolgreich hinzugefügt");
+                setText("");
+                textInputRef.current?.clear();
+              } catch (err) {
+                console.error("Fehler beim Hinzufügen der Antwort:", err);
+                return;
+              }
+
+              if (questionCounter + 1 >= questions.length) {
+                router.navigate("/game/password");
+              } else {
+                setQuestionCounter((prev) => prev + 1);
+                textInputRef.current?.focus();
+              }
             }}
             iconText="arrow.right.circle"
           >
