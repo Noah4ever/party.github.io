@@ -418,6 +418,9 @@ export interface FunnyAnswerDTO {
   guestId: string;
   answer: string;
   createdAt: string;
+  guestName?: string | null;
+  groupId?: string | null;
+  groupName?: string | null;
 }
 
 export const funnyQuestionApi = {
@@ -432,12 +435,9 @@ export const funnyQuestionApi = {
   getWithAnswers: (id: string) =>
     api.get<{ question: FunnyQuestionDTO; answers: FunnyAnswerDTO[] }>(`/games/funny-questions/${id}/answers`),
   removeAnswer: (questionId: string, answerId: string) =>
-    api.delete<void>(
-      `/games/funny-questions/${questionId}/answers/${answerId}`
-    ),
+    api.delete<void>(`/games/funny-questions/${questionId}/answers/${answerId}`),
   addAnswer: (questionId: string, answer: string, guestId: string) =>
     api.post(`/games/funny-answers/${questionId}`, { answer, guestId }),
-
 };
 
 // -------- Password Game Configs --------

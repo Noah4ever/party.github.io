@@ -290,6 +290,16 @@ export default function FunnyQuestionsScreen() {
                         },
                       ]}>
                       <ThemedText style={{ fontSize: 15 }}>{answer.answer}</ThemedText>
+                      <View style={styles.answerMetaRow}>
+                        <IconSymbol name="person.fill" size={14} color={theme.textMuted} />
+                        <ThemedText style={[styles.answerMetaText, { color: theme.textMuted }]}>
+                          {answer.guestName?.trim() ? answer.guestName : "Unknown guest"}
+                        </ThemedText>
+                        <IconSymbol name="people-outline" size={14} color={theme.textMuted} />
+                        <ThemedText style={[styles.answerMetaText, { color: theme.textMuted }]}>
+                          {answer.groupName?.trim() ? answer.groupName : answer.groupId || "No group"}
+                        </ThemedText>
+                      </View>
                       <ThemedText style={{ color: theme.textMuted, fontSize: 12 }}>
                         {formatRelativeDate(answer.createdAt)}
                       </ThemedText>
@@ -499,5 +509,14 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: 12,
     gap: 8,
+  },
+  answerMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  answerMetaText: {
+    fontSize: 12,
   },
 });

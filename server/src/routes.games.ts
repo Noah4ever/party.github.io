@@ -1106,7 +1106,18 @@ gamesRouter.get(
     const data = await loadData();
     const question = data.funnyQuestions.find((q) => q.id === id);
     if (!question) return res.status(404).json({ message: "question not found" });
-    const answers = data.funnyAnswers.filter((a) => a.questionId === id);
+    const answers = data.funnyAnswers
+      .filter((a) => a.questionId === id)
+      .map((answer) => {
+        const guest = data.guests.find((g) => g.id === answer.guestId);
+        const group = guest?.groupId ? data.groups.find((g) => g.id === guest.groupId) : null;
+        return {
+          ...answer,
+          guestName: guest?.name ?? null,
+          groupId: group?.id ?? guest?.groupId ?? null,
+          groupName: group?.name ?? null,
+        };
+      });
     res.json({ question, answers });
   }
 );
