@@ -8,7 +8,7 @@ import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
 
-//TODO: ASH rechange into modal as popup in questions as view
+//TODO: NOAH implement Modal component like in challenge 3
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();

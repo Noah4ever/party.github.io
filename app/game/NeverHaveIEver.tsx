@@ -1,20 +1,16 @@
 import { Image } from "expo-image";
-import { StyleSheet } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 
 import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useTheme } from "@/constants/theme";
 import { ApiError, gameApi, NeverHaveIEverPackDTO } from "@/lib/api";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
 
 //TODO: ASH add questions
-//TODO: ASH add round with text and next button
-//TODO: ASH layout change
-//TODO: ASH add funny style
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -24,6 +20,8 @@ export default function HomeScreen() {
   const [questions, setQuestions] = useState<String[]>([]);
   const [error, setError] = useState<String>();
   const [loading, setLoading] = useState<Boolean>(true);
+
+  const animate = useRef(new Animated.Value(1)).current;
 
   function incrementCounter() {
     setCounter(counter + 1);
@@ -47,48 +45,88 @@ export default function HomeScreen() {
     }, [load])
   );
 
-  // counter updatet sich bei naechsten reload daher useEffect
-  // wird durchgelaufen beim ersten draw und immer wenn sich die dependencies changen (counter)
   useEffect(() => {
     if (questions.length > 0 && counter >= questions.length) {
-      router.navigate("/game/challenge_5");
+      router.navigate("/game/questions");
     }
   }, [counter]);
-  return (
-    <ThemedView style={{ flex: 1 }}>
-      <ParallaxScrollView
-        headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-        headerImage={
-          <Image
-            source={require("@/assets/images/crown.png")}
-            style={styles.papaLogo}
-          />
-        }
-      >
-        <ThemedView style={styles.textContainer}>
-          <ThemedText type="title">Ich hab noch nie... 🍻</ThemedText>
-        </ThemedView>
 
-        <ThemedView style={styles.midContainer}>
-          <ThemedView style={[styles.bubble, { borderColor: theme.primary }]}>
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animate, {
+          toValue: 1.1,
+          duration: 800,
+          useNativeDriver: true,
+          easing: Easing.ease,
+        }),
+        Animated.timing(animate, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+          easing: Easing.ease,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <ParallaxScrollView
+      headerHeight={180}
+      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+      headerImage={
+        <Image
+          source={require("@/assets/images/crown.png")}
+          style={styles.papaLogo}
+        />
+      }
+    >
+      <View
+        style={[
+          styles.heroCard,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
+        <ThemedText type="title">Ich hab noch nie... 🍻</ThemedText>
+        <View style={styles.textContainer}></View>
+
+        <View style={styles.midContainer}>
+          <Animated.View
+            style={[
+              styles.bubble,
+              { borderColor: theme.primary, transform: [{ scale: animate }] },
+            ]}
+          >
             <ThemedText type="subtitle">
-              {/* //TODO: add styling */}
               {loading ? " loading..." : questions[counter]}
             </ThemedText>
-          </ThemedView>
-          <Button
-            onPress={() => incrementCounter()}
-            iconText="arrow.right.circle"
-          >
-            Weiter
-          </Button>
-        </ThemedView>
-      </ParallaxScrollView>
-    </ThemedView>
+          </Animated.View>
+          <View>
+            <Button
+              onPress={() => incrementCounter()}
+              iconText="arrow.right.circle"
+            >
+              Weiter
+            </Button>
+          </View>
+        </View>
+      </View>
+    </ParallaxScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  body: {
+    flex: 1,
+    backgroundColor: "#f200ff",
+  },
+  heroCard: {
+    borderRadius: 24,
+    padding: 24,
+    gap: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "transparent",
+  },
   papaLogo: {
     height: 180,
     width: 290,
@@ -99,28 +137,31 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     gap: 20,
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#fff",
+    textShadowColor: "#4c1fffff",
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 6,
   },
   midContainer: {
-    gap: 20,
+    gap: 35,
     padding: 20,
     justifyContent: "center",
     alignItems: "center",
   },
-  hintContainer: {
-    padding: 20,
-    textAlign: "center",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
   bubble: {
     borderWidth: 4,
-    borderRadius: "50%",
+    borderRadius: 999,
     width: 230,
     height: 230,
     textAlign: "center",
     justifyContent: "center",
     alignItems: "center",
+    shadowColor: "#4c1fffff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 15,
+    elevation: 10,
   },
 });

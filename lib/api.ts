@@ -450,6 +450,8 @@ export const funnyQuestionApi = {
     api.delete<void>(
       `/games/funny-questions/${questionId}/answers/${answerId}`
     ),
+  addAnswer: (questionId: string, answer: string, guestId: string) =>
+    api.post(`/games/funny-answers/${questionId}`, { answer, guestId }),
 };
 
 // -------- Password Game Configs --------

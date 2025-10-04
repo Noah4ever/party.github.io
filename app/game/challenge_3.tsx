@@ -2,21 +2,33 @@ import { Image } from "expo-image";
 import { StyleSheet } from "react-native";
 
 import { Button } from "@/components/game/Button";
-import { HintBox } from "@/components/game/HintBox";
+import { PopupModal } from "@/components/game/hint";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 
-//TODO: ASH add component general hint popup modal
 //TODO: ASH maybe get signature
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();
   const router = useRouter();
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    setModalVisible(true);
+  }, []);
+
   return (
     <ThemedView style={{ flex: 1 }}>
+      <PopupModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        title="🎉 Willkommen!"
+        content="PS: Schummeln ist für Loser, es geht hier um Spaß!"
+      />
       <ParallaxScrollView
         headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
         headerImage={
@@ -47,7 +59,6 @@ export default function HomeScreen() {
           </Button>
         </ThemedView>
       </ParallaxScrollView>
-      <HintBox></HintBox>
     </ThemedView>
   );
 }
