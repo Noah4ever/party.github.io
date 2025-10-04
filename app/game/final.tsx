@@ -10,7 +10,11 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
-import { gameApi, type FinalScoreEntryDTO, type FinalSummaryDTO } from "@/lib/api";
+import {
+  gameApi,
+  type FinalScoreEntryDTO,
+  type FinalSummaryDTO,
+} from "@/lib/api";
 
 const headerColors = { light: "#FDE68A", dark: "#1F2937" };
 const FINALIST_LIMIT = 4;
@@ -21,11 +25,13 @@ function formatDuration(ms: number): string {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
   if (hours > 0) {
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds
+    return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
-      .padStart(2, "0")}`;
+      .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  return `${minutes.toString().padStart(2, "0")}:${seconds
+    .toString()
+    .padStart(2, "0")}`;
 }
 
 export default function FinalScreen() {
@@ -44,26 +50,36 @@ export default function FinalScreen() {
 
         const storedGroupId = await AsyncStorage.getItem("groupId");
         if (!storedGroupId) {
-          throw new Error("Keine Gruppenzuordnung gefunden. Scannt zuerst euren Partner.");
+          throw new Error(
+            "Keine Gruppenzuordnung gefunden. Scannt zuerst euren Partner."
+          );
         }
 
-        const response = (await gameApi.getFinalSummary(storedGroupId)) as FinalSummaryDTO;
+        const response = (await gameApi.getFinalSummary(
+          storedGroupId
+        )) as FinalSummaryDTO;
 
         if (!mounted) return;
 
         if (!response || typeof response !== "object") {
-          throw new Error("Ergebnisse konnten nicht geladen werden. Versucht es gleich erneut.");
+          throw new Error(
+            "Ergebnisse konnten nicht geladen werden. Versucht es gleich erneut."
+          );
         }
 
         if (!response.group) {
-          throw new Error("Wir konnten eure Gruppe nicht finden. Meldet euch beim Orga-Team.");
+          throw new Error(
+            "Wir konnten eure Gruppe nicht finden. Meldet euch beim Orga-Team."
+          );
         }
 
         setSummary(response);
       } catch (err) {
         console.error("final screen load failed", err);
         if (mounted) {
-          setError(err instanceof Error ? err.message : "Etwas ist schiefgelaufen.");
+          setError(
+            err instanceof Error ? err.message : "Etwas ist schiefgelaufen."
+          );
         }
       } finally {
         if (mounted) {
@@ -91,28 +107,36 @@ export default function FinalScreen() {
         penaltyLabel: "+0s",
         placementLabel: "Unbekannt",
         finalist: false,
-        infoText: "Wir werten eure Zeit gerade noch aus. Genießt kurz die Pause!",
+        infoText:
+          "Wir werten eure Zeit gerade noch aus. Genießt kurz die Pause!",
         ownEntry: null as FinalScoreEntryDTO | null,
       };
     }
 
     const hasDuration = typeof groupSummary.durationMs === "number";
-    const timeLabel = typeof groupSummary.durationMs === "number" ? formatDuration(groupSummary.durationMs) : "--:--";
+    const timeLabel =
+      typeof groupSummary.durationMs === "number"
+        ? formatDuration(groupSummary.durationMs)
+        : "--:--";
     const baseTimeLabel =
       typeof groupSummary.rawDurationMs === "number"
         ? formatDuration(groupSummary.rawDurationMs)
         : hasDuration
         ? timeLabel
         : "--:--";
-    const penaltyLabel = `+${(groupSummary.penaltySeconds ?? 0).toLocaleString("de-DE")}s`;
+    const penaltyLabel = `+${(groupSummary.penaltySeconds ?? 0).toLocaleString(
+      "de-DE"
+    )}s`;
 
     const placement = groupSummary.placement;
     const placementLabel = placement ? `${placement}. Platz` : "Unbekannt";
-    const finalist = placement !== undefined && placement > 0 && placement <= FINALIST_LIMIT;
+    const finalist =
+      placement !== undefined && placement > 0 && placement <= FINALIST_LIMIT;
 
     let infoText: string;
     if (!hasDuration) {
-      infoText = "Eure Zeit wurde noch nicht bestätigt. Bleibt in der Nähe, wir melden uns gleich.";
+      infoText =
+        "Eure Zeit wurde noch nicht bestätigt. Bleibt in der Nähe, wir melden uns gleich.";
     } else if (finalist) {
       infoText =
         "Glückwunsch! Ihr gehört zu den schnellsten Teams und seid im Finale. Macht euch bereit für das Live-Trinkspiel!";
@@ -122,7 +146,10 @@ export default function FinalScreen() {
       infoText = "Euer Platz steht gleich fest. Haltet euch bereit!";
     }
 
-    const ownEntry = currentSummary.scoreboard.find((entry) => entry.id === groupSummary.groupId) ?? null;
+    const ownEntry =
+      currentSummary.scoreboard.find(
+        (entry) => entry.id === groupSummary.groupId
+      ) ?? null;
 
     return {
       hasResult: hasDuration,
@@ -137,75 +164,133 @@ export default function FinalScreen() {
   }, [summary]);
 
   const leaderboardLimit = Math.max(FINALIST_LIMIT, 5);
-  const topEntries = (summary?.scoreboard?.slice(0, leaderboardLimit) ?? []) as FinalScoreEntryDTO[];
+  const topEntries = (summary?.scoreboard?.slice(0, leaderboardLimit) ??
+    []) as FinalScoreEntryDTO[];
   const ownPlacement = summary?.group?.placement;
-  const showOwnRow = Boolean(summary?.group && derived.ownEntry && ownPlacement && ownPlacement > leaderboardLimit);
+  const showOwnRow = Boolean(
+    summary?.group &&
+      derived.ownEntry &&
+      ownPlacement &&
+      ownPlacement > leaderboardLimit
+  );
   const ownEntry = derived.ownEntry;
 
   return (
     <ThemedView style={styles.screen}>
       <ParallaxScrollView
-        headerBackgroundColor={headerColors}
-        headerHeight={180}
+        headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
         headerImage={
           <View style={styles.partyHeader}>
-            <View style={[styles.partyGlow, styles.partyGlowPink]} />
-            <View style={[styles.partyGlow, styles.partyGlowBlue]} />
-            <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="contain" />
+            <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
+            <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
+            <Image
+              source={require("@/assets/images/papa/crown.png")}
+              style={styles.papaLogo}
+            />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
+            <View style={[styles.confetti, styles.confettiFour]} />
           </View>
-        }>
+        }
+      >
         <ThemedView
-          style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}
-          testID="final-hero-card">
+          style={[
+            styles.card,
+            styles.heroCard,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+          testID="final-hero-card"
+        >
           <View style={styles.titleRow}>
             <View style={styles.titleTextBlock}>
               <ThemedText type="title" style={styles.titleText}>
                 Finale erreicht <HelloWave />
               </ThemedText>
-              <ThemedText type="subtitle" style={[styles.subtitleText, { color: theme.textSecondary }]}>
+              <ThemedText
+                type="subtitle"
+                style={[styles.subtitleText, { color: theme.textSecondary }]}
+              >
                 Eure Performance im Überblick
               </ThemedText>
             </View>
-            <View style={[styles.placementPill, { backgroundColor: theme.backgroundAlt, borderColor: theme.border }]}>
+            <View
+              style={[
+                styles.placementPill,
+                {
+                  backgroundColor: theme.backgroundAlt,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
               <IconSymbol name="podium" size={18} color={theme.primary} />
-              <ThemedText style={[styles.placementPillLabel, { color: theme.textMuted }]}>
+              <ThemedText
+                style={[styles.placementPillLabel, { color: theme.textMuted }]}
+              >
                 Top {FINALIST_LIMIT} ziehen ins Finale ein
               </ThemedText>
             </View>
           </View>
           <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
-            Wir haben eure Zeit mit eingerechneten Strafen ausgewertet. Schaut euch an, wie ihr im Vergleich zu den
-            anderen Teams abgeschnitten habt und ob ihr beim großen Live-Trinkspiel dabei seid.
+            Wir haben eure Zeit mit eingerechneten Strafen ausgewertet. Schaut
+            euch an, wie ihr im Vergleich zu den anderen Teams abgeschnitten
+            habt und ob ihr beim großen Live-Trinkspiel dabei seid.
           </ThemedText>
         </ThemedView>
 
-        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <ThemedView
+          style={[
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           {loading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color={theme.primary} />
-              <ThemedText style={[styles.loadingText, { color: theme.textMuted }]}>
+              <ThemedText
+                style={[styles.loadingText, { color: theme.textMuted }]}
+              >
                 Ergebnisse werden geladen …
               </ThemedText>
             </View>
           ) : error ? (
             <View style={styles.errorState}>
-              <IconSymbol name="exclamationmark.triangle" size={24} color={theme.danger} />
-              <ThemedText style={[styles.errorText, { color: theme.danger }]}>{error}</ThemedText>
+              <IconSymbol
+                name="exclamationmark.triangle"
+                size={24}
+                color={theme.danger}
+              />
+              <ThemedText style={[styles.errorText, { color: theme.danger }]}>
+                {error}
+              </ThemedText>
             </View>
           ) : (
             <>
               <View
-                style={[styles.summaryHighlight, { borderColor: theme.border, backgroundColor: theme.backgroundAlt }]}>
+                style={[
+                  styles.summaryHighlight,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.backgroundAlt,
+                  },
+                ]}
+              >
                 <View style={styles.summaryHeader}>
-                  <IconSymbol name={derived.finalist ? "star.circle" : "timer"} size={28} color={theme.primary} />
+                  <IconSymbol
+                    name={derived.finalist ? "star.circle" : "timer"}
+                    size={28}
+                    color={theme.primary}
+                  />
                   <View style={styles.summaryHeaderText}>
                     <ThemedText type="subtitle" style={styles.summaryTitle}>
                       {summary?.group?.groupName ?? "Team"}
                     </ThemedText>
-                    <ThemedText style={[styles.summaryCaption, { color: theme.textMuted }]}>
+                    <ThemedText
+                      style={[
+                        styles.summaryCaption,
+                        { color: theme.textMuted },
+                      ]}
+                    >
                       {summary
                         ? `Von ${summary.totalFinished} abgeschlossenen Gruppen · Insgesamt ${summary.totalGroups}`
                         : "Live aktualisierte Ergebnisse"}
@@ -213,93 +298,212 @@ export default function FinalScreen() {
                   </View>
                 </View>
                 <View style={styles.metricsRow}>
-                  <View style={[styles.metricCard, styles.metricCardDefault, { backgroundColor: theme.card }]}>
-                    <ThemedText style={[styles.metricLabel, { color: theme.textMuted }]}>Gesamtzeit</ThemedText>
-                    <ThemedText style={[styles.metricValue, { color: theme.text }]}>{derived.timeLabel}</ThemedText>
+                  <View
+                    style={[
+                      styles.metricCard,
+                      styles.metricCardDefault,
+                      { backgroundColor: theme.card },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[styles.metricLabel, { color: theme.textMuted }]}
+                    >
+                      Gesamtzeit
+                    </ThemedText>
+                    <ThemedText
+                      style={[styles.metricValue, { color: theme.text }]}
+                    >
+                      {derived.timeLabel}
+                    </ThemedText>
                   </View>
-                  <View style={[styles.metricCard, styles.metricCardDefault, { backgroundColor: theme.card }]}>
-                    <ThemedText style={[styles.metricLabel, { color: theme.textMuted }]}>Reine Laufzeit</ThemedText>
-                    <ThemedText style={[styles.metricValueSm, { color: theme.text }]}>
+                  <View
+                    style={[
+                      styles.metricCard,
+                      styles.metricCardDefault,
+                      { backgroundColor: theme.card },
+                    ]}
+                  >
+                    <ThemedText
+                      style={[styles.metricLabel, { color: theme.textMuted }]}
+                    >
+                      Reine Laufzeit
+                    </ThemedText>
+                    <ThemedText
+                      style={[styles.metricValueSm, { color: theme.text }]}
+                    >
                       {derived.baseTimeLabel}
                     </ThemedText>
-                    <ThemedText style={[styles.metricBadge, { color: theme.textMuted }]}>
+                    <ThemedText
+                      style={[styles.metricBadge, { color: theme.textMuted }]}
+                    >
                       {derived.penaltyLabel}
                     </ThemedText>
                   </View>
                   <View
                     style={[
                       styles.metricCard,
-                      derived.finalist ? styles.metricCardFinalist : styles.metricCardDefault,
+                      derived.finalist
+                        ? styles.metricCardFinalist
+                        : styles.metricCardDefault,
                       { backgroundColor: theme.card },
-                    ]}>
-                    <ThemedText style={[styles.metricLabel, { color: theme.textMuted }]}>Platzierung</ThemedText>
-                    <ThemedText style={[styles.metricValue, { color: derived.finalist ? theme.success : theme.text }]}>
+                    ]}
+                  >
+                    <ThemedText
+                      style={[styles.metricLabel, { color: theme.textMuted }]}
+                    >
+                      Platzierung
+                    </ThemedText>
+                    <ThemedText
+                      style={[
+                        styles.metricValue,
+                        {
+                          color: derived.finalist ? theme.success : theme.text,
+                        },
+                      ]}
+                    >
                       {derived.placementLabel}
                     </ThemedText>
                     {derived.finalist ? (
                       <View
                         style={[
                           styles.finalistBadge,
-                          { backgroundColor: theme.primaryMuted, borderColor: theme.success },
-                        ]}>
-                        <IconSymbol name="podium" size={14} color={theme.success} />
-                        <ThemedText style={[styles.finalistBadgeLabel, { color: theme.success }]}>Im Finale</ThemedText>
+                          {
+                            backgroundColor: theme.primaryMuted,
+                            borderColor: theme.success,
+                          },
+                        ]}
+                      >
+                        <IconSymbol
+                          name="podium"
+                          size={14}
+                          color={theme.success}
+                        />
+                        <ThemedText
+                          style={[
+                            styles.finalistBadgeLabel,
+                            { color: theme.success },
+                          ]}
+                        >
+                          Im Finale
+                        </ThemedText>
                       </View>
                     ) : null}
                   </View>
                 </View>
               </View>
 
-              <View style={[styles.messageBox, { borderColor: derived.finalist ? theme.success : theme.border }]}>
+              <View
+                style={[
+                  styles.messageBox,
+                  {
+                    borderColor: derived.finalist
+                      ? theme.success
+                      : theme.border,
+                  },
+                ]}
+              >
                 <IconSymbol
-                  name={derived.finalist ? "star.circle" : "questionmark.circle"}
+                  name={
+                    derived.finalist ? "star.circle" : "questionmark.circle"
+                  }
                   size={20}
                   color={derived.finalist ? theme.success : theme.textMuted}
                   style={{ marginRight: 10 }}
                 />
                 <ThemedText
-                  style={[styles.messageText, { color: derived.finalist ? theme.success : theme.textSecondary }]}>
+                  style={[
+                    styles.messageText,
+                    {
+                      color: derived.finalist
+                        ? theme.success
+                        : theme.textSecondary,
+                    },
+                  ]}
+                >
                   {derived.infoText}
                 </ThemedText>
               </View>
 
               {summary?.scoreboard?.length ? (
                 <View
-                  style={[styles.leaderboardCard, { borderColor: theme.border, backgroundColor: theme.backgroundAlt }]}>
+                  style={[
+                    styles.leaderboardCard,
+                    {
+                      borderColor: theme.border,
+                      backgroundColor: theme.backgroundAlt,
+                    },
+                  ]}
+                >
                   <View style={styles.leaderboardHeader}>
-                    <IconSymbol name="list.bullet" size={20} color={theme.primary} />
+                    <IconSymbol
+                      name="list.bullet"
+                      size={20}
+                      color={theme.primary}
+                    />
                     <ThemedText type="subtitle" style={styles.leaderboardTitle}>
-                      Aktuelle Top {Math.min(FINALIST_LIMIT, summary.scoreboard.length)}
+                      Aktuelle Top{" "}
+                      {Math.min(FINALIST_LIMIT, summary.scoreboard.length)}
                     </ThemedText>
                   </View>
                   <View style={styles.leaderboardList}>
                     {topEntries.map((entry, index) => {
-                      const highlight = summary?.group ? entry.id === summary.group.groupId : false;
+                      const highlight = summary?.group
+                        ? entry.id === summary.group.groupId
+                        : false;
                       const rank = index + 1;
                       return (
                         <View
                           key={entry.id}
                           style={[
                             styles.leaderboardRow,
-                            highlight ? [styles.leaderboardRowActive, { borderColor: theme.primary }] : null,
-                          ]}>
+                            highlight
+                              ? [
+                                  styles.leaderboardRowActive,
+                                  { borderColor: theme.primary },
+                                ]
+                              : null,
+                          ]}
+                        >
                           <View style={styles.leaderboardRankBadge}>
-                            <ThemedText style={[styles.leaderboardRankLabel, { color: theme.text }]}>
+                            <ThemedText
+                              style={[
+                                styles.leaderboardRankLabel,
+                                { color: theme.text },
+                              ]}
+                            >
                               {rank}.
                             </ThemedText>
                           </View>
                           <View style={styles.leaderboardInfo}>
                             <ThemedText
-                              style={[styles.leaderboardName, { color: highlight ? theme.primary : theme.text }]}>
+                              style={[
+                                styles.leaderboardName,
+                                {
+                                  color: highlight ? theme.primary : theme.text,
+                                },
+                              ]}
+                            >
                               {entry.name}
                             </ThemedText>
-                            <ThemedText style={[styles.leaderboardPenalty, { color: theme.textMuted }]}>
+                            <ThemedText
+                              style={[
+                                styles.leaderboardPenalty,
+                                { color: theme.textMuted },
+                              ]}
+                            >
                               {entry.penaltySeconds > 0
-                                ? `+${entry.penaltySeconds.toLocaleString("de-DE")}s Strafe`
+                                ? `+${entry.penaltySeconds.toLocaleString(
+                                    "de-DE"
+                                  )}s Strafe`
                                 : "Keine Strafe"}
                             </ThemedText>
                           </View>
-                          <ThemedText style={[styles.leaderboardTime, { color: theme.text }]}>
+                          <ThemedText
+                            style={[
+                              styles.leaderboardTime,
+                              { color: theme.text },
+                            ]}
+                          >
                             {formatDuration(entry.durationMs)}
                           </ThemedText>
                         </View>
@@ -310,23 +514,50 @@ export default function FinalScreen() {
                       <>
                         <View style={styles.leaderboardDivider} />
                         <View
-                          style={[styles.leaderboardRow, styles.leaderboardRowActive, { borderColor: theme.primary }]}>
+                          style={[
+                            styles.leaderboardRow,
+                            styles.leaderboardRowActive,
+                            { borderColor: theme.primary },
+                          ]}
+                        >
                           <View style={styles.leaderboardRankBadge}>
-                            <ThemedText style={[styles.leaderboardRankLabel, { color: theme.text }]}>
+                            <ThemedText
+                              style={[
+                                styles.leaderboardRankLabel,
+                                { color: theme.text },
+                              ]}
+                            >
                               {ownPlacement}.
                             </ThemedText>
                           </View>
                           <View style={styles.leaderboardInfo}>
-                            <ThemedText style={[styles.leaderboardName, { color: theme.primary }]}>
+                            <ThemedText
+                              style={[
+                                styles.leaderboardName,
+                                { color: theme.primary },
+                              ]}
+                            >
                               {ownEntry.name}
                             </ThemedText>
-                            <ThemedText style={[styles.leaderboardPenalty, { color: theme.textMuted }]}>
+                            <ThemedText
+                              style={[
+                                styles.leaderboardPenalty,
+                                { color: theme.textMuted },
+                              ]}
+                            >
                               {ownEntry.penaltySeconds > 0
-                                ? `+${ownEntry.penaltySeconds.toLocaleString("de-DE")}s Strafe`
+                                ? `+${ownEntry.penaltySeconds.toLocaleString(
+                                    "de-DE"
+                                  )}s Strafe`
                                 : "Keine Strafe"}
                             </ThemedText>
                           </View>
-                          <ThemedText style={[styles.leaderboardTime, { color: theme.text }]}>
+                          <ThemedText
+                            style={[
+                              styles.leaderboardTime,
+                              { color: theme.text },
+                            ]}
+                          >
                             {formatDuration(ownEntry.durationMs)}
                           </ThemedText>
                         </View>
@@ -341,8 +572,8 @@ export default function FinalScreen() {
       </ParallaxScrollView>
 
       <HintBox>
-        Finaltipp: Tankt Wasser, stärkt eure Stimmen und bereitet einen Team-Schlachtruf vor. Im Finale zählt jede
-        Sekunde – und jeder Schluck!
+        Finaltipp: Tankt Wasser, stärkt eure Stimmen und bereitet einen
+        Team-Schlachtruf vor. Im Finale zählt jede Sekunde – und jeder Schluck!
       </HintBox>
     </ThemedView>
   );
@@ -578,22 +809,26 @@ const styles = StyleSheet.create({
   },
   partyGlow: {
     position: "absolute",
-    borderRadius: 200,
+    borderRadius: 160,
     width: 260,
     height: 260,
     opacity: 0.55,
   },
-  partyGlowPink: {
-    backgroundColor: "rgba(236,72,153,0.4)",
-    transform: [{ translateX: -30 }],
+  partyGlowPrimary: {
+    backgroundColor: "rgba(236, 72, 153, 0.45)",
+    left: 0,
   },
-  partyGlowBlue: {
-    backgroundColor: "rgba(59,130,246,0.35)",
-    transform: [{ translateX: 60 }, { translateY: 20 }],
+  partyGlowSecondary: {
+    backgroundColor: "rgba(59, 130, 246, 0.35)",
+    width: 200,
+    height: 200,
+    borderRadius: 140,
+    left: 0,
   },
   partyCrown: {
-    width: 210,
+    width: 200,
     height: 150,
+    marginTop: 10,
   },
   confetti: {
     position: "absolute",
@@ -601,24 +836,40 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   confettiOne: {
-    height: 34,
-    backgroundColor: "#F59E0B",
-    top: 30,
-    left: 60,
+    height: 36,
+    backgroundColor: "#F97316",
+    top: 28,
+    left: 50,
     transform: [{ rotate: "18deg" }],
   },
   confettiTwo: {
-    height: 26,
-    backgroundColor: "#22C55E",
-    top: 40,
-    right: 70,
-    transform: [{ rotate: "-16deg" }],
+    height: 28,
+    backgroundColor: "#6366F1",
+    top: 24,
+    right: 60,
+    transform: [{ rotate: "-12deg" }],
   },
   confettiThree: {
-    height: 30,
-    backgroundColor: "#8B5CF6",
-    bottom: 30,
-    right: 90,
-    transform: [{ rotate: "32deg" }],
+    height: 22,
+    backgroundColor: "#22C55E",
+    bottom: 26,
+    left: 190,
+    transform: [{ rotate: "-28deg" }],
+  },
+  confettiFour: {
+    height: 32,
+    backgroundColor: "#FACC15",
+    bottom: 18,
+    right: 80,
+    transform: [{ rotate: "24deg" }],
+  },
+  papaLogo: {
+    height: 280,
+    width: 230,
+    bottom: 0,
+    left: 0,
+    top: 0,
+    right: 0,
+    position: "absolute",
   },
 });

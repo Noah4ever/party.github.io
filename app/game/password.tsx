@@ -1,5 +1,11 @@
 import { Image } from "expo-image";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -10,7 +16,6 @@ import {
 } from "react-native";
 
 import { Button } from "@/components/game/Button";
-import { HintBox } from "@/components/game/HintBox";
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -52,7 +57,12 @@ export default function PasswordScreen() {
         if (!mounted) {
           return;
         }
-        if (res && "validPasswords" in res && Array.isArray(res.validPasswords) && res.validPasswords.length > 0) {
+        if (
+          res &&
+          "validPasswords" in res &&
+          Array.isArray(res.validPasswords) &&
+          res.validPasswords.length > 0
+        ) {
           setValidPasswords(res.validPasswords as string[]);
           setError(null);
         } else {
@@ -112,15 +122,21 @@ export default function PasswordScreen() {
     }
   }, [router, success]);
 
-  const normalizedInput = useMemo(() => digits.join("").toUpperCase(), [digits]);
-  const isComplete = passwordLength > 0 && digits.every((digit) => digit.trim().length === 1);
+  const normalizedInput = useMemo(
+    () => digits.join("").toUpperCase(),
+    [digits]
+  );
+  const isComplete =
+    passwordLength > 0 && digits.every((digit) => digit.trim().length === 1);
 
   const isMatch = useMemo(() => {
     if (!isComplete) {
       return false;
     }
     const normal = normalizedInput.trim();
-    return validPasswords.some((password) => password.toUpperCase().trim() === normal);
+    return validPasswords.some(
+      (password) => password.toUpperCase().trim() === normal
+    );
   }, [isComplete, normalizedInput, validPasswords]);
 
   const handleDigitChange = useCallback((index: number, value: string) => {
@@ -154,7 +170,10 @@ export default function PasswordScreen() {
   }, []);
 
   const handleKeyPress = useCallback(
-    (index: number, event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    (
+      index: number,
+      event: NativeSyntheticEvent<TextInputKeyPressEventData>
+    ) => {
       if (event.nativeEvent.key === "Backspace" && digits[index] === "") {
         const prevIndex = index - 1;
         if (prevIndex >= 0) {
@@ -189,21 +208,30 @@ export default function PasswordScreen() {
   return (
     <ThemedView style={styles.screen}>
       <ParallaxScrollView
-        headerBackgroundColor={headerColors}
-        headerHeight={180}
+        headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
         headerImage={
           <View style={styles.partyHeader}>
-            <View style={[styles.partyGlow, styles.partyGlowPink]} />
-            <View style={[styles.partyGlow, styles.partyGlowBlue]} />
-            <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="contain" />
+            <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
+            <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
+            <Image
+              source={require("@/assets/images/papa/crown.png")}
+              style={styles.papaLogo}
+            />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
+            <View style={[styles.confetti, styles.confettiFour]} />
           </View>
-        }>
+        }
+      >
         <ThemedView
-          style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}
-          testID="password-hero-card">
+          style={[
+            styles.card,
+            styles.heroCard,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+          testID="password-hero-card"
+        >
           <View style={styles.titleRow}>
             <ThemedText type="title" style={styles.titleText}>
               Finale Challenge
@@ -211,35 +239,61 @@ export default function PasswordScreen() {
             <HelloWave />
           </View>
           <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
-            Ihr habt es fast geschafft! Holt euch den geheimen Code vom Gastgeber und gebt ihn hier ein, um den letzten
-            Schritt ins Finale freizuschalten.
+            Ihr habt es fast geschafft! Bringt nun den Gastgeber einen Shot und
+            trinkt mit ihn, mit etwas Glück und Charm wird er euch den Schlüssel
+            verraten!
           </ThemedText>
-          <View style={[styles.statusBadge, { backgroundColor: theme.backgroundAlt, borderColor: theme.border }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: theme.backgroundAlt,
+                borderColor: theme.border,
+              },
+            ]}
+          >
             <IconSymbol name="lock.circle" size={18} color={theme.primary} />
-            <ThemedText style={[styles.statusBadgeLabel, { color: theme.textMuted }]}>
+            <ThemedText
+              style={[styles.statusBadgeLabel, { color: theme.textMuted }]}
+            >
               Nur das richtige Passwort öffnet die Tür.
             </ThemedText>
           </View>
         </ThemedView>
 
-        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <ThemedView
+          style={[
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           <ThemedText type="subtitle" style={styles.sectionHeading}>
             Gastgeber-Schlüssel
           </ThemedText>
-          <ThemedText style={[styles.sectionIntro, { color: theme.textSecondary }]}>
-            Jeder gültige Code hat die gleiche Länge. Tragt gemeinsam die Zeichen ein und bestätigt eure Eingabe.
+          <ThemedText
+            style={[styles.sectionIntro, { color: theme.textSecondary }]}
+          >
+            Jeder gültige Code hat die gleiche Länge. Tragt gemeinsam die
+            Zeichen ein und bestätigt eure Eingabe.
           </ThemedText>
 
           {loading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color={theme.primary} />
-              <ThemedText style={[styles.loadingText, { color: theme.textMuted }]}>Codes werden geladen …</ThemedText>
+              <ThemedText
+                style={[styles.loadingText, { color: theme.textMuted }]}
+              >
+                Codes werden geladen …
+              </ThemedText>
             </View>
           ) : error ? (
-            <ThemedText style={[styles.errorText, { color: theme.danger }]}>{error}</ThemedText>
+            <ThemedText style={[styles.errorText, { color: theme.danger }]}>
+              {error}
+            </ThemedText>
           ) : passwordLength === 0 ? (
             <ThemedText style={[styles.errorText, { color: theme.textMuted }]}>
-              Keine Passwörter verfügbar. Fragt den Gastgeber, ob das Spiel korrekt vorbereitet wurde.
+              Keine Passwörter verfügbar. Fragt den Gastgeber, ob das Spiel
+              korrekt vorbereitet wurde.
             </ThemedText>
           ) : (
             <>
@@ -261,7 +315,10 @@ export default function PasswordScreen() {
                     style={[
                       styles.digitInput,
                       {
-                        borderColor: attemptedInvalid && isComplete && !isMatch ? theme.danger : theme.border,
+                        borderColor:
+                          attemptedInvalid && isComplete && !isMatch
+                            ? theme.danger
+                            : theme.border,
                         backgroundColor: theme.inputBackground,
                         color: theme.text,
                       },
@@ -273,17 +330,43 @@ export default function PasswordScreen() {
                 ))}
               </View>
               {attemptedInvalid && isComplete && !isMatch ? (
-                <View style={[styles.feedbackRow, styles.feedbackRowError, { borderColor: theme.danger }]}>
-                  <IconSymbol name="xmark.circle" size={18} color={theme.danger} style={{ marginRight: 8 }} />
-                  <ThemedText style={[styles.feedbackText, { color: theme.danger }]}>
+                <View
+                  style={[
+                    styles.feedbackRow,
+                    styles.feedbackRowError,
+                    { borderColor: theme.danger },
+                  ]}
+                >
+                  <IconSymbol
+                    name="xmark.circle"
+                    size={18}
+                    color={theme.danger}
+                    style={{ marginRight: 8 }}
+                  />
+                  <ThemedText
+                    style={[styles.feedbackText, { color: theme.danger }]}
+                  >
                     Das war nicht der richtige Code. Probiert es erneut!
                   </ThemedText>
                 </View>
               ) : null}
               {success ? (
-                <View style={[styles.feedbackRow, styles.feedbackRowSuccess, { borderColor: theme.success }]}>
-                  <IconSymbol name="checkmark.circle" size={18} color={theme.success} style={{ marginRight: 8 }} />
-                  <ThemedText style={[styles.feedbackText, { color: theme.success }]}>
+                <View
+                  style={[
+                    styles.feedbackRow,
+                    styles.feedbackRowSuccess,
+                    { borderColor: theme.success },
+                  ]}
+                >
+                  <IconSymbol
+                    name="checkmark.circle"
+                    size={18}
+                    color={theme.success}
+                    style={{ marginRight: 8 }}
+                  />
+                  <ThemedText
+                    style={[styles.feedbackText, { color: theme.success }]}
+                  >
                     Richtig! Ihr werdet jetzt ins Finale teleportiert …
                   </ThemedText>
                 </View>
@@ -295,11 +378,6 @@ export default function PasswordScreen() {
           )}
         </ThemedView>
       </ParallaxScrollView>
-
-      <HintBox>
-        Tipp: Der Gastgeber verrät euch den Code nur, wenn ihr den Shot gemeinsam trinkt – also seid charmant und
-        aufmerksam!
-      </HintBox>
     </ThemedView>
   );
 }
@@ -413,22 +491,26 @@ const styles = StyleSheet.create({
   },
   partyGlow: {
     position: "absolute",
-    borderRadius: 200,
+    borderRadius: 160,
     width: 260,
     height: 260,
     opacity: 0.55,
   },
-  partyGlowPink: {
-    backgroundColor: "rgba(236,72,153,0.4)",
-    transform: [{ translateX: -30 }],
+  partyGlowPrimary: {
+    backgroundColor: "rgba(236, 72, 153, 0.45)",
+    left: 0,
   },
-  partyGlowBlue: {
-    backgroundColor: "rgba(59,130,246,0.35)",
-    transform: [{ translateX: 60 }, { translateY: 20 }],
+  partyGlowSecondary: {
+    backgroundColor: "rgba(59, 130, 246, 0.35)",
+    width: 200,
+    height: 200,
+    borderRadius: 140,
+    left: 0,
   },
   partyCrown: {
-    width: 210,
+    width: 200,
     height: 150,
+    marginTop: 10,
   },
   confetti: {
     position: "absolute",
@@ -436,24 +518,40 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   confettiOne: {
-    height: 34,
-    backgroundColor: "#F59E0B",
-    top: 30,
-    left: 60,
+    height: 36,
+    backgroundColor: "#F97316",
+    top: 28,
+    left: 50,
     transform: [{ rotate: "18deg" }],
   },
   confettiTwo: {
-    height: 26,
-    backgroundColor: "#22C55E",
-    top: 40,
-    right: 70,
-    transform: [{ rotate: "-16deg" }],
+    height: 28,
+    backgroundColor: "#6366F1",
+    top: 24,
+    right: 60,
+    transform: [{ rotate: "-12deg" }],
   },
   confettiThree: {
-    height: 30,
-    backgroundColor: "#8B5CF6",
-    bottom: 30,
-    right: 90,
-    transform: [{ rotate: "32deg" }],
+    height: 22,
+    backgroundColor: "#22C55E",
+    bottom: 26,
+    left: 190,
+    transform: [{ rotate: "-28deg" }],
+  },
+  confettiFour: {
+    height: 32,
+    backgroundColor: "#FACC15",
+    bottom: 18,
+    right: 80,
+    transform: [{ rotate: "24deg" }],
+  },
+  papaLogo: {
+    height: 280,
+    width: 230,
+    bottom: 0,
+    left: 0,
+    top: 0,
+    right: 0,
+    position: "absolute",
   },
 });

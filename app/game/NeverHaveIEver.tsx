@@ -72,13 +72,20 @@ export default function HomeScreen() {
 
   return (
     <ParallaxScrollView
-      headerHeight={180}
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
       headerImage={
-        <Image
-          source={require("@/assets/images/crown.png")}
-          style={styles.papaLogo}
-        />
+        <View style={styles.partyHeader}>
+          <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
+          <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
+          <Image
+            source={require("@/assets/images/papa/crown.png")}
+            style={styles.papaLogo}
+          />
+          <View style={[styles.confetti, styles.confettiOne]} />
+          <View style={[styles.confetti, styles.confettiTwo]} />
+          <View style={[styles.confetti, styles.confettiThree]} />
+          <View style={[styles.confetti, styles.confettiFour]} />
+        </View>
       }
     >
       <View
@@ -127,10 +134,73 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     backgroundColor: "transparent",
   },
+  partyHeader: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  partyGlow: {
+    position: "absolute",
+    borderRadius: 160,
+    width: 260,
+    height: 260,
+    opacity: 0.55,
+  },
+  partyGlowPrimary: {
+    backgroundColor: "rgba(236, 72, 153, 0.45)",
+    left: 0,
+  },
+  partyGlowSecondary: {
+    backgroundColor: "rgba(59, 130, 246, 0.35)",
+    width: 200,
+    height: 200,
+    borderRadius: 140,
+    left: 0,
+  },
+  partyCrown: {
+    width: 200,
+    height: 150,
+    marginTop: 10,
+  },
+  confetti: {
+    position: "absolute",
+    width: 10,
+    borderRadius: 4,
+  },
+  confettiOne: {
+    height: 36,
+    backgroundColor: "#F97316",
+    top: 28,
+    left: 50,
+    transform: [{ rotate: "18deg" }],
+  },
+  confettiTwo: {
+    height: 28,
+    backgroundColor: "#6366F1",
+    top: 24,
+    right: 60,
+    transform: [{ rotate: "-12deg" }],
+  },
+  confettiThree: {
+    height: 22,
+    backgroundColor: "#22C55E",
+    bottom: 26,
+    left: 190,
+    transform: [{ rotate: "-28deg" }],
+  },
+  confettiFour: {
+    height: 32,
+    backgroundColor: "#FACC15",
+    bottom: 18,
+    right: 80,
+    transform: [{ rotate: "24deg" }],
+  },
   papaLogo: {
-    height: 180,
-    width: 290,
+    height: 280,
+    width: 230,
     bottom: 0,
+    left: 0,
     top: 0,
     right: 0,
     position: "absolute",
