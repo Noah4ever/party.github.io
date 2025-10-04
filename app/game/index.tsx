@@ -15,7 +15,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import QRCodeStyled from "react-native-qrcode-styled";
 
-//TODO: ASHLI fix picture
 //TODO: TG change colors
 
 export default function HomeScreen() {
