@@ -34,15 +34,16 @@ export default function HomeScreen() {
         headerHeight={180}
         headerImage={
           <View style={styles.partyHeader}>
-            <View style={[styles.partyGlow, styles.partyGlowPink]} />
-            <View style={[styles.partyGlow, styles.partyGlowBlue]} />
-            <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="contain" />
+            <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
+            <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
+            <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
+            <View style={[styles.confetti, styles.confettiFour]} />
           </View>
         }>
-        <ThemedView style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <ThemedView style={styles.textContainer}>
           <ThemedText type="title">Challenge 3</ThemedText>
           <ThemedText type="subtitle">Ihr sieht geil aus! 🔥</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
@@ -73,10 +74,74 @@ const styles = StyleSheet.create({
   },
   partyGlow: {
     position: "absolute",
-    borderRadius: 200,
+    borderRadius: 160,
     width: 260,
     height: 260,
     opacity: 0.55,
+  },
+  partyGlowPrimary: {
+    backgroundColor: "rgba(236, 72, 153, 0.45)",
+    left: 0,
+  },
+  partyGlowSecondary: {
+    backgroundColor: "rgba(59, 130, 246, 0.35)",
+    width: 200,
+    height: 200,
+    borderRadius: 140,
+    left: 0,
+  },
+  partyCrown: {
+    width: 200,
+    height: 150,
+    marginTop: 10,
+  },
+  confetti: {
+    position: "absolute",
+    width: 10,
+    borderRadius: 4,
+  },
+  confettiOne: {
+    height: 36,
+    backgroundColor: "#F97316",
+    top: 28,
+    left: 50,
+    transform: [{ rotate: "18deg" }],
+  },
+  confettiTwo: {
+    height: 28,
+    backgroundColor: "#6366F1",
+    top: 24,
+    right: 60,
+    transform: [{ rotate: "-12deg" }],
+  },
+  confettiThree: {
+    height: 22,
+    backgroundColor: "#22C55E",
+    bottom: 26,
+    left: 190,
+    transform: [{ rotate: "-28deg" }],
+  },
+  confettiFour: {
+    height: 32,
+    backgroundColor: "#FACC15",
+    bottom: 18,
+    right: 80,
+    transform: [{ rotate: "24deg" }],
+  },
+  papaLogo: {
+    height: 280,
+    width: 230,
+    bottom: 0,
+    left: 0,
+    top: 0,
+    right: 0,
+    position: "absolute",
+    borderRadius: 200,
+    opacity: 0.55,
+  },
+
+  textContainer: {
+    gap: 15,
   },
   partyGlowPink: {
     backgroundColor: "rgba(236,72,153,0.4)",
@@ -85,36 +150,6 @@ const styles = StyleSheet.create({
   partyGlowBlue: {
     backgroundColor: "rgba(59,130,246,0.35)",
     transform: [{ translateX: 60 }, { translateY: 20 }],
-  },
-  partyCrown: {
-    width: 210,
-    height: 150,
-  },
-  confetti: {
-    position: "absolute",
-    width: 10,
-    borderRadius: 4,
-  },
-  confettiOne: {
-    height: 34,
-    backgroundColor: "#F59E0B",
-    top: 30,
-    left: 60,
-    transform: [{ rotate: "18deg" }],
-  },
-  confettiTwo: {
-    height: 26,
-    backgroundColor: "#22C55E",
-    top: 40,
-    right: 70,
-    transform: [{ rotate: "-16deg" }],
-  },
-  confettiThree: {
-    height: 30,
-    backgroundColor: "#8B5CF6",
-    bottom: 30,
-    right: 90,
-    transform: [{ rotate: "32deg" }],
   },
   card: {
     borderRadius: 22,
