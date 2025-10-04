@@ -35,20 +35,31 @@ const MAPPING = {
   "questionmark.circle": "help-circle-outline",
   "text.bubble": "chatbubble-ellipses-outline",
   "lock.circle": "lock-closed-outline",
+  "lock.open": "lock-open-outline",
   "arrow.down.circle": "arrow-down-circle-outline",
   "arrow.up.circle": "arrow-up-circle-outline",
   "arrow.right.circle": "arrow-forward-circle-outline",
+  "arrow.clockwise": "refresh-outline",
   "checkmark.circle": "checkmark-circle",
   "checkmark.circle.outline": "checkmark-circle-outline",
+  "checkmark.seal": "ribbon-outline",
   "play.circle.fill": "play-circle",
   "scanner.circle": "scan-outline",
+  "qrcode.viewfinder": "scan-circle-outline",
+  "camera.viewfinder": "camera-outline",
+  camera: "camera",
+  timer: "time-outline",
+  "xmark.circle": "close-circle",
   "moon.fill": "moon",
   "sun.max.fill": "sunny",
   plus: "add",
   "person.fill": "person",
   "person.crop.circle.badge.plus": "person-add",
   circle: "ellipse-outline",
+  "exclamationmark.triangle": "warning-outline",
+  "star.circle": "star-outline",
   logout: "log-out",
+  podium: "podium-outline",
 } as const satisfies IconMapping;
 
 // To add new icons:
@@ -76,7 +87,5 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return (
-    <IconSet color={color} size={size} name={MAPPING[name]} style={style} />
-  );
+  return <IconSet color={color} size={size} name={MAPPING[name]} style={style} />;
 }

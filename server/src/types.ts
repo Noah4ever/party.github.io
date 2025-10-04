@@ -22,6 +22,20 @@ export interface GroupProgress {
   currentGame?: string; // id of current game
   quizScore?: number;
   attempts?: number; // password attempts
+  selfieUrl?: string;
+  selfieUploadedAt?: string;
+  lastSelfieChallenge?: string;
+  timePenaltySeconds?: number;
+  timePenaltyEvents?: TimePenaltyEntry[];
+}
+
+export interface TimePenaltyEntry {
+  id: string;
+  seconds: number;
+  reason?: string;
+  source?: string;
+  questionId?: string;
+  addedAt: string;
 }
 
 export interface NeverHaveIEverPack {

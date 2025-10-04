@@ -6,10 +6,12 @@ import {
   FunnyAnswer,
   FunnyQuestion,
   GameState,
+  Group,
   NeverHaveIEverPack,
   PasswordGameConfig,
   QuizPack,
   QuizQuestion,
+  TimePenaltyEntry,
 } from "./types.js";
 
 export const gamesRouter = Router();
@@ -27,6 +29,104 @@ gamesRouter.get("/state", async (_req, res) => {
   const data = await loadData();
   const state: GameState = data.gameState ?? { started: false };
   res.json(state);
+});
+
+type FinalScoreboardEntry = {
+  id: string;
+  name: string;
+  durationMs: number;
+  rawDurationMs: number;
+  penaltySeconds: number;
+  startedAt?: string;
+  finishedAt?: string;
+};
+
+const parseIsoTime = (value?: string | null): number | undefined => {
+  if (!value) return undefined;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? ms : undefined;
+};
+
+const computeGroupScore = (group: Group, fallbackStartMs?: number): FinalScoreboardEntry | null => {
+  const startedAtMs = parseIsoTime(group.startedAt) ?? fallbackStartMs;
+  const finishedAtMs = parseIsoTime(group.finishedAt);
+  if (startedAtMs === undefined || finishedAtMs === undefined) {
+    return null;
+  }
+  const penaltySeconds = Math.max(0, group.progress?.timePenaltySeconds ?? 0);
+  const rawDurationMs = Math.max(0, finishedAtMs - startedAtMs);
+  return {
+    id: group.id,
+    name: group.name,
+    durationMs: rawDurationMs + penaltySeconds * 1000,
+    rawDurationMs,
+    penaltySeconds,
+    startedAt: group.startedAt,
+    finishedAt: group.finishedAt,
+  };
+};
+
+/**
+ * GET /api/games/final-summary
+ *
+ * Returns aggregated scoreboard information for the final screen, including the calling group's
+ * placement, total participants, and computed penalty-adjusted times.
+ */
+gamesRouter.get("/final-summary", async (req, res) => {
+  const groupIdRaw = req.query.groupId;
+  const groupId = typeof groupIdRaw === "string" ? groupIdRaw.trim() : undefined;
+  if (!groupId) {
+    return res.status(400).json({ message: "groupId query parameter required" });
+  }
+
+  const data = await loadData();
+  const groups = data.groups ?? [];
+  const targetGroup = groups.find((group) => group.id === groupId);
+  if (!targetGroup) {
+    return res.status(404).json({ message: "group not found" });
+  }
+
+  const passwordConfig = data.passwordGames.find((cfg) => cfg.active) ?? data.passwordGames[0];
+  const fallbackGlobalMs =
+    parseIsoTime(passwordConfig?.startedAt) ?? parseIsoTime(data.gameState?.startedAt) ?? undefined;
+  const scoreboard = groups
+    .map((group) => computeGroupScore(group, fallbackGlobalMs))
+    .filter((entry): entry is FinalScoreboardEntry => entry !== null)
+    .sort((a, b) => {
+      if (a.durationMs !== b.durationMs) {
+        return a.durationMs - b.durationMs;
+      }
+      const aFinished = parseIsoTime(a.finishedAt);
+      const bFinished = parseIsoTime(b.finishedAt);
+      if (aFinished !== undefined && bFinished !== undefined) {
+        return aFinished - bFinished;
+      }
+      return 0;
+    });
+
+  const placementIndex = scoreboard.findIndex((entry) => entry.id === targetGroup.id);
+  const fallbackStartMsForGroup = parseIsoTime(targetGroup.startedAt) ?? fallbackGlobalMs;
+  const ownScore = computeGroupScore(targetGroup, fallbackStartMsForGroup);
+
+  res.json({
+    group: {
+      groupId: targetGroup.id,
+      groupName: targetGroup.name,
+      durationMs: ownScore?.durationMs,
+      rawDurationMs: ownScore?.rawDurationMs,
+      penaltySeconds: Math.max(0, targetGroup.progress?.timePenaltySeconds ?? 0),
+      placement: placementIndex >= 0 ? placementIndex + 1 : undefined,
+      startedAt: targetGroup.startedAt,
+      finishedAt: targetGroup.finishedAt,
+    },
+    totalFinished: scoreboard.length,
+    totalGroups: groups.length,
+    scoreboard,
+    fallback: {
+      passwordStartedAt: passwordConfig?.startedAt ?? null,
+      gameStartedAt: data.gameState?.startedAt ?? null,
+    },
+  });
 });
 
 /**
@@ -64,13 +164,10 @@ gamesRouter.get("/guests/:guestId/clues", async (req, res) => {
   }
 
   const partnerId = group.guestIds.find((id) => id !== guestId) ?? null;
-  const partner = partnerId
-    ? data.guests.find((g) => g.id === partnerId)
-    : null;
+  const partner = partnerId ? data.guests.find((g) => g.id === partnerId) : null;
   const clues = partner
     ? [partner.clue1, partner.clue2].filter(
-        (value): value is string =>
-          typeof value === "string" && value.trim().length > 0
+        (value): value is string => typeof value === "string" && value.trim().length > 0
       )
     : [];
 
@@ -201,6 +298,79 @@ gamesRouter.post("/groups/:groupId/progress", async (req, res) => {
   res.json(result);
 });
 
+/**
+ * POST /api/games/groups/:groupId/time-penalty
+ *
+ * Adds a time penalty entry for the specified group. Intended for quiz or other challenges
+ * where incorrect answers should add extra time to the group's final duration.
+ *
+ * Params: groupId (string)
+ * Body: { seconds: number; reason?: string; source?: string; questionId?: string }
+ * Response: { success: true; totalPenaltySeconds: number; penalty: TimePenaltyEntry }
+ */
+gamesRouter.post("/groups/:groupId/time-penalty", async (req, res) => {
+  const { groupId } = req.params;
+  const { seconds, reason, source, questionId } = req.body || {};
+
+  if (!groupId) {
+    return res.status(400).json({ message: "groupId required" });
+  }
+
+  const numericSeconds = Number(seconds);
+  if (!Number.isFinite(numericSeconds) || numericSeconds <= 0) {
+    return res.status(400).json({ message: "seconds (positive number) required" });
+  }
+
+  const sanitizedReason = typeof reason === "string" && reason.trim().length > 0 ? reason.trim() : undefined;
+  const sanitizedSource = typeof source === "string" && source.trim().length > 0 ? source.trim() : undefined;
+  const sanitizedQuestionId =
+    typeof questionId === "string" && questionId.trim().length > 0 ? questionId.trim() : undefined;
+  const entryId = nanoid(10);
+  const addedAt = new Date().toISOString();
+
+  const outcome = await mutate((d) => {
+    const group = d.groups.find((g) => g.id === groupId);
+    if (!group) {
+      return { error: { status: 404, message: "group not found" } };
+    }
+
+    if (!Array.isArray(group.progress.timePenaltyEvents)) {
+      group.progress.timePenaltyEvents = [];
+    }
+
+    if (typeof group.progress.timePenaltySeconds !== "number" || Number.isNaN(group.progress.timePenaltySeconds)) {
+      group.progress.timePenaltySeconds = 0;
+    }
+
+    const entry: TimePenaltyEntry = {
+      id: entryId,
+      seconds: Math.round(numericSeconds),
+      reason: sanitizedReason,
+      source: sanitizedSource,
+      questionId: sanitizedQuestionId,
+      addedAt,
+    };
+
+    group.progress.timePenaltySeconds += entry.seconds;
+    group.progress.timePenaltyEvents.push(entry);
+
+    return {
+      success: true,
+      totalPenaltySeconds: group.progress.timePenaltySeconds,
+      penalty: entry,
+    };
+  });
+
+  if ("error" in outcome) {
+    const error = outcome.error;
+    const status = error?.status ?? 400;
+    const message = error?.message ?? "request failed";
+    return res.status(status).json({ message });
+  }
+
+  res.json(outcome);
+});
+
 async function ensureSingleNeverHaveIEverPack(): Promise<NeverHaveIEverPack> {
   return mutate((d) => {
     const entries = d.neverHaveIEverPacks as unknown[];
@@ -222,22 +392,14 @@ async function ensureSingleNeverHaveIEverPack(): Promise<NeverHaveIEverPack> {
     let primary: NeverHaveIEverPack | null = null;
 
     for (const entry of entries) {
-      if (
-        entry &&
-        typeof entry === "object" &&
-        "statements" in (entry as any)
-      ) {
+      if (entry && typeof entry === "object" && "statements" in (entry as any)) {
         const pack = entry as Partial<NeverHaveIEverPack> & {
           statements?: unknown;
         };
         if (!primary) {
           primary = {
-            id:
-              typeof pack.id === "string" && pack.id ? pack.id : "nhie-default",
-            title:
-              typeof pack.title === "string" && pack.title
-                ? pack.title
-                : "Standard Pack",
+            id: typeof pack.id === "string" && pack.id ? pack.id : "nhie-default",
+            title: typeof pack.title === "string" && pack.title ? pack.title : "Standard Pack",
             statements: [],
           };
         }
@@ -285,9 +447,7 @@ async function ensureSingleQuizPack(): Promise<QuizPack> {
     const [primary, ...rest] = d.quizPacks;
     rest.forEach((pack) => {
       pack.questions.forEach((question) => {
-        if (
-          !primary.questions.some((existing) => existing.id === question.id)
-        ) {
+        if (!primary.questions.some((existing) => existing.id === question.id)) {
           primary.questions.push(question);
         }
       });
@@ -390,8 +550,7 @@ gamesRouter.post("/quiz/:packId/questions", requireAuth, async (req, res) => {
   const { packId } = req.params;
   const { question, answers, difficulty, imageUrl } = req.body || {};
   if (!question) return res.status(400).json({ message: "question required" });
-  if (!Array.isArray(answers) || answers.length < 2)
-    return res.status(400).json({ message: "answers min 2" });
+  if (!Array.isArray(answers) || answers.length < 2) return res.status(400).json({ message: "answers min 2" });
   const q: QuizQuestion = {
     id: nanoid(8),
     question,
@@ -419,28 +578,23 @@ gamesRouter.post("/quiz/:packId/questions", requireAuth, async (req, res) => {
  * Body: { question?: string; answers?: string[]; difficulty?: QuizQuestion['difficulty']; imageUrl?: string }
  * Response: QuizQuestion
  */
-gamesRouter.put(
-  "/quiz/:packId/questions/:qid",
-  requireAuth,
-  async (req, res) => {
-    const { packId, qid } = req.params;
-    const { question, answers, difficulty, imageUrl } = req.body || {};
-    const updated = await mutate((d) => {
-      const pack = d.quizPacks.find((p) => p.id === packId);
-      if (!pack) return null;
-      const q = pack.questions.find((item) => item.id === qid);
-      if (!q) return null;
-      if (question !== undefined) q.question = question;
-      if (answers) q.answers = answers as QuizQuestion["answers"];
-      if (difficulty !== undefined) q.difficulty = difficulty;
-      if (imageUrl !== undefined) q.imageUrl = imageUrl;
-      return q;
-    });
-    if (!updated)
-      return res.status(404).json({ message: "question not found" });
-    res.json(updated);
-  }
-);
+gamesRouter.put("/quiz/:packId/questions/:qid", requireAuth, async (req, res) => {
+  const { packId, qid } = req.params;
+  const { question, answers, difficulty, imageUrl } = req.body || {};
+  const updated = await mutate((d) => {
+    const pack = d.quizPacks.find((p) => p.id === packId);
+    if (!pack) return null;
+    const q = pack.questions.find((item) => item.id === qid);
+    if (!q) return null;
+    if (question !== undefined) q.question = question;
+    if (answers) q.answers = answers as QuizQuestion["answers"];
+    if (difficulty !== undefined) q.difficulty = difficulty;
+    if (imageUrl !== undefined) q.imageUrl = imageUrl;
+    return q;
+  });
+  if (!updated) return res.status(404).json({ message: "question not found" });
+  res.json(updated);
+});
 
 /**
  * DELETE /api/games/quiz/:packId/questions/:qid
@@ -448,23 +602,19 @@ gamesRouter.put(
  * Deletes a question from the specified quiz pack. Requires admin authentication.
  * Returns 204 when removed or 404 if the question is missing.
  */
-gamesRouter.delete(
-  "/quiz/:packId/questions/:qid",
-  requireAuth,
-  async (req, res) => {
-    const { packId, qid } = req.params;
-    const ok = await mutate((d) => {
-      const pack = d.quizPacks.find((p) => p.id === packId);
-      if (!pack) return false;
-      const idx = pack.questions.findIndex((question) => question.id === qid);
-      if (idx === -1) return false;
-      pack.questions.splice(idx, 1);
-      return true;
-    });
-    if (!ok) return res.status(404).json({ message: "question not found" });
-    res.status(204).end();
-  }
-);
+gamesRouter.delete("/quiz/:packId/questions/:qid", requireAuth, async (req, res) => {
+  const { packId, qid } = req.params;
+  const ok = await mutate((d) => {
+    const pack = d.quizPacks.find((p) => p.id === packId);
+    if (!pack) return false;
+    const idx = pack.questions.findIndex((question) => question.id === qid);
+    if (idx === -1) return false;
+    pack.questions.splice(idx, 1);
+    return true;
+  });
+  if (!ok) return res.status(404).json({ message: "question not found" });
+  res.status(204).end();
+});
 
 async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
   return mutate((d) => {
@@ -501,11 +651,7 @@ async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
     };
 
     for (const entry of entries) {
-      if (
-        entry &&
-        typeof entry === "object" &&
-        Array.isArray((entry as any).validPasswords)
-      ) {
+      if (entry && typeof entry === "object" && Array.isArray((entry as any).validPasswords)) {
         const cfg = entry as Partial<PasswordGameConfig> & {
           validPasswords: unknown[];
         };
@@ -516,10 +662,7 @@ async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
         aggregatedStartedAt = pickEarliest(aggregatedStartedAt, cfg.startedAt);
         aggregatedEndedAt = pickLatest(aggregatedEndedAt, cfg.endedAt);
         aggregatedUpdatedAt = pickLatest(aggregatedUpdatedAt, cfg.updatedAt);
-        if (
-          aggregatedRequired === undefined &&
-          typeof cfg.requiredCorrectGroups === "number"
-        ) {
+        if (aggregatedRequired === undefined && typeof cfg.requiredCorrectGroups === "number") {
           aggregatedRequired = cfg.requiredCorrectGroups;
         }
         for (const pwd of cfg.validPasswords) {
@@ -539,16 +682,10 @@ async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
     }
 
     const primary: PasswordGameConfig = {
-      id:
-        typeof firstConfig.id === "string" && firstConfig.id
-          ? firstConfig.id
-          : "password-default",
+      id: typeof firstConfig.id === "string" && firstConfig.id ? firstConfig.id : "password-default",
       validPasswords: collected,
       active: aggregatedActive || !!firstConfig.active,
-      requiredCorrectGroups:
-        aggregatedRequired !== undefined
-          ? aggregatedRequired
-          : firstConfig.requiredCorrectGroups,
+      requiredCorrectGroups: aggregatedRequired !== undefined ? aggregatedRequired : firstConfig.requiredCorrectGroups,
       startedAt: aggregatedStartedAt ?? firstConfig.startedAt,
       endedAt: aggregatedEndedAt ?? firstConfig.endedAt,
       updatedAt: aggregatedUpdatedAt ?? firstConfig.updatedAt,
@@ -594,9 +731,7 @@ gamesRouter.get("/never-have-i-ever", async (_req, res) => {
 gamesRouter.post("/never-have-i-ever", requireAuth, async (req, res) => {
   const { title, statements } = req.body || {};
   if (!title) return res.status(400).json({ message: "title required" });
-  const sanitizedStatements = Array.isArray(statements)
-    ? statements.map((s: unknown) => String(s))
-    : [];
+  const sanitizedStatements = Array.isArray(statements) ? statements.map((s: unknown) => String(s)) : [];
   const pack: NeverHaveIEverPack = {
     id: nanoid(8),
     title,
@@ -642,21 +777,17 @@ gamesRouter.put("/never-have-i-ever/:packId", requireAuth, async (req, res) => {
  * Removes the specified Never Have I Ever pack. Requires admin authentication. Returns
  * 204 on success or 404 if the pack cannot be found.
  */
-gamesRouter.delete(
-  "/never-have-i-ever/:packId",
-  requireAuth,
-  async (req, res) => {
-    const { packId } = req.params;
-    const ok = await mutate((d) => {
-      const idx = d.neverHaveIEverPacks.findIndex((p) => p.id === packId);
-      if (idx === -1) return false;
-      d.neverHaveIEverPacks.splice(idx, 1);
-      return true;
-    });
-    if (!ok) return res.status(404).json({ message: "pack not found" });
-    res.status(204).end();
-  }
-);
+gamesRouter.delete("/never-have-i-ever/:packId", requireAuth, async (req, res) => {
+  const { packId } = req.params;
+  const ok = await mutate((d) => {
+    const idx = d.neverHaveIEverPacks.findIndex((p) => p.id === packId);
+    if (idx === -1) return false;
+    d.neverHaveIEverPacks.splice(idx, 1);
+    return true;
+  });
+  if (!ok) return res.status(404).json({ message: "pack not found" });
+  res.status(204).end();
+});
 
 /**
  * GET /api/games/password-game
@@ -690,9 +821,7 @@ gamesRouter.post("/password-game", requireAuth, async (req, res) => {
       d.passwordGames = [cfg];
     }
     if (Array.isArray(validPasswords)) {
-      const sanitized = validPasswords
-        .map((value) => (value != null ? String(value).trim() : ""))
-        .filter(Boolean);
+      const sanitized = validPasswords.map((value) => (value != null ? String(value).trim() : "")).filter(Boolean);
       cfg.validPasswords = Array.from(new Set(sanitized));
     }
     if (typeof active === "boolean") {
@@ -725,9 +854,7 @@ gamesRouter.patch("/password-game", requireAuth, async (req, res) => {
   const updated = await mutate((d) => {
     const cfg = d.passwordGames[0]!;
     if (Array.isArray(validPasswords)) {
-      const sanitized = validPasswords
-        .map((value) => (value != null ? String(value).trim() : ""))
-        .filter(Boolean);
+      const sanitized = validPasswords.map((value) => (value != null ? String(value).trim() : "")).filter(Boolean);
       cfg.validPasswords = Array.from(new Set(sanitized));
     }
     if (typeof active === "boolean") {
@@ -768,10 +895,7 @@ gamesRouter.post(passwordStartPaths, requireAuth, async (_req, res) => {
   res.json(updated);
 });
 
-const passwordAttemptPaths = [
-  "/password-game/attempt",
-  "/password-game/:id/attempt",
-];
+const passwordAttemptPaths = ["/password-game/attempt", "/password-game/:id/attempt"];
 /**
  * POST /api/games/password-game/attempt
  * POST /api/games/password-game/:id/attempt
@@ -785,8 +909,7 @@ const passwordAttemptPaths = [
  */
 gamesRouter.post(passwordAttemptPaths, async (req, res) => {
   const { groupId, password } = req.body || {};
-  if (!groupId || !password)
-    return res.status(400).json({ message: "groupId & password required" });
+  if (!groupId || !password) return res.status(400).json({ message: "groupId & password required" });
   const result = await mutate((d) => {
     const configs = d.passwordGames;
     const pathId = req.params.id;
@@ -803,10 +926,7 @@ gamesRouter.post(passwordAttemptPaths, async (req, res) => {
       group.passwordSolved = true;
       group.finishedAt = new Date().toISOString();
       const solved = d.groups.filter((g) => g.passwordSolved).length;
-      const required =
-        typeof cfg.requiredCorrectGroups === "number"
-          ? cfg.requiredCorrectGroups
-          : Infinity;
+      const required = typeof cfg.requiredCorrectGroups === "number" ? cfg.requiredCorrectGroups : Infinity;
       if (required !== Infinity && solved >= required && !cfg.endedAt) {
         cfg.endedAt = new Date().toISOString();
         cfg.active = false;
@@ -818,10 +938,7 @@ gamesRouter.post(passwordAttemptPaths, async (req, res) => {
   res.json(result);
 });
 
-const passwordAddPaths = [
-  "/password-game/passwords",
-  "/password-game/:id/passwords",
-];
+const passwordAddPaths = ["/password-game/passwords", "/password-game/:id/passwords"];
 /**
  * POST /api/games/password-game/passwords
  * POST /api/games/password-game/:id/passwords
@@ -834,10 +951,7 @@ const passwordAddPaths = [
  */
 gamesRouter.post(passwordAddPaths, requireAuth, async (req, res) => {
   const { password } = req.body || {};
-  const value =
-    typeof password === "string"
-      ? password.trim()
-      : String(password ?? "").trim();
+  const value = typeof password === "string" ? password.trim() : String(password ?? "").trim();
   if (!value) return res.status(400).json({ message: "password required" });
   await ensureSinglePasswordConfig();
   const updated = await mutate((d) => {
@@ -851,10 +965,7 @@ gamesRouter.post(passwordAddPaths, requireAuth, async (req, res) => {
   res.json(updated);
 });
 
-const passwordRemovePaths = [
-  "/password-game/passwords/:password",
-  "/password-game/:id/passwords/:password",
-];
+const passwordRemovePaths = ["/password-game/passwords/:password", "/password-game/:id/passwords/:password"];
 /**
  * DELETE /api/games/password-game/passwords/:password
  * DELETE /api/games/password-game/:id/passwords/:password
@@ -948,8 +1059,7 @@ gamesRouter.put(
       }
       return fq;
     });
-    if (!updated)
-      return res.status(404).json({ message: "question not found" });
+    if (!updated) return res.status(404).json({ message: "question not found" });
     res.json(updated);
   }
 );
@@ -995,8 +1105,7 @@ gamesRouter.get(
     const { id } = req.params;
     const data = await loadData();
     const question = data.funnyQuestions.find((q) => q.id === id);
-    if (!question)
-      return res.status(404).json({ message: "question not found" });
+    if (!question) return res.status(404).json({ message: "question not found" });
     const answers = data.funnyAnswers.filter((a) => a.questionId === id);
     res.json({ question, answers });
   }
@@ -1017,9 +1126,7 @@ gamesRouter.delete(
     const ok = await mutate((d) => {
       const question = d.funnyQuestions.find((q) => q.id === id);
       if (!question) return false;
-      const idx = d.funnyAnswers.findIndex(
-        (a) => a.id === answerId && a.questionId === id
-      );
+      const idx = d.funnyAnswers.findIndex((a) => a.id === answerId && a.questionId === id);
       if (idx === -1) return false;
       d.funnyAnswers.splice(idx, 1);
       return true;

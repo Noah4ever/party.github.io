@@ -39,13 +39,14 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.4",
-    "react-native-qr-svg": "^1.5.0",
+    "react-native-qrcode-styled": "^0.4.0",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
+    "@types/qrcode": "^1.5.5",
     "@types/react": "~19.1.0",
     "@types/react-native": "^0.72.8",
     "eslint": "^9.25.0",

@@ -1,8 +1,12 @@
 import cors, { CorsOptions } from "cors";
 import express, { NextFunction, Request, Response } from "express";
+import { promises as fs } from "fs";
 import { createServer } from "http";
 import multer from "multer";
-import { authRouter, requireAuth } from "./auth.js";
+import { nanoid } from "nanoid";
+import { extname } from "path";
+import { authRouter } from "./auth.js";
+import { mutate } from "./dataStore.js";
 import { adminRouter } from "./routes.admin.js";
 import { gamesRouter } from "./routes.games.js";
 import { groupsRouter } from "./routes.groups.js";
@@ -10,7 +14,27 @@ import { guestsRouter } from "./routes.guests.js";
 import "./setupEnv.js";
 import { initWebsocket } from "./websocket.js";
 
-const upload = multer({ dest: "uploads/" });
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => {
+    const ext = extname(file.originalname || "").toLowerCase() || ".jpg";
+    const rawGuest = typeof req.body?.guestId === "string" ? req.body.guestId : "guest";
+    const guestSlug =
+      rawGuest
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "")
+        .slice(0, 32) || "guest";
+    const filename = `${Date.now()}-${guestSlug}-${nanoid(6)}${ext}`;
+    cb(null, filename);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 7 * 1024 * 1024, // ~7MB
+  },
+});
 
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:19000",
@@ -60,10 +84,51 @@ app.use("/api/games", gamesRouter);
 
 // Add comment so server restarts on change
 // Simple image upload (returns URL). Use field name 'image'.
-app.post("/api/upload", requireAuth, upload.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "file required" });
-  const url = `/uploads/${req.file.filename}`;
-  res.status(201).json({ url });
+app.post("/api/upload", upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "image required" });
+    }
+
+    if (!req.file.mimetype?.startsWith?.("image/")) {
+      await fs.unlink(req.file.path).catch(() => undefined);
+      return res.status(415).json({ message: "only image uploads allowed" });
+    }
+
+    const { guestId, groupId, challengeId } = req.body || {};
+    const uploadedAt = new Date().toISOString();
+    const url = `/uploads/${req.file.filename}`;
+    const absoluteUrl = `${req.protocol}://${req.get("host")}${url}`;
+
+    if (groupId && typeof groupId === "string") {
+      await mutate((data) => {
+        const group = data.groups.find((g) => g.id === groupId);
+        if (group) {
+          if (!group.progress) {
+            group.progress = { completedGames: [] };
+          }
+          group.progress.selfieUrl = url;
+          group.progress.selfieUploadedAt = uploadedAt;
+          if (challengeId && typeof challengeId === "string") {
+            group.progress.lastSelfieChallenge = challengeId;
+          }
+        }
+      });
+    }
+
+    res.status(201).json({
+      url,
+      absoluteUrl,
+      filename: req.file.filename,
+      guestId: typeof guestId === "string" ? guestId : null,
+      groupId: typeof groupId === "string" ? groupId : null,
+      challengeId: typeof challengeId === "string" ? challengeId : null,
+      uploadedAt,
+    });
+  } catch (error) {
+    console.error("upload error", error);
+    res.status(500).json({ message: "upload failed" });
+  }
 });
 
 // Error handler

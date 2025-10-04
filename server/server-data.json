@@ -25,10 +25,14 @@
       ],
       "progress": {
         "completedGames": [
-          "partner-found"
+          "partner-found",
+          "challenge-2-selfie"
         ],
         "attempts": 0,
-        "currentGame": "partner-found"
+        "currentGame": "challenge-2-selfie",
+        "selfieUrl": "/uploads/1759532166175-guest-A9LGsB.jpg",
+        "selfieUploadedAt": "2025-10-03T22:56:06.177Z",
+        "lastSelfieChallenge": "challenge_2"
       }
     }
   ],
@@ -159,12 +163,12 @@
       "id": "password-default",
       "validPasswords": [
         "Test",
-        "ASD",
-        "Penis"
+        "Love",
+        "Pens"
       ],
       "active": true,
       "startedAt": "2025-10-03T18:15:16.400Z",
-      "updatedAt": "2025-10-03T18:15:28.455Z"
+      "updatedAt": "2025-10-03T23:49:45.939Z"
     }
   ],
   "funnyQuestions": [
@@ -361,6 +365,6 @@
   "gameState": {
     "started": true,
     "startedAt": "2025-10-02T11:36:10.445Z",
-    "cluesUnlockedAt": "2025-10-03T15:14:21.915Z"
+    "cluesUnlockedAt": "2025-10-03T19:47:03.694Z"
   }
 }
