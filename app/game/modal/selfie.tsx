@@ -68,7 +68,7 @@ export default function SelfieModal() {
       () => {
         if (feedback === "success") {
           setUploading(false);
-          router.navigate("/game/challenge_3");
+          router.navigate("/game/group-name");
         }
         setFeedback(null);
         setUploading(false);

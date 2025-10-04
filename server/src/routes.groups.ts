@@ -15,9 +15,7 @@ groupsRouter.get("/", async (req, res) => {
   if (req.query.expand) {
     const result = data.groups.map((g) => ({
       ...g,
-      guests: g.guestIds
-        .map((id) => data.guests.find((gs) => gs.id === id))
-        .filter(Boolean),
+      guests: g.guestIds.map((id) => data.guests.find((gs) => gs.id === id)).filter(Boolean),
     }));
     return res.json(result);
   }
@@ -29,8 +27,7 @@ groupsRouter.get("/", async (req, res) => {
 groupsRouter.post("/", requireAuth, async (req, res) => {
   const { name, guestIds = [] } = req.body || {};
   if (!name) return res.status(400).json({ message: "name required" });
-  if (guestIds.length > 2)
-    return res.status(400).json({ message: "guestIds max length 2" });
+  if (guestIds.length > 2) return res.status(400).json({ message: "guestIds max length 2" });
   const group: Group = {
     id: nanoid(8),
     name,
@@ -51,7 +48,7 @@ groupsRouter.post("/", requireAuth, async (req, res) => {
 
 // PUT update group (rename or change members)
 
-groupsRouter.put("/:id", requireAuth, async (req, res) => {
+groupsRouter.put("/:id", async (req, res) => {
   const { id } = req.params;
   const { name, guestIds } = req.body || {};
   const updated = await mutate((d) => {
@@ -75,13 +72,9 @@ groupsRouter.put("/:id", requireAuth, async (req, res) => {
       guestIds.forEach((gid) => {
         const guest = d.guests.find((gs) => gs.id === gid);
         if (!guest) return;
-        const previousGroup = guest.groupId
-          ? d.groups.find((grp) => grp.id === guest.groupId)
-          : undefined;
+        const previousGroup = guest.groupId ? d.groups.find((grp) => grp.id === guest.groupId) : undefined;
         if (previousGroup && previousGroup.id !== group.id) {
-          previousGroup.guestIds = previousGroup.guestIds.filter(
-            (existing) => existing !== gid
-          );
+          previousGroup.guestIds = previousGroup.guestIds.filter((existing) => existing !== gid);
         }
         guest.groupId = group.id;
       });
