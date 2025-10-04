@@ -342,6 +342,20 @@
       "guestId": "ks5K-ZDm",
       "answer": "  ad",
       "createdAt": "2025-10-03T22:40:00.419Z"
+    },
+    {
+      "id": "RuF74pQ_iQ",
+      "questionId": "gaPtByXw",
+      "guestId": "ks5K-ZDm",
+      "answer": "da",
+      "createdAt": "2025-10-03T23:47:26.567Z"
+    },
+    {
+      "id": "uGI58-WhRs",
+      "questionId": "7TSeUY_X",
+      "guestId": "ks5K-ZDm",
+      "answer": "ddddda",
+      "createdAt": "2025-10-03T23:47:32.348Z"
     }
   ],
   "gameState": {
