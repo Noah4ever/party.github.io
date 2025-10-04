@@ -1,42 +1,45 @@
 import { Image } from "expo-image";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { useGlobalStyles } from "@/constants/styles";
+import { useTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
-  const globalStyles = useGlobalStyles();
+  const theme = useTheme();
   const router = useRouter();
   return (
     <ThemedView style={{ flex: 1 }}>
       <ParallaxScrollView
-        headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+        headerBackgroundColor={{ light: "#FDE68A", dark: "#1F2937" }}
+        headerHeight={180}
         headerImage={
-          <Image
-            source={require("@/assets/images/crown.png")}
-            style={styles.papaLogo}
-          />
-        }
-      >
-        <ThemedView style={styles.textContainer}>
+          <View style={styles.partyHeader}>
+            <View style={[styles.partyGlow, styles.partyGlowPink]} />
+            <View style={[styles.partyGlow, styles.partyGlowBlue]} />
+            <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="contain" />
+            <View style={[styles.confetti, styles.confettiOne]} />
+            <View style={[styles.confetti, styles.confettiTwo]} />
+            <View style={[styles.confetti, styles.confettiThree]} />
+          </View>
+        }>
+        <ThemedView style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <ThemedText type="title">Challenge 4</ThemedText>
           <ThemedText type="subtitle">Ich hab noch nie! 🍻</ThemedText>
-          <ThemedText type="defaultSemiBold">
-            Holt euch beide shots oder andere Getränke, am besten mit Alkohol
-            und spielt ich hab noch nie!
+          <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
+            Sichert euch zwei Drinks eurer Wahl (Shots empfohlen!) und spielt eine Runde „Ich hab noch nie“. Lernt euch
+            von einer neuen Seite kennen und habt Spaß dabei!
           </ThemedText>
         </ThemedView>
 
-        <ThemedView style={styles.midContainer}>
-          <ThemedText>Drückt auf Starten wenn ihr ready seid</ThemedText>
-          <Button
-            onPress={() => router.navigate("/game/NeverHaveIEver")}
-            iconText="arrow.right.circle"
-          >
+        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+          <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
+            Drückt auf Starten, sobald ihr bereit seid, eurem Gegenüber ein paar Geheimnisse zu entlocken.
+          </ThemedText>
+          <Button onPress={() => router.navigate("/game/NeverHaveIEver")} iconText="arrow.right.circle">
             Starten!
           </Button>
         </ThemedView>
@@ -46,27 +49,68 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  papaLogo: {
-    height: 180,
-    width: 290,
-    bottom: 0,
-    top: 0,
-    right: 0,
+  partyHeader: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  partyGlow: {
     position: "absolute",
+    borderRadius: 200,
+    width: 260,
+    height: 260,
+    opacity: 0.55,
   },
-  textContainer: {
-    gap: 20,
+  partyGlowPink: {
+    backgroundColor: "rgba(236,72,153,0.4)",
+    transform: [{ translateX: -30 }],
   },
-  midContainer: {
-    gap: 20,
-    padding: 20,
+  partyGlowBlue: {
+    backgroundColor: "rgba(59,130,246,0.35)",
+    transform: [{ translateX: 60 }, { translateY: 20 }],
   },
-  hintContainer: {
-    padding: 20,
-    textAlign: "center",
+  partyCrown: {
+    width: 210,
+    height: 150,
+  },
+  confetti: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    width: 10,
+    borderRadius: 4,
+  },
+  confettiOne: {
+    height: 34,
+    backgroundColor: "#F59E0B",
+    top: 30,
+    left: 60,
+    transform: [{ rotate: "18deg" }],
+  },
+  confettiTwo: {
+    height: 26,
+    backgroundColor: "#22C55E",
+    top: 40,
+    right: 70,
+    transform: [{ rotate: "-16deg" }],
+  },
+  confettiThree: {
+    height: 30,
+    backgroundColor: "#8B5CF6",
+    bottom: 30,
+    right: 90,
+    transform: [{ rotate: "32deg" }],
+  },
+  card: {
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 22,
+    gap: 16,
+  },
+  heroCard: {
+    gap: 18,
+  },
+  bodyText: {
+    fontSize: 16,
+    lineHeight: 22,
   },
 });
