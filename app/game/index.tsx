@@ -76,10 +76,13 @@ export default function HomeScreen() {
       return "Wir benachrichtigen dich automatisch, sobald das Spiel beginnt.";
     }
     if (cluesUnlockedAt) {
-      return `Hinweise wurden um ${new Date(cluesUnlockedAt).toLocaleTimeString("de-DE", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })} Uhr freigeschaltet.`;
+      return `Hinweise wurden um ${new Date(cluesUnlockedAt).toLocaleTimeString(
+        "de-DE",
+        {
+          hour: "2-digit",
+          minute: "2-digit",
+        }
+      )} Uhr freigeschaltet.`;
     }
     return "Hinweise sind freigegeben. Schau dir die Liste unten an.";
   }, [connected, started, cluesUnlockedAt]);
@@ -92,13 +95,24 @@ export default function HomeScreen() {
         <View style={styles.partyHeader}>
           <View style={[styles.partyGlow, styles.partyGlowPink]} />
           <View style={[styles.partyGlow, styles.partyGlowBlue]} />
-          <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="contain" />
+          <Image
+            source={require("@/assets/images/crown.png")}
+            style={styles.partyCrown}
+            contentFit="contain"
+          />
           <View style={[styles.confetti, styles.confettiOne]} />
           <View style={[styles.confetti, styles.confettiTwo]} />
           <View style={[styles.confetti, styles.confettiThree]} />
         </View>
-      }>
-      <ThemedView style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      }
+    >
+      <ThemedView
+        style={[
+          styles.card,
+          styles.heroCard,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
         <View style={styles.titleRow}>
           <ThemedText type="title" style={styles.titleText}>
             Hey, {name}!
@@ -109,71 +123,120 @@ export default function HomeScreen() {
           </ThemedText>
         </View>
         <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
-          Finde deine geheime Party-Person durch Hinweise, Challenges und Teamwork. Wenn ihr alle Aufgaben schnell löst,
-          wartet das Finale mit einem besonderen Preis auf euch.
+          In mehreren Schritten wirst du eine bestimmte Person auf dieser Party
+          durch mehrere Steps kennenlernen. Schafft ihr beide alle challenges
+          kommt ihr ins Finale Trinkspiel und könnt was cooles gewinnen!
         </ThemedText>
         <View
           style={[
             styles.statusBadge,
-            started ? { backgroundColor: theme.success, borderColor: theme.success } : styles.statusBadgeWaiting,
-          ]}>
+            started
+              ? { backgroundColor: theme.success, borderColor: theme.success }
+              : styles.statusBadgeWaiting,
+          ]}
+        >
           <IconSymbol
             name={started ? "checkmark.circle" : "ellipsis.vertical.circle"}
             size={16}
             color={started ? "#16A34A" : theme.textMuted}
           />
-          <ThemedText style={[styles.statusBadgeLabel, { color: started ? "#14532D" : theme.textMuted }]}>
+          <ThemedText
+            style={[
+              styles.statusBadgeLabel,
+              { color: started ? "#14532D" : theme.textMuted },
+            ]}
+          >
             {started ? "Das Spiel läuft!" : "Warte bis das Spiel startet"}
           </ThemedText>
         </View>
-        <ThemedText style={[styles.statusMessage, { color: theme.textMuted }]}>{statusMessage}</ThemedText>
+        <ThemedText style={[styles.statusMessage, { color: theme.textMuted }]}>
+          {statusMessage}
+        </ThemedText>
       </ThemedView>
 
-      <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      <ThemedView
+        style={[
+          styles.card,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
         <View style={styles.sectionHeaderRow}>
           <ThemedText type="subtitle" style={styles.sectionHeading}>
             Deine Mission
           </ThemedText>
-          <IconSymbol name="gamecontroller.fill" size={20} color={theme.primary} />
+          <IconSymbol
+            name="gamecontroller.fill"
+            size={20}
+            color={theme.primary}
+          />
         </View>
-        <ThemedText style={[styles.sectionIntro, { color: theme.textSecondary }]}>
-          Challenge 1: Finde die Person, zu der deine Hinweise passen. Tauscht euch aus, sammelt Hinweise und haltet den
-          QR-Code bereit, sobald du glaubst, sie gefunden zu haben.
+        <ThemedText
+          style={[styles.sectionIntro, { color: theme.textSecondary }]}
+        >
+          Challenge 1: Finde die Person, zu der deine Hinweise passen. Tauscht
+          euch aus, sammelt Hinweise und haltet den QR-Code bereit, sobald du
+          glaubst, sie gefunden zu haben.
         </ThemedText>
-        <View style={[styles.clueCard, { backgroundColor: theme.backgroundAlt, borderColor: theme.border }]}>
-          <ThemedText style={[styles.clueTitle, { color: theme.textMuted }]}>Hinweise</ThemedText>
+        <View
+          style={[
+            styles.clueCard,
+            { backgroundColor: theme.backgroundAlt, borderColor: theme.border },
+          ]}
+        >
+          <ThemedText style={[styles.clueTitle, { color: theme.textMuted }]}>
+            Hinweise
+          </ThemedText>
           {started ? (
             clues?.length ? (
               <View style={styles.clueList}>
                 {clues.map((clue, index) => (
                   <View key={`${clue}-${index}`} style={styles.clueItem}>
-                    <View style={[styles.clueBullet, { backgroundColor: theme.primary }]} />
+                    <View
+                      style={[
+                        styles.clueBullet,
+                        { backgroundColor: theme.primary },
+                      ]}
+                    />
                     <ThemedText style={styles.clueText}>{clue}</ThemedText>
                   </View>
                 ))}
               </View>
             ) : (
-              <ThemedText style={[styles.clueEmpty, { color: theme.textMuted }]}>
+              <ThemedText
+                style={[styles.clueEmpty, { color: theme.textMuted }]}
+              >
                 Hinweise werden in Kürze freigegeben – halte Ausschau!
               </ThemedText>
             )
           ) : (
             <ThemedText style={[styles.clueEmpty, { color: theme.textMuted }]}>
-              Sobald das Spiel startet, erscheinen hier deine persönlichen Hinweise.
+              Sobald das Spiel startet, erscheinen hier deine persönlichen
+              Hinweise.
             </ThemedText>
           )}
         </View>
       </ThemedView>
 
-      <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      <ThemedView
+        style={[
+          styles.card,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
         <ThemedText type="subtitle" style={styles.sectionHeading}>
           QR-Check
         </ThemedText>
-        <ThemedText style={[styles.sectionIntro, { color: theme.textSecondary }]}>
-          Wenn du sicher bist, wer zu dir gehört, scan den QR-Code der Person, um eure Verbindung zu bestätigen.
+        <ThemedText
+          style={[styles.sectionIntro, { color: theme.textSecondary }]}
+        >
+          Wenn du sicher bist, wer zu dir gehört, scan den QR-Code der Person,
+          um eure Verbindung zu bestätigen.
         </ThemedText>
         <View style={styles.actionsRow}>
-          <Button onPress={() => router.navigate("/game/modal/camera")} iconText="scanner.circle">
+          <Button
+            onPress={() => router.navigate("/game/modal/camera")}
+            iconText="scanner.circle"
+          >
             Scan QR-Code
           </Button>
         </View>
@@ -188,10 +251,13 @@ export default function HomeScreen() {
             style={{ backgroundColor: theme.backgroundAlt }}
             errorCorrectionLevel="M"
           />
-          <ThemedText style={[styles.qrHint, { color: theme.textMuted }]}>Deine Guest-Id: {guestId}</ThemedText>
           <ThemedText style={[styles.qrHint, { color: theme.textMuted }]}>
-            Zeig diesen Code deiner Partnerperson, damit sie dich scannen kann. Auf der nächsten Seite deines Partners
-            kannst du seinen Code scannen.
+            Deine Guest-Id: {guestId}
+          </ThemedText>
+          <ThemedText style={[styles.qrHint, { color: theme.textMuted }]}>
+            Zeig diesen Code deiner Partnerperson, damit sie dich scannen kann.
+            Auf der nächsten Seite deines Partners kannst du seinen Code
+            scannen.
           </ThemedText>
         </View>
       </ThemedView>

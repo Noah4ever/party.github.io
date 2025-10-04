@@ -1,6 +1,9 @@
 // components/PopupModal.tsx
+import { useTheme } from "@/constants/theme";
 import React from "react";
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ThemedText } from "../themed-text";
+import { IconSymbol } from "../ui/icon-symbol";
 
 type PopupModalProps = {
   visible: boolean;
@@ -15,6 +18,7 @@ export const PopupModal: React.FC<PopupModalProps> = ({
   title = "Hinweis",
   content = "Hier ist dein Popup-Text",
 }) => {
+  const theme = useTheme();
   return (
     <Modal
       animationType="fade"
@@ -25,13 +29,22 @@ export const PopupModal: React.FC<PopupModalProps> = ({
       <View style={styles.overlay}>
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
 
-        <View style={styles.modalContainer}>
+        <View
+          style={[
+            styles.modalContainer,
+            {
+              backgroundColor: theme.backgroundAlt,
+            },
+          ]}
+        >
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeText}>X</Text>
+            <Text style={styles.closeText}>
+              <IconSymbol name="xmark.circle" color={theme.danger} />
+            </Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.content}>{content}</Text>
+          <ThemedText style={[styles.title]}>{title}</ThemedText>
+          <ThemedText style={styles.content}>{content}</ThemedText>
         </View>
       </View>
     </Modal>
@@ -47,7 +60,6 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: 300,
-    backgroundColor: "#047bcaff",
     borderRadius: 20,
     padding: 20,
     alignItems: "center",
@@ -60,7 +72,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   closeText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
   },
   title: {

@@ -1,4 +1,5 @@
 import { Button } from "@/components/game/Button";
+import { PopupModal } from "@/components/game/hint";
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -12,8 +13,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Checkbox } from "expo-checkbox";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const PENALTY_SECONDS_MINOR = 60;
 const PENALTY_SECONDS_MAJOR = 180;
@@ -28,18 +40,25 @@ export default function QuizScreen() {
   const router = useRouter();
   const [questions, setQuestions] = useState<QuizQuestionDTO[]>([]);
   const [checkedAnswers, setCheckedAnswers] = useState<boolean[][]>([]);
-  const [feedbackByQuestion, setFeedbackByQuestion] = useState<Record<string, AnswerFeedback[]>>({});
+  const [feedbackByQuestion, setFeedbackByQuestion] = useState<
+    Record<string, AnswerFeedback[]>
+  >({});
   const [questionCounter, setQuestionCounter] = useState(0);
   const [correctCounter, setCorrectCounter] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
   const [groupId, setGroupId] = useState<string | null>(null);
-  const [resultNotice, setResultNotice] = useState<{ status: "correct" | "incorrect"; message: string } | null>(null);
+  const [resultNotice, setResultNotice] = useState<{
+    status: "correct" | "incorrect";
+    message: string;
+  } | null>(null);
   const [quizComplete, setQuizComplete] = useState(false);
-  const [finalSummary, setFinalSummary] = useState<{ correct: number; total: number; penaltySeconds: number } | null>(
-    null
-  );
+  const [finalSummary, setFinalSummary] = useState<{
+    correct: number;
+    total: number;
+    penaltySeconds: number;
+  } | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
   const summaryStats = useMemo(() => {
@@ -47,9 +66,18 @@ export default function QuizScreen() {
       return null as null | { incorrect: number; incorrectPercent: number };
     }
     const incorrect = Math.max(finalSummary.total - finalSummary.correct, 0);
-    const incorrectPercent = finalSummary.total > 0 ? Math.round((incorrect / finalSummary.total) * 100) : 0;
+    const incorrectPercent =
+      finalSummary.total > 0
+        ? Math.round((incorrect / finalSummary.total) * 100)
+        : 0;
     return { incorrect, incorrectPercent };
   }, [finalSummary]);
+
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    setModalVisible(true);
+  }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -83,10 +111,17 @@ export default function QuizScreen() {
       if (!isMountedRef.current) {
         return;
       }
-      if (res && Array.isArray(res) && res.length > 0 && Array.isArray(res[0]?.questions)) {
+      if (
+        res &&
+        Array.isArray(res) &&
+        res.length > 0 &&
+        Array.isArray(res[0]?.questions)
+      ) {
         const qs = shuffleArray(res[0]!.questions);
         setQuestions(qs);
-        setCheckedAnswers(qs.map((q) => new Array(q.answers.length).fill(false)));
+        setCheckedAnswers(
+          qs.map((q) => new Array(q.answers.length).fill(false))
+        );
       } else {
         setQuestions([]);
         setCheckedAnswers([]);
@@ -94,7 +129,9 @@ export default function QuizScreen() {
     } catch (err) {
       console.error("quiz load failed", err);
       if (isMountedRef.current) {
-        setError("Quiz konnte nicht geladen werden. Versucht es gleich nochmal.");
+        setError(
+          "Quiz konnte nicht geladen werden. Versucht es gleich nochmal."
+        );
       }
     } finally {
       if (isMountedRef.current) {
@@ -116,7 +153,10 @@ export default function QuizScreen() {
     })();
   }, []);
 
-  const currentQuestion = useMemo(() => questions[questionCounter], [questions, questionCounter]);
+  const currentQuestion = useMemo(
+    () => questions[questionCounter],
+    [questions, questionCounter]
+  );
   const totalQuestions = questions.length;
   const currentAnswers = useMemo(() => {
     if (!currentQuestion) {
@@ -124,7 +164,9 @@ export default function QuizScreen() {
     }
     return checkedAnswers[questionCounter] ?? [];
   }, [checkedAnswers, currentQuestion, questionCounter]);
-  const answerStatuses = currentQuestion ? feedbackByQuestion[currentQuestion.id] ?? [] : [];
+  const answerStatuses = currentQuestion
+    ? feedbackByQuestion[currentQuestion.id] ?? []
+    : [];
   const hasSelections = currentAnswers.some(Boolean);
 
   const toggleCheckbox = useCallback(
@@ -137,7 +179,8 @@ export default function QuizScreen() {
         if (!next[questionCounter]) {
           return prev;
         }
-        next[questionCounter][answerIndex] = !next[questionCounter][answerIndex];
+        next[questionCounter][answerIndex] =
+          !next[questionCounter][answerIndex];
         return next;
       });
     },
@@ -177,8 +220,12 @@ export default function QuizScreen() {
       [currentQuestion.id]: evaluation.map((entry) => entry.status),
     }));
 
-    const questionCorrect = evaluation.every((entry) => entry.status !== "incorrect" && entry.status !== "missed");
-    const projectedCorrectCount = questionCorrect ? correctCounter + 1 : correctCounter;
+    const questionCorrect = evaluation.every(
+      (entry) => entry.status !== "incorrect" && entry.status !== "missed"
+    );
+    const projectedCorrectCount = questionCorrect
+      ? correctCounter + 1
+      : correctCounter;
     const isLastQuestion = questionCounter + 1 >= totalQuestions;
 
     if (questionCorrect) {
@@ -195,7 +242,8 @@ export default function QuizScreen() {
     if (isLastQuestion) {
       const finalCorrect = projectedCorrectCount;
       const finalIncorrect = Math.max(totalQuestions - finalCorrect, 0);
-      const incorrectRatio = totalQuestions > 0 ? finalIncorrect / totalQuestions : 0;
+      const incorrectRatio =
+        totalQuestions > 0 ? finalIncorrect / totalQuestions : 0;
       let penaltySeconds = 0;
       if (incorrectRatio > 0.75) {
         penaltySeconds = PENALTY_SECONDS_MAJOR;
@@ -207,7 +255,9 @@ export default function QuizScreen() {
         try {
           await gameApi.addTimePenalty(groupId, {
             seconds: penaltySeconds,
-            reason: `Quiz abgeschlossen mit ${Math.round(incorrectRatio * 100)}% falschen Antworten`,
+            reason: `Quiz abgeschlossen mit ${Math.round(
+              incorrectRatio * 100
+            )}% falschen Antworten`,
             source: "quiz",
           });
         } catch (penaltyError) {
@@ -221,7 +271,11 @@ export default function QuizScreen() {
       }
 
       setQuizComplete(true);
-      setFinalSummary({ correct: finalCorrect, total: totalQuestions, penaltySeconds });
+      setFinalSummary({
+        correct: finalCorrect,
+        total: totalQuestions,
+        penaltySeconds,
+      });
       setResultNotice(null);
       setLocked(false);
       return;
@@ -254,11 +308,25 @@ export default function QuizScreen() {
     (status: AnswerFeedback) => {
       switch (status) {
         case "correct":
-          return <IconSymbol name="checkmark.circle" size={20} color={theme.success} />;
+          return (
+            <IconSymbol
+              name="checkmark.circle"
+              size={20}
+              color={theme.success}
+            />
+          );
         case "incorrect":
-          return <IconSymbol name="xmark.circle" size={20} color={theme.danger} />;
+          return (
+            <IconSymbol name="xmark.circle" size={20} color={theme.danger} />
+          );
         case "missed":
-          return <IconSymbol name="questionmark.circle" size={20} color={theme.warning ?? "#f97316"} />;
+          return (
+            <IconSymbol
+              name="questionmark.circle"
+              size={20}
+              color={theme.warning ?? "#f97316"}
+            />
+          );
         default:
           return null;
       }
@@ -268,6 +336,13 @@ export default function QuizScreen() {
 
   return (
     <ThemedView style={styles.screen}>
+      <PopupModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        title="🎉 Finale Challenge!"
+        content="Ihr müsst eine Reihe von Fragen per Multiple Choice richtig
+            beantworten um an den Schlüssel fürs Finale zu kommen"
+      />
       <ParallaxScrollView
         headerBackgroundColor={headerColors}
         headerHeight={180}
@@ -275,15 +350,25 @@ export default function QuizScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPink]} />
             <View style={[styles.partyGlow, styles.partyGlowBlue]} />
-            <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="contain" />
+            <Image
+              source={require("@/assets/images/crown.png")}
+              style={styles.partyCrown}
+              contentFit="contain"
+            />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
           </View>
-        }>
+        }
+      >
         <ThemedView
-          style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}
-          testID="quiz-hero-card">
+          style={[
+            styles.card,
+            styles.heroCard,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+          testID="quiz-hero-card"
+        >
           <View style={styles.titleRow}>
             <ThemedText type="title" style={styles.titleText}>
               Quiz Challenge
@@ -291,33 +376,74 @@ export default function QuizScreen() {
             <HelloWave />
           </View>
           <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
-            Beantwortet jede Frage gemeinsam. Für falsche Antworten kassiert ihr Zeitstrafen – also wählt mit Bedacht!
+            Beantwortet jede Frage gemeinsam. Für falsche Antworten kassiert ihr
+            Zeitstrafen – also wählt mit Bedacht!
           </ThemedText>
-          <View style={[styles.statusBadge, { backgroundColor: theme.backgroundAlt, borderColor: theme.border }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              {
+                backgroundColor: theme.backgroundAlt,
+                borderColor: theme.border,
+              },
+            ]}
+          >
             <IconSymbol name="timer" size={18} color={theme.primary} />
-            <ThemedText style={[styles.statusBadgeLabel, { color: theme.textMuted }]}>
-              Frage {Math.min(questionCounter + 1, Math.max(totalQuestions, 1))} von {Math.max(totalQuestions, 1)} ·
-              Richtig: {correctCounter}
+            <ThemedText
+              style={[styles.statusBadgeLabel, { color: theme.textMuted }]}
+            >
+              Frage {Math.min(questionCounter + 1, Math.max(totalQuestions, 1))}{" "}
+              von {Math.max(totalQuestions, 1)} · Richtig: {correctCounter}
             </ThemedText>
           </View>
         </ThemedView>
 
-        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <ThemedView
+          style={[
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           {loading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color={theme.primary} />
-              <ThemedText style={[styles.loadingText, { color: theme.textMuted }]}>Quiz wird geladen …</ThemedText>
+              <ThemedText
+                style={[styles.loadingText, { color: theme.textMuted }]}
+              >
+                Quiz wird geladen …
+              </ThemedText>
             </View>
           ) : error ? (
             <View style={styles.errorState}>
-              <IconSymbol name="exclamationmark.triangle" size={24} color={theme.danger} />
-              <ThemedText style={[styles.errorText, { color: theme.danger }]}>{error}</ThemedText>
+              <IconSymbol
+                name="exclamationmark.triangle"
+                size={24}
+                color={theme.danger}
+              />
+              <ThemedText style={[styles.errorText, { color: theme.danger }]}>
+                {error}
+              </ThemedText>
               <TouchableOpacity
-                style={[styles.retryButton, { borderColor: theme.border, backgroundColor: theme.backgroundAlt }]}
+                style={[
+                  styles.retryButton,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.backgroundAlt,
+                  },
+                ]}
                 activeOpacity={0.9}
-                onPress={loadQuestions}>
-                <IconSymbol name="arrow.clockwise" size={18} color={theme.primary} />
-                <ThemedText style={[styles.retryText, { color: theme.primary }]}>Erneut versuchen</ThemedText>
+                onPress={loadQuestions}
+              >
+                <IconSymbol
+                  name="arrow.clockwise"
+                  size={18}
+                  color={theme.primary}
+                />
+                <ThemedText
+                  style={[styles.retryText, { color: theme.primary }]}
+                >
+                  Erneut versuchen
+                </ThemedText>
               </TouchableOpacity>
             </View>
           ) : currentQuestion ? (
@@ -326,7 +452,11 @@ export default function QuizScreen() {
                 {currentQuestion.question}
               </ThemedText>
               {currentQuestion.imageUrl ? (
-                <Image source={{ uri: currentQuestion.imageUrl }} style={styles.questionImage} contentFit="cover" />
+                <Image
+                  source={{ uri: currentQuestion.imageUrl }}
+                  style={styles.questionImage}
+                  contentFit="cover"
+                />
               ) : null}
               <View style={styles.answerList}>
                 {currentQuestion.answers.map((answer, index) => {
@@ -343,7 +473,8 @@ export default function QuizScreen() {
                       ]}
                       activeOpacity={0.9}
                       onPress={() => toggleCheckbox(index)}
-                      disabled={locked}>
+                      disabled={locked}
+                    >
                       <View style={styles.answerLeft}>
                         <Checkbox
                           value={selected}
@@ -356,14 +487,21 @@ export default function QuizScreen() {
                             styles.answerText,
                             status === "correct" && { color: theme.success },
                             status === "incorrect" && { color: theme.danger },
-                            status === "missed" && { color: theme.warning ?? "#f97316" },
-                          ]}>
+                            status === "missed" && {
+                              color: theme.warning ?? "#f97316",
+                            },
+                          ]}
+                        >
                           {answer.text}
                         </ThemedText>
                       </View>
                       <View style={styles.answerRight}>
                         {answer.imageUrl ? (
-                          <Image source={{ uri: answer.imageUrl }} style={styles.answerImage} contentFit="cover" />
+                          <Image
+                            source={{ uri: answer.imageUrl }}
+                            style={styles.answerImage}
+                            contentFit="cover"
+                          />
                         ) : null}
                         {statusIcon}
                       </View>
@@ -378,34 +516,69 @@ export default function QuizScreen() {
               ) : null}
               {quizComplete && finalSummary ? (
                 <View
-                  style={[styles.completionCard, { borderColor: theme.border, backgroundColor: theme.backgroundAlt }]}>
+                  style={[
+                    styles.completionCard,
+                    {
+                      borderColor: theme.border,
+                      backgroundColor: theme.backgroundAlt,
+                    },
+                  ]}
+                >
                   <View style={styles.completionHeader}>
-                    <IconSymbol name="checkmark.circle" size={24} color={theme.success} />
-                    <ThemedText style={[styles.completionTitle, { color: theme.success }]}>
+                    <IconSymbol
+                      name="checkmark.circle"
+                      size={24}
+                      color={theme.success}
+                    />
+                    <ThemedText
+                      style={[styles.completionTitle, { color: theme.success }]}
+                    >
                       Quiz abgeschlossen
                     </ThemedText>
                   </View>
-                  <ThemedText style={[styles.completionText, { color: theme.textSecondary }]}>
-                    Richtige Antworten: {finalSummary.correct}/{finalSummary.total}
+                  <ThemedText
+                    style={[
+                      styles.completionText,
+                      { color: theme.textSecondary },
+                    ]}
+                  >
+                    Richtige Antworten: {finalSummary.correct}/
+                    {finalSummary.total}
                   </ThemedText>
                   {summaryStats ? (
-                    <ThemedText style={[styles.completionText, { color: theme.textSecondary }]}>
-                      Falsche Antworten: {summaryStats.incorrect} ({summaryStats.incorrectPercent}%)
+                    <ThemedText
+                      style={[
+                        styles.completionText,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
+                      Falsche Antworten: {summaryStats.incorrect} (
+                      {summaryStats.incorrectPercent}%)
                     </ThemedText>
                   ) : null}
                   {finalSummary.penaltySeconds > 0 ? (
-                    <ThemedText style={[styles.completionText, { color: theme.danger }]}>
+                    <ThemedText
+                      style={[styles.completionText, { color: theme.danger }]}
+                    >
                       Zeitstrafe: {finalSummary.penaltySeconds} Sekunden –
                       {finalSummary.penaltySeconds === PENALTY_SECONDS_MAJOR
                         ? " das tut weh, aber ihr könnt noch aufholen!"
                         : " ihr könnt das nächste Spiel noch schneller meistern!"}
                     </ThemedText>
                   ) : (
-                    <ThemedText style={[styles.completionText, { color: theme.textSecondary }]}>
+                    <ThemedText
+                      style={[
+                        styles.completionText,
+                        { color: theme.textSecondary },
+                      ]}
+                    >
                       Keine Zeitstrafe – starke Teamarbeit!
                     </ThemedText>
                   )}
-                  <Button onPress={() => router.navigate("/game/questionary")} iconText="arrow.right.circle">
+                  <Button
+                    onPress={() => router.navigate("/game/questionary")}
+                    iconText="arrow.right.circle"
+                  >
                     Weiter
                   </Button>
                 </View>
@@ -413,8 +586,14 @@ export default function QuizScreen() {
             </>
           ) : (
             <View style={styles.emptyState}>
-              <IconSymbol name="checkmark.seal" size={28} color={theme.primary} />
-              <ThemedText style={[styles.emptyText, { color: theme.textSecondary }]}>
+              <IconSymbol
+                name="checkmark.seal"
+                size={28}
+                color={theme.primary}
+              />
+              <ThemedText
+                style={[styles.emptyText, { color: theme.textSecondary }]}
+              >
                 Keine Quizfragen verfügbar. Kommt später noch einmal vorbei!
               </ThemedText>
             </View>
@@ -432,19 +611,38 @@ export default function QuizScreen() {
             style={[
               styles.resultNotice,
               resultNotice.status === "correct"
-                ? { borderColor: theme.success, backgroundColor: "rgba(34,197,94,0.16)" }
-                : { borderColor: theme.danger, backgroundColor: "rgba(239,68,68,0.16)" },
-            ]}>
+                ? {
+                    borderColor: theme.success,
+                    backgroundColor: "rgba(34,197,94,0.16)",
+                  }
+                : {
+                    borderColor: theme.danger,
+                    backgroundColor: "rgba(239,68,68,0.16)",
+                  },
+            ]}
+          >
             <IconSymbol
-              name={resultNotice.status === "correct" ? "checkmark.circle" : "xmark.circle"}
+              name={
+                resultNotice.status === "correct"
+                  ? "checkmark.circle"
+                  : "xmark.circle"
+              }
               size={20}
-              color={resultNotice.status === "correct" ? theme.success : theme.danger}
+              color={
+                resultNotice.status === "correct" ? theme.success : theme.danger
+              }
             />
             <ThemedText
               style={[
                 styles.resultNoticeText,
-                { color: resultNotice.status === "correct" ? theme.success : theme.danger },
-              ]}>
+                {
+                  color:
+                    resultNotice.status === "correct"
+                      ? theme.success
+                      : theme.danger,
+                },
+              ]}
+            >
               {resultNotice.message}
             </ThemedText>
           </View>
@@ -463,7 +661,11 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr;
 }
 
-function getAnswerStyle(status: AnswerFeedback, selected: boolean, theme: Theme) {
+function getAnswerStyle(
+  status: AnswerFeedback,
+  selected: boolean,
+  theme: Theme
+) {
   const base = {
     borderColor: theme.border,
     backgroundColor: theme.backgroundAlt,
