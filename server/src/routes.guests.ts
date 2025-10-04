@@ -20,6 +20,23 @@ guestsRouter.get("/", async (_req, res) => {
   res.json(data.guests);
 });
 
+// GET /api/guests/:id
+/**
+ * GET /api/guests/:id
+ *
+ * Returns a guest by id. No authentication required because the public app
+ * needs read-only access.
+ *
+ * Response: Guest
+ */
+guestsRouter.get("/:id", async (req, res) => {
+  const { id } = req.params;
+  const data = await loadData();
+  const guest = data.guests.find((g) => g.id === id);
+  if (!guest) return res.status(404).json({ message: "guest not found" });
+  res.json(guest);
+});
+
 // POST /api/guests
 // body: { name, clue1?, clue2? }
 /**

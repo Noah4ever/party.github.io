@@ -4,7 +4,7 @@ import { useTheme } from "@/constants/theme";
 import { useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { StyleSheet } from "react-native";
-import { QrCodeSvg, defaultRenderer as renderer } from "react-native-qr-svg";
+import QRCodeStyled from "react-native-qrcode-styled";
 
 export default function GuestQRCode() {
   const theme = useTheme();
@@ -32,12 +32,14 @@ export default function GuestQRCode() {
       </ThemedText>
 
       <ThemedView style={{ justifyContent: "center", alignItems: "center", marginTop: 0, flex: 1 }}>
-        <QrCodeSvg
-          value={qrUrl}
-          frameSize={300}
-          renderer={renderer}
-          dotColor={theme.text}
-          backgroundColor={theme.background}
+        <QRCodeStyled
+          data={qrUrl}
+          size={325}
+          isPiecesGlued={true}
+          pieceBorderRadius={5}
+          pieceLiquidRadius={2}
+          color={theme.text}
+          style={{ backgroundColor: theme.background }}
           errorCorrectionLevel="M"
         />
       </ThemedView>
