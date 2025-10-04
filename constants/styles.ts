@@ -18,7 +18,8 @@ export function useGlobalStyles() {
     },
     inputField: {
       padding: 10,
-      height: 40,
+      borderRadius: 6,
+      height: 45,
       borderWidth: 1,
       borderColor: theme.inputBorder,
       color: theme.inputText,
@@ -26,8 +27,6 @@ export function useGlobalStyles() {
     },
     checkBox: {
       margin: 8,
-      // TODO: add color checkbox
     },
-    //TODO: add layout that is on every site
   });
 }

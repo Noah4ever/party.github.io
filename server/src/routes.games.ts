@@ -1001,7 +1001,7 @@ const funnyQuestionPaths = ["/funny-questions", "/funny-question"];
  *
  * Response: FunnyQuestion[]
  */
-gamesRouter.get(funnyQuestionPaths, requireAuth, async (_req, res) => {
+gamesRouter.get(funnyQuestionPaths, async (_req, res) => {
   const data = await loadData();
   res.json(data.funnyQuestions);
 });
