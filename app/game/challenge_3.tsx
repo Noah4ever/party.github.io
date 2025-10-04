@@ -43,7 +43,8 @@ export default function HomeScreen() {
             <View style={[styles.confetti, styles.confettiFour]} />
           </View>
         }>
-        <ThemedView style={styles.textContainer}>
+        <ThemedView
+          style={[styles.textContainer, styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <ThemedText type="title">Challenge 3</ThemedText>
           <ThemedText type="subtitle">Ihr sieht geil aus! 🔥</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
