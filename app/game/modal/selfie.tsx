@@ -222,7 +222,7 @@ export default function SelfieModal() {
   const handleSkip = useCallback(async () => {
     const confirmed = await confirm({
       title: "Selfie überspringen?",
-      message: "Ohne Foto geht ihr direkt weiter. Ihr könnt das Selfie später jederzeit nachholen.",
+      message: "Ohne Foto geht ihr direkt weiter?",
       confirmLabel: "Überspringen",
       cancelLabel: "Zurück",
     });
@@ -236,6 +236,7 @@ export default function SelfieModal() {
     setUploading(false);
     await AsyncStorage.removeItem("challenge2Selfie");
     router.back();
+    router.navigate("/game/challenge_3");
   }, [router]);
 
   const permissionStatusLabel = useMemo(() => {
