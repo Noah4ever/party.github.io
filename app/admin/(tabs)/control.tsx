@@ -56,6 +56,14 @@ const NAVIGATION_ITEMS: ControlItem[] = [
     route: "/admin/control/passwords",
     type: "navigation",
   },
+  {
+    key: "uploads",
+    title: "Uploads",
+    description: "View uploaded selfies",
+    icon: "camera.viewfinder",
+    route: "/admin/control/uploads",
+    type: "navigation",
+  },
 ];
 
 const GAME_FLOW_ITEMS: ControlItem[] = [

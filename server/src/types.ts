@@ -83,6 +83,14 @@ export interface FunnyAnswer {
   createdAt: string;
 }
 
+export interface UploadRecord {
+  filename: string;
+  guestId?: string | null;
+  groupId?: string | null;
+  challengeId?: string | null;
+  uploadedAt: string;
+}
+
 export interface GameState {
   started: boolean;
   startedAt?: string;
@@ -97,6 +105,7 @@ export interface DataShape {
   passwordGames: PasswordGameConfig[];
   funnyQuestions: FunnyQuestion[];
   funnyAnswers: FunnyAnswer[];
+  uploads: UploadRecord[];
   gameState: GameState;
 }
 
@@ -108,6 +117,7 @@ export const DEFAULT_DATA: DataShape = {
   passwordGames: [],
   funnyQuestions: [],
   funnyAnswers: [],
+  uploads: [],
   gameState: {
     started: false,
   },

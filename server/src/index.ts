@@ -18,13 +18,35 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, "uploads/"),
   filename: (req, file, cb) => {
     const ext = extname(file.originalname || "").toLowerCase() || ".jpg";
-    const rawGuest = typeof req.body?.guestId === "string" ? req.body.guestId : "guest";
-    const guestSlug =
-      rawGuest
+
+    const normalizeSegment = (value: unknown) => {
+      if (typeof value !== "string") {
+        return null;
+      }
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+      const cleaned = trimmed
         .toLowerCase()
         .replace(/[^a-z0-9_-]/g, "")
-        .slice(0, 32) || "guest";
-    const filename = `${Date.now()}-${guestSlug}-${nanoid(6)}${ext}`;
+        .slice(0, 32);
+      return cleaned || null;
+    };
+
+    const segments = [Date.now().toString()];
+    const groupSegment = normalizeSegment(req.body?.groupId);
+    if (groupSegment) {
+      segments.push(`grp-${groupSegment}`);
+    }
+    const guestSegment = normalizeSegment(req.body?.guestId);
+    if (guestSegment) {
+      segments.push(`guest-${guestSegment}`);
+    }
+
+    segments.push(nanoid(6));
+
+    const filename = `${segments.join("-")}${ext}`;
     cb(null, filename);
   },
 });
@@ -100,30 +122,53 @@ app.post("/api/upload", upload.single("image"), async (req, res) => {
     const url = `/uploads/${req.file.filename}`;
     const absoluteUrl = `${req.protocol}://${req.get("host")}${url}`;
 
-    if (groupId && typeof groupId === "string") {
+    const normalizeId = (value: unknown): string | null => {
+      if (typeof value !== "string") {
+        return null;
+      }
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    };
+
+    const normalizedGuestId = normalizeId(guestId);
+    const normalizedGroupId = normalizeId(groupId);
+    const normalizedChallengeId = normalizeId(challengeId);
+
+    if (normalizedGroupId) {
       await mutate((data) => {
-        const group = data.groups.find((g) => g.id === groupId);
+        const group = data.groups.find((g) => g.id === normalizedGroupId);
         if (group) {
           if (!group.progress) {
             group.progress = { completedGames: [] };
           }
           group.progress.selfieUrl = url;
           group.progress.selfieUploadedAt = uploadedAt;
-          if (challengeId && typeof challengeId === "string") {
-            group.progress.lastSelfieChallenge = challengeId;
+          if (normalizedChallengeId) {
+            group.progress.lastSelfieChallenge = normalizedChallengeId;
           }
         }
       });
     }
 
+    const normalizedUpload = {
+      filename: req.file.filename,
+      guestId: normalizedGuestId,
+      groupId: normalizedGroupId,
+      challengeId: normalizedChallengeId,
+      uploadedAt,
+    } as const;
+
+    await mutate((data) => {
+      if (!Array.isArray(data.uploads)) {
+        data.uploads = [];
+      }
+      data.uploads.push({ ...normalizedUpload });
+    });
+
     res.status(201).json({
       url,
       absoluteUrl,
-      filename: req.file.filename,
-      guestId: typeof guestId === "string" ? guestId : null,
-      groupId: typeof groupId === "string" ? groupId : null,
-      challengeId: typeof challengeId === "string" ? challengeId : null,
-      uploadedAt,
+      ...normalizedUpload,
     });
   } catch (error) {
     console.error("upload error", error);

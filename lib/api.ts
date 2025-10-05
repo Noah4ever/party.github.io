@@ -327,6 +327,24 @@ export interface AdminDataDump {
   funnyAnswers: FunnyAnswerDTO[];
 }
 
+export interface AdminUploadEntryDTO {
+  filename: string;
+  url: string;
+  size: number;
+  createdAt: string;
+  updatedAt?: string;
+  uploadedAt?: string;
+  guestId?: string | null;
+  guestName?: string | null;
+  groupId?: string | null;
+  groupName?: string | null;
+  challengeId?: string | null;
+}
+
+export interface AdminUploadListDTO {
+  files: AdminUploadEntryDTO[];
+}
+
 export const adminApi = {
   downloadData: () => api.get<AdminDataDump>("/admin/data"),
   importData: (data: AdminDataDump) =>
@@ -335,6 +353,7 @@ export const adminApi = {
   getGameState: () => api.get<GameStateDTO>("/admin/game-state"),
   startGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/start"),
   resetGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/reset"),
+  listUploads: () => api.get<AdminUploadListDTO>("/admin/uploads"),
 };
 
 export const authApi = {
