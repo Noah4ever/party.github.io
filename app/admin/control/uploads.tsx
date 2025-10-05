@@ -10,6 +10,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -367,7 +368,9 @@ export default function UploadsScreen() {
                 <ThemedText style={[styles.filename, { color: theme.text }]} numberOfLines={1}>
                   {item.filename}
                 </ThemedText>
-                <ThemedText style={{ color: theme.textMuted, fontSize: 12 }}>{formatDateTime(uploadedAt)}</ThemedText>
+                <ThemedText style={{ color: theme.textMuted, fontSize: 12 }}>
+                  {formatDateTime(uploadedAt)} Uhr
+                </ThemedText>
                 <ThemedText style={{ color: theme.textMuted, fontSize: 12 }}>
                   {formatBytes(item.size) || "Unbekannte Größe"}
                 </ThemedText>
@@ -382,8 +385,8 @@ export default function UploadsScreen() {
                     event.stopPropagation();
                     handleDownloadItems([item]);
                   }}>
-                  <IconSymbol name="arrow.down.circle" size={18} color={theme.primary} />
-                  <ThemedText style={[styles.cardActionText, { color: theme.primary }]}>Download</ThemedText>
+                  <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
+                  <ThemedText style={[styles.cardActionText, { color: theme.accent }]}>Download</ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.cardActionButton}
@@ -487,8 +490,8 @@ export default function UploadsScreen() {
                     opacity: !downloadsSupported || working ? 0.5 : 1,
                   },
                 ]}>
-                <IconSymbol name="arrow.down.circle" size={18} color={theme.primary} />
-                <ThemedText style={[styles.selectionButtonText, { color: theme.primary }]}>Download</ThemedText>
+                <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
+                <ThemedText style={[styles.selectionButtonText, { color: theme.accent }]}>Download</ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDeleteSelected}
@@ -527,88 +530,98 @@ export default function UploadsScreen() {
       </ScrollView>
 
       <Modal visible={!!previewItem} transparent animationType="fade" onRequestClose={handleClosePreview}>
-        <View style={[styles.previewBackdrop, { backgroundColor: theme.backdrop }]}>
-          {previewItem ? (
-            <View style={[styles.previewCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <TouchableOpacity style={styles.previewCloseButton} onPress={handleClosePreview}>
-                <IconSymbol name="xmark.circle" size={22} color={theme.text} />
-              </TouchableOpacity>
-              {isVideoFile(previewItem.filename) ? (
-                <Video
-                  source={{ uri: `${baseUrl}${previewItem.url}` }}
-                  style={styles.previewMedia}
-                  useNativeControls
-                  shouldPlay
-                  resizeMode={ResizeMode.CONTAIN}
-                />
-              ) : (
-                <Image
-                  source={{ uri: `${baseUrl}${previewItem.url}` }}
-                  style={styles.previewMedia}
-                  contentFit="contain"
-                  transition={200}
-                />
-              )}
-              <View style={styles.previewMeta}>
-                <ThemedText style={[styles.previewMetaRow, { color: theme.text }]}>
-                  Datei: {previewItem.filename}
-                </ThemedText>
-                <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
-                  Hochgeladen: {formatDateTime(previewItem.uploadedAt ?? previewItem.createdAt ?? Date.now())}
-                </ThemedText>
-                {previewItem.size ? (
-                  <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
-                    Größe: {formatBytes(previewItem.size)}
-                  </ThemedText>
-                ) : null}
-                {previewItem.groupName || previewItem.groupId ? (
-                  <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
-                    Gruppe: {previewItem.groupName ?? previewItem.groupId}
-                  </ThemedText>
-                ) : null}
-                {previewItem.guestName || previewItem.guestId ? (
-                  <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
-                    Gast: {previewItem.guestName ?? previewItem.guestId}
-                  </ThemedText>
-                ) : null}
-                {previewItem.challengeId ? (
-                  <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
-                    Challenge: {previewItem.challengeId}
-                  </ThemedText>
-                ) : null}
-              </View>
-              <View style={styles.previewActions}>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (!downloadsSupported) {
-                      showAlert({
-                        title: "Download nicht verfügbar",
-                        message: "Bitte öffne das Dashboard im Browser, um Dateien herunterzuladen.",
-                      });
-                      return;
-                    }
-                    handleDownloadItems([previewItem]);
-                  }}
-                  style={[styles.previewActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}>
-                  <IconSymbol name="arrow.down.circle" size={20} color={theme.primary} />
-                  <ThemedText style={[styles.previewActionText, { color: theme.primary }]}>Download</ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    void handleDeleteUploads([previewItem.filename], {
-                      onSuccess: () => {
-                        setPreviewItem(null);
-                      },
-                    });
-                  }}
-                  style={[styles.previewActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}>
-                  <IconSymbol name="trash.fill" size={20} color={theme.danger} />
-                  <ThemedText style={[styles.previewActionText, { color: theme.danger }]}>Löschen</ThemedText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
-        </View>
+        <TouchableWithoutFeedback onPress={handleClosePreview}>
+          <View style={[styles.previewBackdrop, { backgroundColor: theme.backdrop }]}>
+            {previewItem ? (
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={[styles.previewCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <TouchableOpacity style={styles.previewCloseButton} onPress={handleClosePreview}>
+                    <IconSymbol name="xmark.circle" size={22} color={theme.text} />
+                  </TouchableOpacity>
+                  {isVideoFile(previewItem.filename) ? (
+                    <Video
+                      source={{ uri: `${baseUrl}${previewItem.url}` }}
+                      style={styles.previewMedia}
+                      useNativeControls
+                      shouldPlay
+                      resizeMode={ResizeMode.CONTAIN}
+                    />
+                  ) : (
+                    <Image
+                      source={{ uri: `${baseUrl}${previewItem.url}` }}
+                      style={styles.previewMedia}
+                      contentFit="contain"
+                      transition={200}
+                    />
+                  )}
+                  <View style={styles.previewMeta}>
+                    <ThemedText style={[styles.previewMetaRow, { color: theme.text }]}>
+                      Datei: {previewItem.filename}
+                    </ThemedText>
+                    <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
+                      Hochgeladen: {formatDateTime(previewItem.uploadedAt ?? previewItem.createdAt ?? Date.now())}
+                    </ThemedText>
+                    {previewItem.size ? (
+                      <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
+                        Größe: {formatBytes(previewItem.size)}
+                      </ThemedText>
+                    ) : null}
+                    {previewItem.groupName || previewItem.groupId ? (
+                      <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
+                        Gruppe: {previewItem.groupName ?? previewItem.groupId}
+                      </ThemedText>
+                    ) : null}
+                    {previewItem.guestName || previewItem.guestId ? (
+                      <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
+                        Gast: {previewItem.guestName ?? previewItem.guestId}
+                      </ThemedText>
+                    ) : null}
+                    {previewItem.challengeId ? (
+                      <ThemedText style={[styles.previewMetaRow, { color: theme.textMuted }]}>
+                        Challenge: {previewItem.challengeId}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+                  <View style={styles.previewActions}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (!downloadsSupported) {
+                          showAlert({
+                            title: "Download nicht verfügbar",
+                            message: "Bitte öffne das Dashboard im Browser, um Dateien herunterzuladen.",
+                          });
+                          return;
+                        }
+                        handleDownloadItems([previewItem]);
+                      }}
+                      style={[
+                        styles.previewActionButton,
+                        { borderColor: theme.border, backgroundColor: theme.overlay },
+                      ]}>
+                      <IconSymbol name="arrow.down.circle" size={20} color={theme.accent} />
+                      <ThemedText style={[styles.previewActionText, { color: theme.accent }]}>Download</ThemedText>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        void handleDeleteUploads([previewItem.filename], {
+                          onSuccess: () => {
+                            setPreviewItem(null);
+                          },
+                        });
+                      }}
+                      style={[
+                        styles.previewActionButton,
+                        { borderColor: theme.border, backgroundColor: theme.overlay },
+                      ]}>
+                      <IconSymbol name="trash.fill" size={20} color={theme.danger} />
+                      <ThemedText style={[styles.previewActionText, { color: theme.danger }]}>Löschen</ThemedText>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            ) : null}
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </>
   );
