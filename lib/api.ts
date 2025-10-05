@@ -145,7 +145,33 @@ async function request<TResponse = any, TBody = any>(opts: RequestOptions<TBody>
     clearTimeout(timeout);
   }
 
-  if (raw) return res;
+  if (raw) {
+    if (!res.ok) {
+      const text = await res.text();
+      let details: any = undefined;
+      let message = text || res.statusText || "Request failed";
+      if (text) {
+        try {
+          details = JSON.parse(text);
+          if (details?.message) {
+            message = details.message;
+          }
+        } catch {
+          /* keep plain text */
+        }
+      }
+      if (res.status === 401 && unauthorizedHandler) {
+        unauthorizedHandler();
+      }
+      throw new ApiError({
+        status: res.status,
+        url,
+        message,
+        details: details ?? text,
+      });
+    }
+    return res;
+  }
 
   const text = await res.text();
   let json: any = undefined;
@@ -390,6 +416,16 @@ export const adminApi = {
   listUploads: () => api.get<AdminUploadListDTO>("/admin/uploads"),
   deleteUploads: (filenames: string[]) =>
     api.post<DeleteUploadsResponseDTO, { filenames: string[] }>("/admin/uploads/delete", { filenames }),
+  archiveUploads: (filenames: string[]) =>
+    api.post<Response, { filenames: string[] }>(
+      "/admin/uploads/archive",
+      { filenames },
+      {
+        raw: true,
+        headers: { Accept: "application/zip" },
+        timeoutMs: Math.max(30000, filenames.length * 2000),
+      }
+    ),
   getLeaderboard: () => api.get<AdminLeaderboardDTO>("/admin/leaderboard"),
   getQuizPenaltyConfig: () => api.get<QuizPenaltyConfigDTO>("/admin/quiz-penalty"),
   updateQuizPenaltyConfig: (data: QuizPenaltyConfigDTO) =>

@@ -52,6 +52,23 @@ function formatBytes(bytes?: number): string {
   return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+function getFilenameFromContentDisposition(disposition: string | null, fallback: string): string {
+  if (!disposition) return fallback;
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      /* ignore malformed encoding */
+    }
+  }
+  const quotedMatch = disposition.match(/filename="?([^";]+)"?/i);
+  if (quotedMatch?.[1]) {
+    return quotedMatch[1];
+  }
+  return fallback;
+}
+
 export default function UploadsScreen() {
   const theme = useTheme();
   const { ensureSession } = useAdminAuth();
@@ -114,7 +131,8 @@ export default function UploadsScreen() {
         return;
       }
       const response = (await adminApi.listUploads()) as { files?: AdminUploadEntryDTO[] };
-      setUploads(response.files ?? []);
+      const validFiles = (response.files ?? []).filter((item) => !/\.txt$/i.test(item.filename));
+      setUploads(validFiles);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : "Failed to load uploads";
       setError(message);
@@ -177,7 +195,7 @@ export default function UploadsScreen() {
   }, [filteredUploads]);
 
   const handleDownloadItems = useCallback(
-    (items: AdminUploadEntryDTO[]) => {
+    async (items: AdminUploadEntryDTO[]) => {
       if (items.length === 0) return;
       const doc = getDocument();
       if (!downloadsSupported || !doc || !doc.body) {
@@ -188,17 +206,72 @@ export default function UploadsScreen() {
         return;
       }
 
-      items.forEach((item, index) => {
+      const triggerDownload = (blob: Blob, filename: string) => {
+        const objectUrl = URL.createObjectURL(blob);
         const link = doc.createElement("a");
-        link.href = `${baseUrl}${item.url}`;
-        link.download = item.filename;
+        link.href = objectUrl;
+        link.download = filename;
         link.style.display = "none";
         doc.body.appendChild(link);
-        setTimeout(() => {
-          link.click();
-          doc.body.removeChild(link);
-        }, index * 80);
-      });
+        link.click();
+        doc.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      };
+
+      if (items.length === 1) {
+        const item = items[0];
+        try {
+          const response = await fetch(`${baseUrl}${item.url}`, {
+            credentials: "include",
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const blob = await response.blob();
+          triggerDownload(blob, item.filename);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Unbekannter Fehler";
+          showAlert({
+            title: `Download fehlgeschlagen (${item.filename})`,
+            message,
+          });
+        }
+        return;
+      }
+
+      const filenames = items.map((item) => item.filename);
+      try {
+        const response = (await adminApi.archiveUploads(filenames)) as Response;
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `HTTP ${response.status}`);
+        }
+        const blob = await response.blob();
+        const header = response.headers.get("content-disposition");
+        const fallbackName = `uploads-${new Date().toISOString().replace(/[:.]/g, "-")}.zip`;
+        const zipName = getFilenameFromContentDisposition(header, fallbackName);
+        triggerDownload(blob, zipName);
+
+        const missingHeader = response.headers.get("X-Missing-Uploads");
+        if (missingHeader) {
+          const missingList = missingHeader
+            .split(",")
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+          if (missingList.length > 0) {
+            showAlert({
+              title: "Einige Dateien fehlten",
+              message: `Nicht gefunden: ${missingList.join(", ")}`,
+            });
+          }
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unbekannter Fehler";
+        showAlert({
+          title: "Download fehlgeschlagen",
+          message,
+        });
+      }
     },
     [baseUrl, downloadsSupported]
   );
@@ -258,7 +331,7 @@ export default function UploadsScreen() {
 
   const handleDownloadSelected = useCallback(() => {
     if (selectedUploads.length === 0) return;
-    handleDownloadItems(selectedUploads);
+    void handleDownloadItems(selectedUploads);
   }, [handleDownloadItems, selectedUploads]);
 
   const handleOpenPreview = useCallback((item: AdminUploadEntryDTO) => {
@@ -354,13 +427,7 @@ export default function UploadsScreen() {
                 />
               </TouchableOpacity>
               {video ? (
-                <Video
-                  source={{ uri }}
-                  style={styles.image}
-                  useNativeControls
-                  shouldPlay={false}
-                  resizeMode={ResizeMode.COVER}
-                />
+                <Video source={{ uri }} useNativeControls shouldPlay={false} resizeMode={ResizeMode.COVER} />
               ) : (
                 <Image source={{ uri }} style={styles.image} contentFit="cover" transition={200} cachePolicy="memory" />
               )}
@@ -383,7 +450,7 @@ export default function UploadsScreen() {
                   style={styles.cardActionButton}
                   onPress={(event) => {
                     event.stopPropagation();
-                    handleDownloadItems([item]);
+                    void handleDownloadItems([item]);
                   }}>
                   <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
                   <ThemedText style={[styles.cardActionText, { color: theme.accent }]}>Download</ThemedText>
@@ -536,7 +603,7 @@ export default function UploadsScreen() {
               <TouchableWithoutFeedback onPress={() => {}}>
                 <View style={[styles.previewCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
                   <TouchableOpacity style={styles.previewCloseButton} onPress={handleClosePreview}>
-                    <IconSymbol name="xmark.circle" size={22} color={theme.text} />
+                    <IconSymbol name="xmark.circle" size={22} color={theme.danger} />
                   </TouchableOpacity>
                   {isVideoFile(previewItem.filename) ? (
                     <Video
@@ -592,7 +659,7 @@ export default function UploadsScreen() {
                           });
                           return;
                         }
-                        handleDownloadItems([previewItem]);
+                        void handleDownloadItems([previewItem]);
                       }}
                       style={[
                         styles.previewActionButton,

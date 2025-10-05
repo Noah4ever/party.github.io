@@ -10,19 +10,21 @@
     "build": "tsc -p ."
   },
   "dependencies": {
-    "ws": "^8.16.0",
-    "dotenv": "^16.4.5",
+    "archiver": "^7.0.1",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
     "nanoid": "^5.0.7",
+    "ws": "^8.16.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.10",
+    "@types/archiver": "^6.0.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/multer": "^2.0.0",
+    "@types/ws": "^8.5.10",
     "tsx": "^4.19.1",
     "typescript": "^5.4.5"
   }
