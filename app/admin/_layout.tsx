@@ -121,6 +121,7 @@ function RootLayoutInner() {
         <Stack.Screen name="control/quiz-questions" options={{ title: "Quiz Question" }} />
         <Stack.Screen name="control/funny-questions" options={{ title: "Funny Question" }} />
         <Stack.Screen name="control/passwords" options={{ title: "Passwords" }} />
+        <Stack.Screen name="control/leaderboard" options={{ title: "Leaderboard" }} />
         <Stack.Screen name="control/uploads" options={{ title: "Uploads" }} />
       </Stack>
       <StatusBar style="auto" />

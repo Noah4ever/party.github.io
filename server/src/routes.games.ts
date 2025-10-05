@@ -2,11 +2,11 @@ import { Router } from "express";
 import { nanoid } from "nanoid";
 import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
+import { buildScoreboard, computeGroupScore, parseIsoTime } from "./scoreboard.js";
 import {
   FunnyAnswer,
   FunnyQuestion,
   GameState,
-  Group,
   NeverHaveIEverPack,
   PasswordGameConfig,
   QuizPack,
@@ -31,41 +31,6 @@ gamesRouter.get("/state", async (_req, res) => {
   res.json(state);
 });
 
-type FinalScoreboardEntry = {
-  id: string;
-  name: string;
-  durationMs: number;
-  rawDurationMs: number;
-  penaltySeconds: number;
-  startedAt?: string;
-  finishedAt?: string;
-};
-
-const parseIsoTime = (value?: string | null): number | undefined => {
-  if (!value) return undefined;
-  const ms = Date.parse(value);
-  return Number.isFinite(ms) ? ms : undefined;
-};
-
-const computeGroupScore = (group: Group, fallbackStartMs?: number): FinalScoreboardEntry | null => {
-  const startedAtMs = parseIsoTime(group.startedAt) ?? fallbackStartMs;
-  const finishedAtMs = parseIsoTime(group.finishedAt);
-  if (startedAtMs === undefined || finishedAtMs === undefined) {
-    return null;
-  }
-  const penaltySeconds = Math.max(0, group.progress?.timePenaltySeconds ?? 0);
-  const rawDurationMs = Math.max(0, finishedAtMs - startedAtMs);
-  return {
-    id: group.id,
-    name: group.name,
-    durationMs: rawDurationMs + penaltySeconds * 1000,
-    rawDurationMs,
-    penaltySeconds,
-    startedAt: group.startedAt,
-    finishedAt: group.finishedAt,
-  };
-};
-
 /**
  * GET /api/games/final-summary
  *
@@ -89,20 +54,7 @@ gamesRouter.get("/final-summary", async (req, res) => {
   const passwordConfig = data.passwordGames.find((cfg) => cfg.active) ?? data.passwordGames[0];
   const fallbackGlobalMs =
     parseIsoTime(passwordConfig?.startedAt) ?? parseIsoTime(data.gameState?.startedAt) ?? undefined;
-  const scoreboard = groups
-    .map((group) => computeGroupScore(group, fallbackGlobalMs))
-    .filter((entry): entry is FinalScoreboardEntry => entry !== null)
-    .sort((a, b) => {
-      if (a.durationMs !== b.durationMs) {
-        return a.durationMs - b.durationMs;
-      }
-      const aFinished = parseIsoTime(a.finishedAt);
-      const bFinished = parseIsoTime(b.finishedAt);
-      if (aFinished !== undefined && bFinished !== undefined) {
-        return aFinished - bFinished;
-      }
-      return 0;
-    });
+  const scoreboard = buildScoreboard(groups, fallbackGlobalMs);
 
   const placementIndex = scoreboard.findIndex((entry) => entry.id === targetGroup.id);
   const fallbackStartMsForGroup = parseIsoTime(targetGroup.startedAt) ?? fallbackGlobalMs;

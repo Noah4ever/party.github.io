@@ -4,6 +4,7 @@ import path from "path";
 
 import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
+import { buildScoreboard, parseIsoTime } from "./scoreboard.js";
 import { DataShape, GameState, UploadRecord } from "./types.js";
 import { broadcastGameState } from "./websocket.js";
 
@@ -95,6 +96,40 @@ adminRouter.get("/uploads", requireAuth, async (_req, res) => {
     console.error("admin uploads listing failed", error);
     res.status(500).json({ message: "Failed to read uploads directory" });
   }
+});
+
+adminRouter.get("/leaderboard", requireAuth, async (_req, res) => {
+  const data = await loadData();
+  const groups = data.groups ?? [];
+  const passwordConfig = data.passwordGames.find((cfg) => cfg.active) ?? data.passwordGames[0];
+  const fallbackGlobalMs =
+    parseIsoTime(passwordConfig?.startedAt) ?? parseIsoTime(data.gameState?.startedAt) ?? undefined;
+
+  const scoreboard = buildScoreboard(groups, fallbackGlobalMs);
+  const scoreboardWithPlacement = scoreboard.map((entry, index) => ({ ...entry, placement: index + 1 }));
+  const top = scoreboardWithPlacement.slice(0, 4);
+  const others = scoreboardWithPlacement.slice(4);
+  const finishedIds = new Set(scoreboard.map((entry) => entry.id));
+  const unfinished = groups
+    .filter((group) => !finishedIds.has(group.id))
+    .map((group) => ({
+      id: group.id,
+      name: group.name,
+      startedAt: group.startedAt ?? null,
+      finishedAt: group.finishedAt ?? null,
+    }));
+
+  res.json({
+    totalFinished: scoreboard.length,
+    totalGroups: groups.length,
+    top,
+    others,
+    unfinished,
+    fallback: {
+      passwordStartedAt: passwordConfig?.startedAt ?? null,
+      gameStartedAt: data.gameState?.startedAt ?? null,
+    },
+  });
 });
 
 /**

@@ -345,6 +345,29 @@ export interface AdminUploadListDTO {
   files: AdminUploadEntryDTO[];
 }
 
+export interface AdminLeaderboardEntryDTO extends FinalScoreEntryDTO {
+  placement: number;
+}
+
+export interface AdminUnfinishedGroupDTO {
+  id: string;
+  name: string;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+}
+
+export interface AdminLeaderboardDTO {
+  totalFinished: number;
+  totalGroups: number;
+  top: AdminLeaderboardEntryDTO[];
+  others: AdminLeaderboardEntryDTO[];
+  unfinished: AdminUnfinishedGroupDTO[];
+  fallback?: {
+    passwordStartedAt?: string | null;
+    gameStartedAt?: string | null;
+  };
+}
+
 export const adminApi = {
   downloadData: () => api.get<AdminDataDump>("/admin/data"),
   importData: (data: AdminDataDump) =>
@@ -354,6 +377,7 @@ export const adminApi = {
   startGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/start"),
   resetGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/reset"),
   listUploads: () => api.get<AdminUploadListDTO>("/admin/uploads"),
+  getLeaderboard: () => api.get<AdminLeaderboardDTO>("/admin/leaderboard"),
 };
 
 export const authApi = {

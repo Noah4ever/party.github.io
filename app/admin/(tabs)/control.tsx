@@ -57,6 +57,14 @@ const NAVIGATION_ITEMS: ControlItem[] = [
     type: "navigation",
   },
   {
+    key: "leaderboard",
+    title: "Leaderboard",
+    description: "See group rankings",
+    icon: "podium",
+    route: "/admin/control/leaderboard",
+    type: "navigation",
+  },
+  {
     key: "uploads",
     title: "Uploads",
     description: "View uploaded selfies",
