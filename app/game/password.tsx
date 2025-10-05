@@ -1,11 +1,5 @@
 import { Image } from "expo-image";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -22,10 +16,10 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
-import { passwordGameApi } from "@/lib/api";
+import { PasswordAttemptResponseDTO, passwordGameApi } from "@/lib/api";
+import { showAlert } from "@/lib/dialogs";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-
-const headerColors = { light: "#FDE68A", dark: "#1F2937" };
 
 export default function PasswordScreen() {
   const theme = useTheme();
@@ -38,6 +32,8 @@ export default function PasswordScreen() {
   const [error, setError] = useState<string | null>(null);
   const [attemptedInvalid, setAttemptedInvalid] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [groupId, setGroupId] = useState<string | null>(null);
 
   const passwordLength = useMemo(() => {
     if (validPasswords.length === 0) {
@@ -57,12 +53,7 @@ export default function PasswordScreen() {
         if (!mounted) {
           return;
         }
-        if (
-          res &&
-          "validPasswords" in res &&
-          Array.isArray(res.validPasswords) &&
-          res.validPasswords.length > 0
-        ) {
+        if (res && "validPasswords" in res && Array.isArray(res.validPasswords) && res.validPasswords.length > 0) {
           setValidPasswords(res.validPasswords as string[]);
           setError(null);
         } else {
@@ -114,6 +105,19 @@ export default function PasswordScreen() {
   }, [passwordLength]);
 
   useEffect(() => {
+    (async () => {
+      try {
+        const storedGroupId = await AsyncStorage.getItem("groupId");
+        if (storedGroupId) {
+          setGroupId(storedGroupId);
+        }
+      } catch (err) {
+        console.warn("password screen groupId load failed", err);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
         router.navigate("/game/final");
@@ -122,21 +126,15 @@ export default function PasswordScreen() {
     }
   }, [router, success]);
 
-  const normalizedInput = useMemo(
-    () => digits.join("").toUpperCase(),
-    [digits]
-  );
-  const isComplete =
-    passwordLength > 0 && digits.every((digit) => digit.trim().length === 1);
+  const normalizedInput = useMemo(() => digits.join("").toUpperCase(), [digits]);
+  const isComplete = passwordLength > 0 && digits.every((digit) => digit.trim().length === 1);
 
   const isMatch = useMemo(() => {
     if (!isComplete) {
       return false;
     }
     const normal = normalizedInput.trim();
-    return validPasswords.some(
-      (password) => password.toUpperCase().trim() === normal
-    );
+    return validPasswords.some((password) => password.toUpperCase().trim() === normal);
   }, [isComplete, normalizedInput, validPasswords]);
 
   const handleDigitChange = useCallback((index: number, value: string) => {
@@ -170,10 +168,7 @@ export default function PasswordScreen() {
   }, []);
 
   const handleKeyPress = useCallback(
-    (
-      index: number,
-      event: NativeSyntheticEvent<TextInputKeyPressEventData>
-    ) => {
+    (index: number, event: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
       if (event.nativeEvent.key === "Backspace" && digits[index] === "") {
         const prevIndex = index - 1;
         if (prevIndex >= 0) {
@@ -189,21 +184,48 @@ export default function PasswordScreen() {
     [digits]
   );
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!isComplete) {
       setAttemptedInvalid(true);
       return;
     }
 
-    if (isMatch) {
-      setSuccess(true);
-      setAttemptedInvalid(false);
+    if (!groupId) {
+      showAlert({
+        title: "Gruppe nicht gefunden",
+        message: "Wir konnten deine Gruppenzuordnung nicht laden. Versuche es nach einem Neustart erneut.",
+      });
       return;
     }
 
-    setAttemptedInvalid(true);
-    setSuccess(false);
-  }, [isComplete, isMatch]);
+    if (submitting) {
+      return;
+    }
+
+    setSubmitting(true);
+    setAttemptedInvalid(false);
+
+    try {
+      const response = (await passwordGameApi.attempt(groupId, normalizedInput)) as PasswordAttemptResponseDTO;
+      if (response.correct) {
+        setSuccess(true);
+        setAttemptedInvalid(false);
+      } else {
+        setAttemptedInvalid(true);
+        setSuccess(false);
+      }
+    } catch (err) {
+      console.error("password attempt failed", err);
+      showAlert({
+        title: "Überprüfung fehlgeschlagen",
+        message: "Wir konnten den Versuch nicht speichern. Prüft eure Verbindung und versucht es erneut.",
+      });
+      setAttemptedInvalid(true);
+      setSuccess(false);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [groupId, isComplete, normalizedInput, submitting]);
 
   return (
     <ThemedView style={styles.screen}>
@@ -213,25 +235,16 @@ export default function PasswordScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-            <Image
-              source={require("@/assets/images/papa/crown.png")}
-              style={styles.papaLogo}
-            />
+            <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
             <View style={[styles.confetti, styles.confettiFour]} />
           </View>
-        }
-      >
+        }>
         <ThemedView
-          style={[
-            styles.card,
-            styles.heroCard,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-          testID="password-hero-card"
-        >
+          style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}
+          testID="password-hero-card">
           <View style={styles.titleRow}>
             <ThemedText type="title" style={styles.titleText}>
               Finale Challenge
@@ -239,9 +252,8 @@ export default function PasswordScreen() {
             <HelloWave />
           </View>
           <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
-            Ihr habt es fast geschafft! Bringt nun den Gastgeber einen Shot und
-            trinkt mit ihn, mit etwas Glück und Charm wird er euch den Schlüssel
-            verraten!
+            Ihr habt es fast geschafft! Bringt nun den Gastgeber einen Shot und trinkt mit ihn, mit etwas Glück und
+            Charm wird er euch den Schlüssel verraten!
           </ThemedText>
           <View
             style={[
@@ -250,50 +262,32 @@ export default function PasswordScreen() {
                 backgroundColor: theme.backgroundAlt,
                 borderColor: theme.border,
               },
-            ]}
-          >
+            ]}>
             <IconSymbol name="lock.circle" size={18} color={theme.primary} />
-            <ThemedText
-              style={[styles.statusBadgeLabel, { color: theme.textMuted }]}
-            >
+            <ThemedText style={[styles.statusBadgeLabel, { color: theme.textMuted }]}>
               Nur das richtige Passwort öffnet die Tür.
             </ThemedText>
           </View>
         </ThemedView>
 
-        <ThemedView
-          style={[
-            styles.card,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
+        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <ThemedText type="subtitle" style={styles.sectionHeading}>
             Gastgeber-Schlüssel
           </ThemedText>
-          <ThemedText
-            style={[styles.sectionIntro, { color: theme.textSecondary }]}
-          >
-            Jeder gültige Code hat die gleiche Länge. Tragt gemeinsam die
-            Zeichen ein und bestätigt eure Eingabe.
+          <ThemedText style={[styles.sectionIntro, { color: theme.textSecondary }]}>
+            Jeder gültige Code hat die gleiche Länge. Tragt gemeinsam die Zeichen ein und bestätigt eure Eingabe.
           </ThemedText>
 
           {loading ? (
             <View style={styles.loadingState}>
               <ActivityIndicator size="large" color={theme.primary} />
-              <ThemedText
-                style={[styles.loadingText, { color: theme.textMuted }]}
-              >
-                Codes werden geladen …
-              </ThemedText>
+              <ThemedText style={[styles.loadingText, { color: theme.textMuted }]}>Codes werden geladen …</ThemedText>
             </View>
           ) : error ? (
-            <ThemedText style={[styles.errorText, { color: theme.danger }]}>
-              {error}
-            </ThemedText>
+            <ThemedText style={[styles.errorText, { color: theme.danger }]}>{error}</ThemedText>
           ) : passwordLength === 0 ? (
             <ThemedText style={[styles.errorText, { color: theme.textMuted }]}>
-              Keine Passwörter verfügbar. Fragt den Gastgeber, ob das Spiel
-              korrekt vorbereitet wurde.
+              Keine Passwörter verfügbar. Fragt den Gastgeber, ob das Spiel korrekt vorbereitet wurde.
             </ThemedText>
           ) : (
             <>
@@ -315,10 +309,7 @@ export default function PasswordScreen() {
                     style={[
                       styles.digitInput,
                       {
-                        borderColor:
-                          attemptedInvalid && isComplete && !isMatch
-                            ? theme.danger
-                            : theme.border,
+                        borderColor: attemptedInvalid && isComplete && !isMatch ? theme.danger : theme.border,
                         backgroundColor: theme.inputBackground,
                         color: theme.text,
                       },
@@ -330,49 +321,23 @@ export default function PasswordScreen() {
                 ))}
               </View>
               {attemptedInvalid && isComplete && !isMatch ? (
-                <View
-                  style={[
-                    styles.feedbackRow,
-                    styles.feedbackRowError,
-                    { borderColor: theme.danger },
-                  ]}
-                >
-                  <IconSymbol
-                    name="xmark.circle"
-                    size={18}
-                    color={theme.danger}
-                    style={{ marginRight: 8 }}
-                  />
-                  <ThemedText
-                    style={[styles.feedbackText, { color: theme.danger }]}
-                  >
+                <View style={[styles.feedbackRow, styles.feedbackRowError, { borderColor: theme.danger }]}>
+                  <IconSymbol name="xmark.circle" size={18} color={theme.danger} style={{ marginRight: 8 }} />
+                  <ThemedText style={[styles.feedbackText, { color: theme.danger }]}>
                     Das war nicht der richtige Code. Probiert es erneut!
                   </ThemedText>
                 </View>
               ) : null}
               {success ? (
-                <View
-                  style={[
-                    styles.feedbackRow,
-                    styles.feedbackRowSuccess,
-                    { borderColor: theme.success },
-                  ]}
-                >
-                  <IconSymbol
-                    name="checkmark.circle"
-                    size={18}
-                    color={theme.success}
-                    style={{ marginRight: 8 }}
-                  />
-                  <ThemedText
-                    style={[styles.feedbackText, { color: theme.success }]}
-                  >
+                <View style={[styles.feedbackRow, styles.feedbackRowSuccess, { borderColor: theme.success }]}>
+                  <IconSymbol name="checkmark.circle" size={18} color={theme.success} style={{ marginRight: 8 }} />
+                  <ThemedText style={[styles.feedbackText, { color: theme.success }]}>
                     Richtig! Ihr werdet jetzt ins Finale teleportiert …
                   </ThemedText>
                 </View>
               ) : null}
               <Button onPress={handleSubmit} iconText="arrow.right.circle">
-                {isComplete ? "Schlüssel einlösen" : "Code eingeben"}
+                {submitting ? "Wird geprüft…" : isComplete ? "Schlüssel einlösen" : "Code eingeben"}
               </Button>
             </>
           )}

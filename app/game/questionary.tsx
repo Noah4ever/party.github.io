@@ -7,10 +7,11 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useGlobalStyles } from "@/constants/styles";
 import { useTheme } from "@/constants/theme";
-import { funnyQuestionApi, FunnyQuestionDTO } from "@/lib/api";
+import { funnyQuestionApi, FunnyQuestionDTO, gameApi } from "@/lib/api";
+import { showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 //TODO: ASH add questions
 
@@ -23,14 +24,26 @@ export default function HomeScreen() {
   const [questions, setQuestions] = useState<FunnyQuestionDTO[]>([]);
   const [questionCounter, setQuestionCounter] = useState<number>(0);
   const [guestId, setGuestId] = useState("");
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const textInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     (async () => {
-      const guestId = await AsyncStorage.getItem("guestId");
-      if (guestId) {
-        setGuestId(guestId);
+      try {
+        const [storedGuestId, storedGroupId] = await Promise.all([
+          AsyncStorage.getItem("guestId"),
+          AsyncStorage.getItem("groupId"),
+        ]);
+        if (storedGuestId) {
+          setGuestId(storedGuestId);
+        }
+        if (storedGroupId) {
+          setGroupId(storedGroupId);
+        }
+      } catch (err) {
+        console.warn("questionary id load failed", err);
       }
     })();
   }, []);
@@ -45,6 +58,60 @@ export default function HomeScreen() {
   }, []);
 
   const currentQuestion = questions[questionCounter];
+  const buttonLabel = useMemo(() => (submitting ? "Wird gespeichert…" : "Abgeben!"), [submitting]);
+
+  const handleSubmit = useCallback(async () => {
+    if (submitting) {
+      return;
+    }
+
+    if (!text.trim()) {
+      alert("Bitte gebe etwas ein");
+      textInputRef.current?.focus();
+      return;
+    }
+
+    if (!currentQuestion?.id) {
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      await funnyQuestionApi.addAnswer(currentQuestion.id, text, guestId);
+      setText("");
+      textInputRef.current?.clear();
+
+      const isLastQuestion = questionCounter + 1 >= questions.length;
+      if (isLastQuestion) {
+        if (groupId) {
+          try {
+            await gameApi.recordProgress(groupId, "challenge-6-questionary");
+          } catch (err) {
+            console.warn("questionary progress update failed", err);
+            showAlert({
+              title: "Speichern fehlgeschlagen",
+              message: "Wir konnten euren Fortschritt nicht speichern. Versucht es bitte erneut.",
+            });
+            return;
+          }
+        }
+        router.navigate("/game/password");
+        return;
+      }
+
+      setQuestionCounter((prev) => prev + 1);
+      textInputRef.current?.focus();
+    } catch (err) {
+      console.error("Fehler beim Hinzufügen der Antwort:", err);
+      showAlert({
+        title: "Antwort fehlgeschlagen",
+        message: "Bitte versucht es erneut.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }, [currentQuestion?.id, guestId, groupId, questionCounter, questions.length, router, submitting, text]);
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -54,32 +121,18 @@ export default function HomeScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-            <Image
-              source={require("@/assets/images/papa/crown.png")}
-              style={styles.papaLogo}
-            />
+            <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
             <View style={[styles.confetti, styles.confettiFour]} />
           </View>
-        }
-      >
-        <View
-          style={[
-            styles.heroCard,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
+        }>
+        <View style={[styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <View style={styles.textContainer}>
             <ThemedText type="title">Finale Challenge!</ThemedText>
-            <ThemedText type="defaultSemiBold">
-              Fast geschafft beantworte noch diese Fragen !
-            </ThemedText>
-            <ThemedText>
-              Frage:{" "}
-              {questions && questions.length > 0 && currentQuestion.question}
-            </ThemedText>
+            <ThemedText type="defaultSemiBold">Fast geschafft beantworte noch diese Fragen !</ThemedText>
+            <ThemedText>Frage: {questions && questions.length > 0 && currentQuestion.question}</ThemedText>
           </View>
 
           <View style={styles.midContainer}>
@@ -87,44 +140,9 @@ export default function HomeScreen() {
               ref={textInputRef}
               style={globalStyles.inputField}
               onChangeText={setText}
-              value={text}
-            ></TextInput>
-            <Button
-              onPress={async () => {
-                if (!text.trim()) {
-                  alert("Bitte gebe etwas ein");
-                  textInputRef.current?.focus;
-                  return;
-                }
-
-                if (!currentQuestion?.id) {
-                  return;
-                }
-
-                try {
-                  await funnyQuestionApi.addAnswer(
-                    currentQuestion.id,
-                    text,
-                    guestId
-                  );
-                  console.log("Antwort erfolgreich hinzugefügt");
-                  setText("");
-                  textInputRef.current?.clear();
-                } catch (err) {
-                  console.error("Fehler beim Hinzufügen der Antwort:", err);
-                  return;
-                }
-
-                if (questionCounter + 1 >= questions.length) {
-                  router.navigate("/game/password");
-                } else {
-                  setQuestionCounter((prev) => prev + 1);
-                  textInputRef.current?.focus();
-                }
-              }}
-              iconText="arrow.right.circle"
-            >
-              Abgeben!
+              value={text}></TextInput>
+            <Button onPress={handleSubmit} iconText="arrow.right.circle">
+              {buttonLabel}
             </Button>
           </View>
         </View>

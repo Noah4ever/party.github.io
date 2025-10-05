@@ -227,6 +227,10 @@ gamesRouter.post("/partner/verify", async (req, res) => {
       }
       group.progress.currentGame = "partner-found";
 
+      if (!group.startedAt) {
+        group.startedAt = new Date().toISOString();
+      }
+
       return {
         match: true,
         groupId: group.id,
@@ -281,6 +285,9 @@ gamesRouter.post("/groups/:groupId/progress", async (req, res) => {
       group.progress.completedGames.push(gameId);
     }
     group.progress.currentGame = gameId;
+    if (!group.startedAt) {
+      group.startedAt = new Date().toISOString();
+    }
     return {
       success: true,
       completedGames: group.progress.completedGames,
@@ -340,6 +347,12 @@ gamesRouter.post("/groups/:groupId/time-penalty", async (req, res) => {
 
     if (typeof group.progress.timePenaltySeconds !== "number" || Number.isNaN(group.progress.timePenaltySeconds)) {
       group.progress.timePenaltySeconds = 0;
+    }
+
+    if (!group.startedAt) {
+      const fallbackStart =
+        (typeof d.gameState?.startedAt === "string" ? d.gameState.startedAt : undefined) ?? new Date().toISOString();
+      group.startedAt = fallbackStart;
     }
 
     const entry: TimePenaltyEntry = {
@@ -921,10 +934,33 @@ gamesRouter.post(passwordAttemptPaths, async (req, res) => {
     const group = d.groups.find((g) => g.id === groupId);
     if (!group) return { error: "group not found" };
     group.progress.attempts = (group.progress.attempts || 0) + 1;
-    const correct = cfg.validPasswords.includes(password);
+    const normalizePassword = (value: unknown): string => {
+      const text = typeof value === "string" ? value : value != null ? String(value) : "";
+      return text.trim().toUpperCase();
+    };
+    const normalizedAttempt = normalizePassword(password);
+    const correct = cfg.validPasswords.some((candidate) => normalizePassword(candidate) === normalizedAttempt);
     if (correct) {
       group.passwordSolved = true;
-      group.finishedAt = new Date().toISOString();
+      const completionTimestamp = new Date().toISOString();
+
+      if (!Array.isArray(group.progress.completedGames)) {
+        group.progress.completedGames = [];
+      }
+      if (!group.progress.completedGames.includes("password-solved")) {
+        group.progress.completedGames.push("password-solved");
+      }
+      group.progress.currentGame = "password-solved";
+      const fallbackStartTimestamp =
+        (typeof cfg.startedAt === "string" ? cfg.startedAt : undefined) ??
+        (typeof d.gameState?.startedAt === "string" ? d.gameState.startedAt : undefined) ??
+        completionTimestamp;
+      if (!group.startedAt) {
+        group.startedAt = fallbackStartTimestamp;
+      }
+      if (!group.finishedAt) {
+        group.finishedAt = completionTimestamp;
+      }
       const solved = d.groups.filter((g) => g.passwordSolved).length;
       const required = typeof cfg.requiredCorrectGroups === "number" ? cfg.requiredCorrectGroups : Infinity;
       if (required !== Infinity && solved >= required && !cfg.endedAt) {

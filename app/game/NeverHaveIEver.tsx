@@ -5,32 +5,41 @@ import { Animated, Easing, StyleSheet, View } from "react-native";
 import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
-import { useGlobalStyles } from "@/constants/styles";
 import { useTheme } from "@/constants/theme";
 import { ApiError, gameApi, NeverHaveIEverPackDTO } from "@/lib/api";
+import { showAlert } from "@/lib/dialogs";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 
 //TODO: ASH add questions
 
 export default function HomeScreen() {
   const router = useRouter();
-  const globalStyles = useGlobalStyles();
   const theme = useTheme();
   const [counter, setCounter] = useState<number>(0);
-  const [questions, setQuestions] = useState<String[]>([]);
-  const [error, setError] = useState<String>();
-  const [loading, setLoading] = useState<Boolean>(true);
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [error, setError] = useState<string | undefined>();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const [completionSubmitting, setCompletionSubmitting] = useState(false);
 
   const animate = useRef(new Animated.Value(1)).current;
+  const completionTriggeredRef = useRef(false);
 
-  function incrementCounter() {
-    setCounter(counter + 1);
-  }
+  const incrementCounter = useCallback(() => {
+    if (completionSubmitting) {
+      return;
+    }
+    setCounter((prev) => prev + 1);
+  }, [completionSubmitting]);
 
   const load = useCallback(async () => {
     try {
       const data = (await gameApi.getNHIE()) as NeverHaveIEverPackDTO[];
       setQuestions(data[0].statements);
+      setError(undefined);
+      setCounter(0);
+      completionTriggeredRef.current = false;
       console.log(data);
     } catch (e) {
       setError((e as ApiError).message || "Failed to load questions");
@@ -46,10 +55,42 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
-    if (questions.length > 0 && counter >= questions.length) {
-      router.navigate("/game/questions");
+    (async () => {
+      try {
+        const storedGroupId = await AsyncStorage.getItem("groupId");
+        if (storedGroupId) {
+          setGroupId(storedGroupId);
+        }
+      } catch (err) {
+        console.warn("NeverHaveIEver groupId load failed", err);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!completionTriggeredRef.current && questions.length > 0 && counter >= questions.length) {
+      completionTriggeredRef.current = true;
+      setCompletionSubmitting(true);
+
+      (async () => {
+        try {
+          if (groupId) {
+            await gameApi.recordProgress(groupId, "challenge-4-never-have-i-ever");
+          }
+          router.navigate("/game/questions");
+        } catch (err) {
+          console.error("NHIE progress update failed", err);
+          showAlert({
+            title: "Speichern fehlgeschlagen",
+            message: "Euer Fortschritt konnte nicht gespeichert werden. Versucht es bitte erneut.",
+          });
+          completionTriggeredRef.current = false;
+        } finally {
+          setCompletionSubmitting(false);
+        }
+      })();
     }
-  }, [counter]);
+  }, [counter, groupId, questions.length, router]);
 
   useEffect(() => {
     Animated.loop(
@@ -68,7 +109,7 @@ export default function HomeScreen() {
         }),
       ])
     ).start();
-  }, []);
+  }, [animate]);
 
   return (
     <ParallaxScrollView
@@ -77,42 +118,31 @@ export default function HomeScreen() {
         <View style={styles.partyHeader}>
           <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
           <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-          <Image
-            source={require("@/assets/images/papa/crown.png")}
-            style={styles.papaLogo}
-          />
+          <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
           <View style={[styles.confetti, styles.confettiOne]} />
           <View style={[styles.confetti, styles.confettiTwo]} />
           <View style={[styles.confetti, styles.confettiThree]} />
           <View style={[styles.confetti, styles.confettiFour]} />
         </View>
-      }
-    >
-      <View
-        style={[
-          styles.heroCard,
-          { borderColor: theme.border, backgroundColor: theme.card },
-        ]}
-      >
+      }>
+      <View style={[styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
         <ThemedText type="title">Ich hab noch nie... 🍻</ThemedText>
         <View style={styles.textContainer}></View>
 
         <View style={styles.midContainer}>
-          <Animated.View
-            style={[
-              styles.bubble,
-              { borderColor: theme.primary, transform: [{ scale: animate }] },
-            ]}
-          >
+          <Animated.View style={[styles.bubble, { borderColor: theme.primary, transform: [{ scale: animate }] }]}>
             <ThemedText type="subtitle">
-              {loading ? " loading..." : questions[counter]}
+              {loading
+                ? " loading..."
+                : completionSubmitting
+                ? "Challenge wird abgeschlossen…"
+                : error
+                ? error
+                : questions[counter] ?? "Keine weiteren Fragen"}
             </ThemedText>
           </Animated.View>
           <View>
-            <Button
-              onPress={() => incrementCounter()}
-              iconText="arrow.right.circle"
-            >
+            <Button onPress={() => incrementCounter()} iconText="arrow.right.circle">
               Weiter
             </Button>
           </View>

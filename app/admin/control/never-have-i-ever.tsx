@@ -171,7 +171,7 @@ export default function NeverHaveIEverScreen() {
         }>
         {pack ? (
           <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
-            <ThemedText type="subtitle">Statements</ThemedText>
+            <ThemedText type="subtitle">Ich habe noch nie...</ThemedText>
             <ThemedText style={{ color: theme.textMuted }}>Manage all statements for the game here.</ThemedText>
             <View style={{ gap: 12 }}>
               {statements.length === 0 ? (

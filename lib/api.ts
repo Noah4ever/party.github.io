@@ -451,6 +451,12 @@ export interface PasswordGameConfigDTO {
   updatedAt?: string;
 }
 
+export interface PasswordAttemptResponseDTO {
+  correct: boolean;
+  solved: boolean;
+  ended: boolean;
+}
+
 export const passwordGameApi = {
   get: () => api.get<PasswordGameConfigDTO>("/games/password-game"),
   update: (data: { validPasswords?: string[]; active?: boolean }) =>
@@ -462,6 +468,11 @@ export const passwordGameApi = {
   removePassword: (password: string) =>
     api.delete<void>(`/games/password-game/passwords/${encodeURIComponent(password)}`),
   start: () => api.post<PasswordGameConfigDTO>("/games/password-game/start"),
+  attempt: (groupId: string, password: string, options?: { configId?: string }) =>
+    api.post<PasswordAttemptResponseDTO, { groupId: string; password: string }>(
+      options?.configId ? `/games/password-game/${options.configId}/attempt` : "/games/password-game/attempt",
+      { groupId, password }
+    ),
 };
 
 // -------- Public Game APIs --------

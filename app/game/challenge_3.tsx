@@ -7,8 +7,11 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
+import { gameApi } from "@/lib/api";
+import { showAlert } from "@/lib/dialogs";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 //TODO: ASH maybe get signature
 
@@ -16,10 +19,48 @@ export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     setModalVisible(true);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const storedGroupId = await AsyncStorage.getItem("groupId");
+        if (storedGroupId) {
+          setGroupId(storedGroupId);
+        }
+      } catch (err) {
+        console.warn("challenge_3 groupId load failed", err);
+      }
+    })();
+  }, []);
+
+  const buttonLabel = useMemo(() => (submitting ? "Wird gespeichert…" : "Erledigt!"), [submitting]);
+
+  const handleComplete = useCallback(async () => {
+    if (submitting) {
+      return;
+    }
+    setSubmitting(true);
+    try {
+      if (groupId) {
+        await gameApi.recordProgress(groupId, "challenge-3-story-share");
+      }
+      router.navigate("/game/challenge_4");
+    } catch (error) {
+      console.error("challenge_3 progress update failed", error);
+      showAlert({
+        title: "Speichern fehlgeschlagen",
+        message: "Wir konnten euren Fortschritt nicht sichern. Versucht es bitte noch einmal.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  }, [groupId, router, submitting]);
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -57,8 +98,8 @@ export default function HomeScreen() {
           <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
             Markiert die Challenge als erledigt, sobald ihr eure Stories präsentiert habt.
           </ThemedText>
-          <Button onPress={() => router.navigate("/game/challenge_4")} iconText="checkmark.circle.outline">
-            Erledigt!
+          <Button onPress={handleComplete} iconText="checkmark.circle.outline">
+            {buttonLabel}
           </Button>
         </ThemedView>
       </ParallaxScrollView>
