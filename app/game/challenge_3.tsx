@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 //TODO: ASH maybe get signature
+//TODO: erstetzem
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -89,8 +90,7 @@ export default function HomeScreen() {
           <ThemedText type="title">Challenge 3</ThemedText>
           <ThemedText type="subtitle">Ihr sieht geil aus! 🔥</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
-            Teilt lustige Fakten oder Storys von euch miteinander. Danach stellt jede*r von euch mindestens zwei Fakten
-            kurz vor anderen Leuten vor – es müssen mindestens zwei Zuhörer dabei sein!
+            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und l!
           </ThemedText>
         </ThemedView>
 

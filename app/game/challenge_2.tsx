@@ -9,6 +9,7 @@ import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { Collapsible } from "@/components/ui/collapsible";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -124,27 +125,30 @@ export default function ChallengeTwoScreen() {
             </ThemedText>
             <IconSymbol name="qr-code" size={20} color={theme.primary} />
           </View>
+
           <ThemedText
             style={[styles.sectionIntro, { color: theme.textSecondary }]}
           >
-            Nutzt euren Code weiterhin, um sicherzugehen, dass ihr beim nächsten
-            Check-in bereit seid.
+            Nutze den Button unten, um deinen persönlichen QR-Code anzuzeigen.
           </ThemedText>
-          <View style={styles.qrWrapper}>
-            <QRCodeStyled
-              data={qrValue}
-              size={225}
-              isPiecesGlued={true}
-              pieceBorderRadius={5}
-              pieceLiquidRadius={2}
-              color={theme.text}
-              style={{ backgroundColor: theme.backgroundAlt }}
-              errorCorrectionLevel="M"
-            />
-            <ThemedText style={[styles.qrHint, { color: theme.textMuted }]}>
-              Deine Guest-Id: {qrValue}
-            </ThemedText>
-          </View>
+
+          <Collapsible title="QR-Code anzeigen">
+            <View style={styles.qrWrapper}>
+              <QRCodeStyled
+                data={qrValue}
+                size={225}
+                isPiecesGlued={true}
+                pieceBorderRadius={5}
+                pieceLiquidRadius={2}
+                color={theme.text}
+                style={{ backgroundColor: theme.backgroundAlt }}
+                errorCorrectionLevel="M"
+              />
+              <ThemedText style={[styles.qrHint, { color: theme.textMuted }]}>
+                Deine Guest-Id: {qrValue}
+              </ThemedText>
+            </View>
+          </Collapsible>
         </ThemedView>
 
         <ThemedView
@@ -164,27 +168,6 @@ export default function ChallengeTwoScreen() {
             Ihr seid ein Team! Haltet euren Moment fest und ladet ein Selfie
             hoch, damit wir sehen, dass ihr zusammen unterwegs seid.
           </ThemedText>
-          <View
-            style={[
-              styles.statusBadge,
-              {
-                backgroundColor: theme.backgroundAlt,
-                borderColor: theme.border,
-                gap: 8,
-              },
-            ]}
-          >
-            <IconSymbol
-              name="camera.viewfinder"
-              size={18}
-              color={theme.primary}
-            />
-            <ThemedText
-              style={[styles.statusBadgeLabel, { color: theme.textMuted }]}
-            >
-              Nur noch ein Selfie bis Challenge 3
-            </ThemedText>
-          </View>
         </ThemedView>
 
         <ThemedView
@@ -203,8 +186,8 @@ export default function ChallengeTwoScreen() {
             style={[styles.sectionIntro, { color: theme.textSecondary }]}
           >
             Bitte macht gemeinsam ein Selfie und ladet es hoch. Falls das Licht
-            schlecht ist, ihr könnt jederzeit neu aufnehmen. Das Foto wird nur
-            für das Event gespeichert.
+            schlecht ist, könnt ihr jederzeit ein neues aufnehmen. Das Foto wird
+            nur für das Event gespeichert.
           </ThemedText>
           {selfieStatus ? (
             <View

@@ -1,9 +1,9 @@
 // components/PopupModal.tsx
 import { useTheme } from "@/constants/theme";
 import React from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../themed-text";
-import { IconSymbol } from "../ui/icon-symbol";
+import { Button } from "./Button";
 
 type PopupModalProps = {
   visible: boolean;
@@ -24,7 +24,7 @@ export const PopupModal: React.FC<PopupModalProps> = ({
       animationType="fade"
       transparent={true}
       visible={visible}
-      onRequestClose={onClose} // Android Back-Button
+      onRequestClose={onClose}
     >
       <View style={styles.overlay}>
         <TouchableOpacity style={StyleSheet.absoluteFill} onPress={onClose} />
@@ -37,14 +37,16 @@ export const PopupModal: React.FC<PopupModalProps> = ({
             },
           ]}
         >
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeText}>
-              <IconSymbol name="xmark.circle" color={theme.danger} />
-            </Text>
-          </TouchableOpacity>
-
           <ThemedText style={[styles.title]}>{title}</ThemedText>
           <ThemedText style={styles.content}>{content}</ThemedText>
+
+          <Button
+            onPress={onClose}
+            iconText="checkmark.circle.outline"
+            style={{ height: 50, marginTop: 20 }}
+          >
+            Check!
+          </Button>
         </View>
       </View>
     </Modal>

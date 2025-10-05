@@ -131,7 +131,10 @@ export default function HomeScreen() {
         <View style={[styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <View style={styles.textContainer}>
             <ThemedText type="title">Finale Challenge!</ThemedText>
-            <ThemedText type="defaultSemiBold">Fast geschafft beantworte noch diese Fragen !</ThemedText>
+            <ThemedText type="defaultSemiBold">
+              Fast geschafft beantworte noch diese Fragen! Hier gibt es kein richtig oder falsch, wir wollen nur lustige
+              Antworten sammeln!
+            </ThemedText>
             <ThemedText>Frage: {questions && questions.length > 0 && currentQuestion.question}</ThemedText>
           </View>
 
