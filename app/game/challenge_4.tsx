@@ -20,28 +20,47 @@ export default function HomeScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-            <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
+            <Image
+              source={require("@/assets/images/papa/crown.png")}
+              style={styles.papaLogo}
+            />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
             <View style={[styles.confetti, styles.confettiFour]} />
           </View>
-        }>
+        }
+      >
         <ThemedView
-          style={[styles.textContainer, styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+          style={[
+            styles.textContainer,
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           <ThemedText type="title">Challenge 4</ThemedText>
           <ThemedText type="subtitle">Ich hab noch nie! 🍻</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
-            Sichert euch zwei Drinks eurer Wahl (Shots empfohlen!) und spielt eine Runde „Ich hab noch nie“. Lernt euch
-            von einer neuen Seite kennen und habt Spaß dabei!
+            Schnappt euch zwei Drinks eurer Wahl (Shots empfohlen 🍸) und
+            startet eine Runde „Ich hab noch nie“! Das Spiel zeigt euch einen
+            Satz – wenn er auf euch zutrifft, trinkt ihr.
           </ThemedText>
         </ThemedView>
 
-        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <ThemedView
+          style={[
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
-            Drückt auf Starten, sobald ihr bereit seid, eurem Gegenüber ein paar Geheimnisse zu entlocken.
+            Drückt auf Starten, sobald ihr bereit seid, eurem Gegenüber ein paar
+            Geheimnisse zu entlocken.
           </ThemedText>
-          <Button onPress={() => router.navigate("/game/NeverHaveIEver")} iconText="arrow.right.circle">
+          <Button
+            onPress={() => router.navigate("/game/NeverHaveIEver")}
+            iconText="arrow.right.circle"
+          >
             Starten!
           </Button>
         </ThemedView>

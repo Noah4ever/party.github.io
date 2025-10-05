@@ -74,7 +74,8 @@ export default function HomeScreen() {
           <View style={styles.textContainer}>
             <ThemedText type="title">Finale Challenge!</ThemedText>
             <ThemedText type="defaultSemiBold">
-              Fast geschafft beantworte noch diese Fragen !
+              Fast geschafft beantworte noch diese Fragen! Hier gibt es kein
+              richtig oder falsch, wir wollen nur lustige Antworten sammeln!
             </ThemedText>
             <ThemedText>
               Frage:{" "}

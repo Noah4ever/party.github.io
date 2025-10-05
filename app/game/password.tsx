@@ -238,27 +238,14 @@ export default function PasswordScreen() {
             </ThemedText>
             <HelloWave />
           </View>
-          <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
+          <ThemedText
+            type="defaultSemiBold"
+            style={[styles.leadText, { color: theme.textSecondary }]}
+          >
             Ihr habt es fast geschafft! Bringt nun den Gastgeber einen Shot und
             trinkt mit ihn, mit etwas Glück und Charm wird er euch den Schlüssel
             verraten!
           </ThemedText>
-          <View
-            style={[
-              styles.statusBadge,
-              {
-                backgroundColor: theme.backgroundAlt,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <IconSymbol name="lock.circle" size={18} color={theme.primary} />
-            <ThemedText
-              style={[styles.statusBadgeLabel, { color: theme.textMuted }]}
-            >
-              Nur das richtige Passwort öffnet die Tür.
-            </ThemedText>
-          </View>
         </ThemedView>
 
         <ThemedView

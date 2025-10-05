@@ -11,6 +11,7 @@ import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 
 //TODO: ASH maybe get signature
+//TODO: erstetzem
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -36,28 +37,45 @@ export default function HomeScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-            <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
+            <Image
+              source={require("@/assets/images/papa/crown.png")}
+              style={styles.papaLogo}
+            />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
             <View style={[styles.confetti, styles.confettiFour]} />
           </View>
-        }>
+        }
+      >
         <ThemedView
-          style={[styles.textContainer, styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+          style={[
+            styles.textContainer,
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           <ThemedText type="title">Challenge 3</ThemedText>
           <ThemedText type="subtitle">Ihr sieht geil aus! 🔥</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
-            Teilt lustige Fakten oder Storys von euch miteinander. Danach stellt jede*r von euch mindestens zwei Fakten
-            kurz vor anderen Leuten vor – es müssen mindestens zwei Zuhörer dabei sein!
+            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und l!
           </ThemedText>
         </ThemedView>
 
-        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <ThemedView
+          style={[
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
-            Markiert die Challenge als erledigt, sobald ihr eure Stories präsentiert habt.
+            Markiert die Challenge als erledigt, sobald ihr eure Stories
+            präsentiert habt.
           </ThemedText>
-          <Button onPress={() => router.navigate("/game/challenge_4")} iconText="checkmark.circle.outline">
+          <Button
+            onPress={() => router.navigate("/game/challenge_4")}
+            iconText="checkmark.circle.outline"
+          >
             Erledigt!
           </Button>
         </ThemedView>
