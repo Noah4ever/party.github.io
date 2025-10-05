@@ -119,6 +119,7 @@ function RootLayoutInner() {
         <Stack.Screen name="qr/[guestId]" options={{ presentation: "modal", title: "QR Code" }} />
         <Stack.Screen name="control/never-have-i-ever" options={{ title: "Never Have I Ever", presentation: "card" }} />
         <Stack.Screen name="control/quiz-questions" options={{ title: "Quiz Question" }} />
+        <Stack.Screen name="control/quiz-penalty" options={{ title: "Quiz Penalty" }} />
         <Stack.Screen name="control/funny-questions" options={{ title: "Funny Question" }} />
         <Stack.Screen name="control/passwords" options={{ title: "Passwords" }} />
         <Stack.Screen name="control/leaderboard" options={{ title: "Leaderboard" }} />

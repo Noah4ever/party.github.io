@@ -332,6 +332,10 @@ export default function FinalScreen() {
                     {topEntries.map((entry, index) => {
                       const highlight = summary?.group ? entry.id === summary.group.groupId : false;
                       const rank = index + 1;
+                      const baseDurationMs =
+                        typeof entry.rawDurationMs === "number" ? entry.rawDurationMs : entry.durationMs;
+                      const penaltyLabel =
+                        entry.penaltySeconds > 0 ? `+${entry.penaltySeconds.toLocaleString("de-DE")}s` : null;
                       return (
                         <View
                           key={entry.id}
@@ -360,9 +364,16 @@ export default function FinalScreen() {
                                 : "Keine Strafe"}
                             </ThemedText>
                           </View>
-                          <ThemedText style={[styles.leaderboardTime, { color: theme.text }]}>
-                            {formatDuration(entry.durationMs)}
-                          </ThemedText>
+                          <View style={styles.leaderboardTiming}>
+                            <ThemedText style={[styles.leaderboardBaseTime, { color: theme.text }]}>
+                              {formatDuration(baseDurationMs)}
+                            </ThemedText>
+                            {penaltyLabel ? (
+                              <ThemedText style={[styles.leaderboardPenaltyExtra, { color: theme.danger }]}>
+                                {penaltyLabel}
+                              </ThemedText>
+                            ) : null}
+                          </View>
                         </View>
                       );
                     })}
@@ -387,9 +398,20 @@ export default function FinalScreen() {
                                 : "Keine Strafe"}
                             </ThemedText>
                           </View>
-                          <ThemedText style={[styles.leaderboardTime, { color: theme.text }]}>
-                            {formatDuration(ownEntry.durationMs)}
-                          </ThemedText>
+                          <View style={styles.leaderboardTiming}>
+                            <ThemedText style={[styles.leaderboardBaseTime, { color: theme.text }]}>
+                              {formatDuration(
+                                typeof ownEntry.rawDurationMs === "number"
+                                  ? ownEntry.rawDurationMs
+                                  : ownEntry.durationMs
+                              )}
+                            </ThemedText>
+                            {ownEntry.penaltySeconds > 0 ? (
+                              <ThemedText style={[styles.leaderboardPenaltyExtra, { color: theme.danger }]}>
+                                {`+${ownEntry.penaltySeconds.toLocaleString("de-DE")}s`}
+                              </ThemedText>
+                            ) : null}
+                          </View>
                         </View>
                       </>
                     ) : null}
@@ -627,8 +649,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
-  leaderboardTime: {
+  leaderboardTiming: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  leaderboardBaseTime: {
     fontSize: 18,
+    fontWeight: "700",
+  },
+  leaderboardPenaltyExtra: {
+    fontSize: 14,
     fontWeight: "700",
   },
   partyHeader: {

@@ -17,7 +17,7 @@ export const parseIsoTime = (value?: string | null): number | undefined => {
 };
 
 export const computeGroupScore = (group: Group, fallbackStartMs?: number): FinalScoreboardEntry | null => {
-  const startedAtMs = parseIsoTime(group.startedAt) ?? fallbackStartMs;
+  const startedAtMs = fallbackStartMs ?? parseIsoTime(group.startedAt);
   const finishedAtMs = parseIsoTime(group.finishedAt);
   if (startedAtMs === undefined || finishedAtMs === undefined) {
     return null;

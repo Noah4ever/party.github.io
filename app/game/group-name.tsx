@@ -5,7 +5,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, TextInput, View } from "react-native";
 
 import { Button } from "@/components/game/Button";
-import { HintBox } from "@/components/game/HintBox";
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -123,10 +122,6 @@ export default function GroupNameScreen() {
     }
   }, [saving, groupId, nameTooShort, hasChanges, trimmedName, router]);
 
-  const handleSkip = useCallback(() => {
-    router.navigate("/game/challenge_3");
-  }, [router]);
-
   return (
     <ThemedView style={styles.screen}>
       <ParallaxScrollView
@@ -212,7 +207,7 @@ export default function GroupNameScreen() {
           )}
         </ThemedView>
 
-        <HintBox>Tipp: Ein starker Name motiviert – und macht es dem Moderator leichter, euch anzufeuern!</HintBox>
+        {/* <HintBox>Tipp: Ein starker Name motiviert – und macht es dem Moderator leichter, euch anzufeuern!</HintBox> */}
       </ParallaxScrollView>
     </ThemedView>
   );

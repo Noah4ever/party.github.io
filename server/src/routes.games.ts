@@ -4,12 +4,14 @@ import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
 import { buildScoreboard, computeGroupScore, parseIsoTime } from "./scoreboard.js";
 import {
+  DEFAULT_DATA,
   FunnyAnswer,
   FunnyQuestion,
   GameState,
   NeverHaveIEverPack,
   PasswordGameConfig,
   QuizPack,
+  QuizPenaltyConfig,
   QuizQuestion,
   TimePenaltyEntry,
 } from "./types.js";
@@ -29,6 +31,20 @@ gamesRouter.get("/state", async (_req, res) => {
   const data = await loadData();
   const state: GameState = data.gameState ?? { started: false };
   res.json(state);
+});
+
+gamesRouter.get("/quiz-penalty", async (_req, res) => {
+  const data = await loadData();
+  const defaults = DEFAULT_DATA.quizPenaltyConfig;
+  const config: QuizPenaltyConfig = data.quizPenaltyConfig ?? defaults;
+  res.json({
+    minorPenaltySeconds: Number.isFinite(config?.minorPenaltySeconds)
+      ? config.minorPenaltySeconds
+      : defaults.minorPenaltySeconds,
+    majorPenaltySeconds: Number.isFinite(config?.majorPenaltySeconds)
+      ? config.majorPenaltySeconds
+      : defaults.majorPenaltySeconds,
+  });
 });
 
 /**
@@ -53,12 +69,11 @@ gamesRouter.get("/final-summary", async (req, res) => {
 
   const passwordConfig = data.passwordGames.find((cfg) => cfg.active) ?? data.passwordGames[0];
   const fallbackGlobalMs =
-    parseIsoTime(passwordConfig?.startedAt) ?? parseIsoTime(data.gameState?.startedAt) ?? undefined;
+    parseIsoTime(data.gameState?.startedAt) ?? parseIsoTime(passwordConfig?.startedAt) ?? undefined;
   const scoreboard = buildScoreboard(groups, fallbackGlobalMs);
 
   const placementIndex = scoreboard.findIndex((entry) => entry.id === targetGroup.id);
-  const fallbackStartMsForGroup = parseIsoTime(targetGroup.startedAt) ?? fallbackGlobalMs;
-  const ownScore = computeGroupScore(targetGroup, fallbackStartMsForGroup);
+  const ownScore = computeGroupScore(targetGroup, fallbackGlobalMs);
 
   res.json({
     group: {

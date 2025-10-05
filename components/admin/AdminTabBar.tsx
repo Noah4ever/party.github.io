@@ -43,7 +43,7 @@ export default function AdminTabBar({ state, descriptors, navigation, palette }:
             WebkitBackdropFilter: "blur(8px)",
           }
         : null,
-    [isDarkPalette]
+    [isDarkPalette, theme.backgroundAlt]
   );
 
   const handleLayout = useCallback((event: any) => {

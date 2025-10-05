@@ -7,7 +7,7 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import type { Theme } from "@/constants/theme";
 import { useTheme } from "@/constants/theme";
-import { gameApi, QuizQuestionDTO } from "@/lib/api";
+import { gameApi, QuizPenaltyConfigDTO, QuizQuestionDTO } from "@/lib/api";
 import { showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Checkbox } from "expo-checkbox";
@@ -44,6 +44,7 @@ export default function QuizScreen() {
     total: number;
     penaltySeconds: number;
   } | null>(null);
+  const [penaltyConfig, setPenaltyConfig] = useState<QuizPenaltyConfigDTO | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(true);
   const summaryStats = useMemo(() => {
@@ -126,6 +127,23 @@ export default function QuizScreen() {
     })();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const config = (await gameApi.getQuizPenaltyConfig()) as QuizPenaltyConfigDTO;
+        if (!cancelled && config) {
+          setPenaltyConfig(config);
+        }
+      } catch (err) {
+        console.warn("quiz penalty config load failed", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const currentQuestion = useMemo(() => questions[questionCounter], [questions, questionCounter]);
   const totalQuestions = questions.length;
   const currentAnswers = useMemo(() => {
@@ -206,11 +224,14 @@ export default function QuizScreen() {
       const finalCorrect = projectedCorrectCount;
       const finalIncorrect = Math.max(totalQuestions - finalCorrect, 0);
       const incorrectRatio = totalQuestions > 0 ? finalIncorrect / totalQuestions : 0;
+      const minorPenalty = penaltyConfig?.minorPenaltySeconds ?? PENALTY_SECONDS_MINOR;
+      const majorPenalty = penaltyConfig?.majorPenaltySeconds ?? PENALTY_SECONDS_MAJOR;
+
       let penaltySeconds = 0;
       if (incorrectRatio > 0.75) {
-        penaltySeconds = PENALTY_SECONDS_MAJOR;
+        penaltySeconds = majorPenalty;
       } else if (incorrectRatio > 0.5) {
-        penaltySeconds = PENALTY_SECONDS_MINOR;
+        penaltySeconds = minorPenalty;
       }
 
       if (penaltySeconds > 0 && groupId) {
@@ -270,6 +291,7 @@ export default function QuizScreen() {
     totalQuestions,
     correctCounter,
     groupId,
+    penaltyConfig,
   ]);
 
   const renderAnswerStatusIcon = useCallback(

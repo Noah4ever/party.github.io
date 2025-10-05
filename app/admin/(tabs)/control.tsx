@@ -41,6 +41,14 @@ const NAVIGATION_ITEMS: ControlItem[] = [
     type: "navigation",
   },
   {
+    key: "quiz-penalty",
+    title: "Quiz Penalties",
+    description: "Adjust quiz time penalties",
+    icon: "timer",
+    route: "/admin/control/quiz-penalty",
+    type: "navigation",
+  },
+  {
     key: "funny-question",
     title: "Funny Questions",
     description: "Questions & guest answers",

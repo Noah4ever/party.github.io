@@ -5,7 +5,7 @@ import path from "path";
 import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
 import { buildScoreboard, parseIsoTime } from "./scoreboard.js";
-import { DataShape, GameState, UploadRecord } from "./types.js";
+import { DataShape, DEFAULT_DATA, GameState, QuizPenaltyConfig, UploadRecord } from "./types.js";
 import { broadcastGameState } from "./websocket.js";
 
 export const adminRouter = Router();
@@ -26,6 +26,22 @@ function sanitizeGameState(value: unknown): GameState {
   };
 }
 
+function sanitizeQuizPenaltyConfig(value: unknown): QuizPenaltyConfig {
+  const defaults = DEFAULT_DATA.quizPenaltyConfig;
+  if (!value || typeof value !== "object") {
+    return { ...defaults };
+  }
+  const source = value as Partial<QuizPenaltyConfig>;
+  const minor = Number(source.minorPenaltySeconds);
+  const major = Number(source.majorPenaltySeconds);
+  const safeMinor = Number.isFinite(minor) && minor >= 0 ? Math.floor(minor) : defaults.minorPenaltySeconds;
+  const safeMajor = Number.isFinite(major) && major >= 0 ? Math.floor(major) : defaults.majorPenaltySeconds;
+  return {
+    minorPenaltySeconds: safeMinor,
+    majorPenaltySeconds: safeMajor,
+  };
+}
+
 function sanitizeData(payload: unknown): DataShape {
   const raw = (payload && typeof payload === "object" ? payload : {}) as Partial<DataShape>;
   return {
@@ -38,6 +54,7 @@ function sanitizeData(payload: unknown): DataShape {
     funnyAnswers: toArray(raw.funnyAnswers),
     uploads: toArray(raw.uploads),
     gameState: sanitizeGameState(raw.gameState),
+    quizPenaltyConfig: sanitizeQuizPenaltyConfig(raw.quizPenaltyConfig),
   };
 }
 
@@ -98,12 +115,37 @@ adminRouter.get("/uploads", requireAuth, async (_req, res) => {
   }
 });
 
+adminRouter.get("/quiz-penalty", requireAuth, async (_req, res) => {
+  const data = await loadData();
+  const defaults = DEFAULT_DATA.quizPenaltyConfig;
+  const config = data.quizPenaltyConfig ?? defaults;
+  res.json({
+    minorPenaltySeconds: Number.isFinite(config?.minorPenaltySeconds)
+      ? config.minorPenaltySeconds
+      : defaults.minorPenaltySeconds,
+    majorPenaltySeconds: Number.isFinite(config?.majorPenaltySeconds)
+      ? config.majorPenaltySeconds
+      : defaults.majorPenaltySeconds,
+  });
+});
+
+adminRouter.post("/quiz-penalty", requireAuth, async (req, res) => {
+  const sanitized = sanitizeQuizPenaltyConfig(req.body);
+
+  await mutate((data) => {
+    data.quizPenaltyConfig = sanitized;
+    return true;
+  });
+
+  res.json({ success: true, config: sanitized, updatedAt: new Date().toISOString() });
+});
+
 adminRouter.get("/leaderboard", requireAuth, async (_req, res) => {
   const data = await loadData();
   const groups = data.groups ?? [];
   const passwordConfig = data.passwordGames.find((cfg) => cfg.active) ?? data.passwordGames[0];
   const fallbackGlobalMs =
-    parseIsoTime(passwordConfig?.startedAt) ?? parseIsoTime(data.gameState?.startedAt) ?? undefined;
+    parseIsoTime(data.gameState?.startedAt) ?? parseIsoTime(passwordConfig?.startedAt) ?? undefined;
 
   const scoreboard = buildScoreboard(groups, fallbackGlobalMs);
   const scoreboardWithPlacement = scoreboard.map((entry, index) => ({ ...entry, placement: index + 1 }));
@@ -153,6 +195,7 @@ adminRouter.post("/data", requireAuth, async (req, res) => {
     d.funnyQuestions = sanitized.funnyQuestions;
     d.funnyAnswers = sanitized.funnyAnswers;
     d.gameState = sanitized.gameState;
+    d.quizPenaltyConfig = sanitized.quizPenaltyConfig;
     return true;
   });
 
@@ -243,6 +286,7 @@ adminRouter.post("/clear-data", requireAuth, async (_req, res) => {
     d.funnyQuestions = [];
     d.funnyAnswers = [];
     d.gameState = { started: false };
+    d.quizPenaltyConfig = { ...DEFAULT_DATA.quizPenaltyConfig };
     return true;
   });
 

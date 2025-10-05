@@ -325,6 +325,7 @@ export interface AdminDataDump {
   passwordGames: PasswordGameConfigDTO[];
   funnyQuestions: FunnyQuestionDTO[];
   funnyAnswers: FunnyAnswerDTO[];
+  quizPenaltyConfig: QuizPenaltyConfigDTO;
 }
 
 export interface AdminUploadEntryDTO {
@@ -343,6 +344,11 @@ export interface AdminUploadEntryDTO {
 
 export interface AdminUploadListDTO {
   files: AdminUploadEntryDTO[];
+}
+
+export interface QuizPenaltyConfigDTO {
+  minorPenaltySeconds: number;
+  majorPenaltySeconds: number;
 }
 
 export interface AdminLeaderboardEntryDTO extends FinalScoreEntryDTO {
@@ -378,6 +384,9 @@ export const adminApi = {
   resetGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/reset"),
   listUploads: () => api.get<AdminUploadListDTO>("/admin/uploads"),
   getLeaderboard: () => api.get<AdminLeaderboardDTO>("/admin/leaderboard"),
+  getQuizPenaltyConfig: () => api.get<QuizPenaltyConfigDTO>("/admin/quiz-penalty"),
+  updateQuizPenaltyConfig: (data: QuizPenaltyConfigDTO) =>
+    api.post<{ success: boolean; config: QuizPenaltyConfigDTO }>("/admin/quiz-penalty", data),
 };
 
 export const authApi = {
@@ -567,6 +576,7 @@ export const gameApi = {
       },
       { seconds: number; reason?: string; source?: string; questionId?: string }
     >(`/games/groups/${groupId}/time-penalty`, data),
+  getQuizPenaltyConfig: () => api.get<QuizPenaltyConfigDTO>("/games/quiz-penalty"),
   getFinalSummary: (groupId: string) => api.get<FinalSummaryDTO>("/games/final-summary", { groupId }),
   uploadSelfie: (data: FormData) => api.post<UploadSelfieResponse, FormData>("/upload", data, { timeoutMs: 20000 }),
 };

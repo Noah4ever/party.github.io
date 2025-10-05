@@ -97,6 +97,11 @@ export interface GameState {
   cluesUnlockedAt?: string;
 }
 
+export interface QuizPenaltyConfig {
+  minorPenaltySeconds: number;
+  majorPenaltySeconds: number;
+}
+
 export interface DataShape {
   guests: Guest[];
   groups: Group[];
@@ -107,6 +112,7 @@ export interface DataShape {
   funnyAnswers: FunnyAnswer[];
   uploads: UploadRecord[];
   gameState: GameState;
+  quizPenaltyConfig: QuizPenaltyConfig;
 }
 
 export const DEFAULT_DATA: DataShape = {
@@ -120,5 +126,9 @@ export const DEFAULT_DATA: DataShape = {
   uploads: [],
   gameState: {
     started: false,
+  },
+  quizPenaltyConfig: {
+    minorPenaltySeconds: 60,
+    majorPenaltySeconds: 180,
   },
 };
