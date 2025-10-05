@@ -346,6 +346,11 @@ export interface AdminUploadListDTO {
   files: AdminUploadEntryDTO[];
 }
 
+export interface DeleteUploadsResponseDTO {
+  deleted: string[];
+  failed: { filename: string; error: string }[];
+}
+
 export interface QuizPenaltyConfigDTO {
   minorPenaltySeconds: number;
   majorPenaltySeconds: number;
@@ -383,6 +388,8 @@ export const adminApi = {
   startGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/start"),
   resetGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/reset"),
   listUploads: () => api.get<AdminUploadListDTO>("/admin/uploads"),
+  deleteUploads: (filenames: string[]) =>
+    api.post<DeleteUploadsResponseDTO, { filenames: string[] }>("/admin/uploads/delete", { filenames }),
   getLeaderboard: () => api.get<AdminLeaderboardDTO>("/admin/leaderboard"),
   getQuizPenaltyConfig: () => api.get<QuizPenaltyConfigDTO>("/admin/quiz-penalty"),
   updateQuizPenaltyConfig: (data: QuizPenaltyConfigDTO) =>

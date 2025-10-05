@@ -40,6 +40,7 @@ const MAPPING = {
   "arrow.up.circle": "arrow-up-circle-outline",
   "arrow.right.circle": "arrow-forward-circle-outline",
   "arrow.clockwise": "refresh-outline",
+  "tray.and.arrow.up": "cloud-upload-outline",
   "checkmark.circle": "checkmark-circle",
   "checkmark.circle.outline": "checkmark-circle-outline",
   "checkmark.seal": "ribbon-outline",
@@ -55,11 +56,15 @@ const MAPPING = {
   plus: "add",
   "person.fill": "person",
   "person.crop.circle.badge.plus": "person-add",
+  "dot.circle": "ellipse",
   circle: "ellipse-outline",
+  magnifyingglass: "search",
   "exclamationmark.triangle": "warning-outline",
+  "info.circle": "information-circle-outline",
   "star.circle": "star-outline",
   logout: "log-out",
   podium: "podium-outline",
+  "doc.text": "document-text-outline",
 } as const satisfies IconMapping;
 
 // To add new icons:

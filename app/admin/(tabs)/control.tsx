@@ -99,7 +99,6 @@ export default function TabTwoScreen() {
   const router = useRouter();
   const isWeb = Platform.OS === "web";
   const [downloading, setDownloading] = useState(false);
-  const [importing, setImporting] = useState(false);
   const { colorScheme: activeScheme, toggleTheme, isUsingSystem } = useThemePreference();
 
   const showAlert = useCallback((title: string, message?: string) => {
@@ -152,54 +151,6 @@ export default function TabTwoScreen() {
     }
   }, [ensureSession, isWeb, showAlert]);
 
-  const handleImportData = useCallback(() => {
-    if (!isWeb) {
-      showAlert("Not available", "Importing a JSON backup is currently supported on the web dashboard.");
-      return;
-    }
-    if (typeof document === "undefined") {
-      showAlert("Import unavailable", "Unable to access the file picker in this environment.");
-      return;
-    }
-
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "application/json";
-    input.onchange = async (event) => {
-      const target = event.target as HTMLInputElement | null;
-      const file = target?.files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const parsed = JSON.parse(text);
-        const ok = await ensureSession({ silent: true });
-        if (!ok) {
-          showAlert("Session expired", "Please sign in again to import data.");
-          return;
-        }
-        setImporting(true);
-        await adminApi.importData(parsed);
-        showAlert("Import complete", "The dataset has been replaced successfully.");
-      } catch (error) {
-        if (error instanceof SyntaxError) {
-          showAlert("Invalid file", "The selected file does not contain valid JSON.");
-        } else {
-          const apiError = error as ApiError;
-          const message = apiError?.message || "Unable to import the dataset.";
-          showAlert("Import failed", message);
-        }
-      } finally {
-        setImporting(false);
-      }
-      if (target) {
-        target.value = "";
-      }
-    };
-
-    input.click();
-  }, [ensureSession, isWeb, showAlert]);
-
   const controlItems = useMemo<ControlItem[]>(() => {
     const isDark = activeScheme === "dark";
     const themeToggle: ControlItem = {
@@ -227,12 +178,10 @@ export default function TabTwoScreen() {
     const importItem: ControlItem = {
       key: "import-data",
       title: "Import dataset (.json)",
-      description: isWeb ? "Replaces all data with the contents of a JSON backup." : "Available on the web dashboard.",
+      description: "Upload a backup file or paste JSON contents.",
       icon: "arrow.up.circle",
-      type: "action",
-      onPress: handleImportData,
-      disabled: importing,
-      loading: importing,
+      type: "navigation",
+      route: "/admin/control/import-data",
     };
 
     const clearAll: ControlItem = {
@@ -245,7 +194,7 @@ export default function TabTwoScreen() {
     };
 
     return [themeToggle, downloadItem, importItem, clearAll];
-  }, [activeScheme, downloading, handleDownloadData, handleImportData, importing, isUsingSystem, isWeb, toggleTheme]);
+  }, [activeScheme, downloading, handleDownloadData, isUsingSystem, isWeb, toggleTheme]);
 
   const handleItemPress = useCallback(
     (item: ControlItem) => {

@@ -115,6 +115,48 @@ adminRouter.get("/uploads", requireAuth, async (_req, res) => {
   }
 });
 
+adminRouter.post("/uploads/delete", requireAuth, async (req, res) => {
+  const raw = req?.body?.filenames;
+  const filenames = Array.isArray(raw)
+    ? raw
+        .map((name) => (typeof name === "string" ? name.trim() : ""))
+        .filter((name) => name && !name.includes("/") && !name.includes("\\") && !name.includes(".."))
+    : [];
+
+  if (filenames.length === 0) {
+    return res.status(400).json({ message: "No valid filenames provided." });
+  }
+
+  const uploadDir = path.resolve("uploads");
+  const deleted: string[] = [];
+  const failed: { filename: string; error: string }[] = [];
+
+  for (const filename of filenames) {
+    const filePath = path.join(uploadDir, filename);
+    try {
+      await fs.unlink(filePath);
+      deleted.push(filename);
+    } catch (error: any) {
+      if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+        deleted.push(filename);
+      } else {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        failed.push({ filename, error: message });
+      }
+    }
+  }
+
+  if (deleted.length > 0) {
+    const deleteSet = new Set(deleted);
+    await mutate((data) => {
+      data.uploads = (data.uploads ?? []).filter((record) => !deleteSet.has(record.filename));
+      return true;
+    });
+  }
+
+  res.json({ deleted, failed });
+});
+
 adminRouter.get("/quiz-penalty", requireAuth, async (_req, res) => {
   const data = await loadData();
   const defaults = DEFAULT_DATA.quizPenaltyConfig;

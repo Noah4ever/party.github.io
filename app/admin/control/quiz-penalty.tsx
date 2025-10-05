@@ -19,10 +19,6 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 import { adminApi, ApiError, QuizPenaltyConfigDTO } from "@/lib/api";
 import { showAlert, showError } from "@/lib/dialogs";
 
-function formatSeconds(value: number): string {
-  return `${value.toLocaleString("de-DE")} Sekunden`;
-}
-
 export default function QuizPenaltyScreen() {
   const theme = useTheme();
   const { ensureSession } = useAdminAuth();
