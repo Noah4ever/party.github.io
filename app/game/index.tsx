@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 
 import { Button } from "@/components/game/Button";
 import { HelloWave } from "@/components/hello-wave";
@@ -12,7 +12,7 @@ import { useGameStateSubscription } from "@/hooks/use-game-state";
 import { gameApi, guestsApi } from "@/lib/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import QRCodeStyled from "react-native-qrcode-styled";
 
 //TODO: TG change colors
@@ -26,6 +26,9 @@ export default function HomeScreen() {
   const [guestId, setGuestId] = useState("error");
   const [clues, setClues] = useState<string[]>();
   const [name, setName] = useState<string>("");
+  const [manualGuestId, setManualGuestId] = useState("");
+  const [manualError, setManualError] = useState<string | null>(null);
+  const [manualSubmitting, setManualSubmitting] = useState(false);
 
   useEffect(() => {
     if (local.guestId && !Array.isArray(local.guestId)) {
@@ -86,6 +89,44 @@ export default function HomeScreen() {
     }
     return "Hinweise sind freigegeben. Schau dir die Liste unten an.";
   }, [connected, started, cluesUnlockedAt]);
+
+  const handleManualGuestIdSubmit = useCallback(async () => {
+    if (manualSubmitting) {
+      return;
+    }
+
+    const trimmed = manualGuestId.trim();
+    if (!trimmed) {
+      setManualError("Bitte gib deine Guest-ID ein.");
+      return;
+    }
+
+    setManualSubmitting(true);
+    try {
+      const data = await guestsApi.get(trimmed);
+      if (!data || typeof data !== "object") {
+        setManualError("Diese Guest-ID wurde nicht gefunden.");
+        return;
+      }
+
+      await AsyncStorage.setItem("guestId", trimmed);
+      setGuestId(trimmed);
+
+      if ("name" in data && typeof data.name === "string" && data.name) {
+        setName(data.name);
+      }
+
+      setManualGuestId("");
+      setManualError(null);
+    } catch (error) {
+      console.warn("manual guestId validation failed", error);
+      setManualError(
+        "Guest-ID konnte nicht geprüft werden. Versuch es bitte erneut."
+      );
+    } finally {
+      setManualSubmitting(false);
+    }
+  }, [manualGuestId, manualSubmitting]);
 
   return (
     <ParallaxScrollView
@@ -258,6 +299,62 @@ export default function HomeScreen() {
             Auf der nächsten Seite deines Partners kannst du seinen Code
             scannen.
           </ThemedText>
+          {guestId === "error" && (
+            <View
+              style={[
+                styles.manualGuestContainer,
+                {
+                  backgroundColor: theme.backgroundAlt,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <ThemedText
+                style={[styles.manualGuestLabel, { color: theme.textMuted }]}
+              >
+                Kennst du deine Guest-ID? Trag sie hier ein, damit wir dich
+                zuordnen können.
+              </ThemedText>
+              <TextInput
+                value={manualGuestId}
+                onChangeText={(value) => {
+                  setManualGuestId(value);
+                  if (manualError) {
+                    setManualError(null);
+                  }
+                }}
+                placeholder="Guest-ID eingeben"
+                placeholderTextColor={theme.placeholder}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={[
+                  styles.manualGuestInput,
+                  {
+                    backgroundColor: theme.inputBackground,
+                    borderColor: theme.inputBorder,
+                    color: theme.inputText,
+                  },
+                ]}
+                returnKeyType="done"
+                editable={!manualSubmitting}
+                onSubmitEditing={handleManualGuestIdSubmit}
+              />
+              {manualError ? (
+                <ThemedText
+                  style={[styles.manualGuestError, { color: theme.danger }]}
+                >
+                  {manualError}
+                </ThemedText>
+              ) : null}
+              <Button
+                onPress={handleManualGuestIdSubmit}
+                iconText="checkmark.circle"
+                style={styles.manualGuestButton}
+              >
+                {manualSubmitting ? "Wird geprüft…" : "Guest-ID speichern"}
+              </Button>
+            </View>
+          )}
         </View>
       </ThemedView>
     </ParallaxScrollView>
@@ -440,5 +537,31 @@ const styles = StyleSheet.create({
   qrHint: {
     textAlign: "center",
     fontSize: 14,
+  },
+  manualGuestContainer: {
+    width: "100%",
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 16,
+    marginTop: 12,
+  },
+  manualGuestLabel: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  manualGuestInput: {
+    width: "100%",
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+  },
+  manualGuestError: {
+    fontSize: 13,
+  },
+  manualGuestButton: {
+    marginTop: 4,
   },
 });
