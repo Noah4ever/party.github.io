@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { HintBox } from "@/components/game/HintBox";
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -422,11 +421,6 @@ export default function FinalScreen() {
           )}
         </ThemedView>
       </ParallaxScrollView>
-
-      <HintBox>
-        Finaltipp: Tankt Wasser, stärkt eure Stimmen und bereitet einen Team-Schlachtruf vor. Im Finale zählt jede
-        Sekunde – und jeder Schluck!
-      </HintBox>
     </ThemedView>
   );
 }

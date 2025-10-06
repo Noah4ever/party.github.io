@@ -38,11 +38,10 @@ export default function HomeScreen() {
             { borderColor: theme.border, backgroundColor: theme.card },
           ]}
         >
-          <ThemedText type="title">Challenge 4</ThemedText>
-          <ThemedText type="subtitle">Ich hab noch nie! 🍻</ThemedText>
+          <ThemedText type="title">Ich hab noch nie! 🍻</ThemedText>
+          <ThemedText type="subtitle">Schnappt euch zwei Drinks eurer Wahl (Shots empfohlen 🍸)</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
-            Schnappt euch zwei Drinks eurer Wahl (Shots empfohlen 🍸) und
-            startet eine Runde „Ich hab noch nie“! Das Spiel zeigt euch einen
+      Das Spiel zeigt euch einen
             Satz – wenn er auf euch zutrifft, trinkt ihr.
           </ThemedText>
         </ThemedView>

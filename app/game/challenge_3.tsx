@@ -13,8 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-//TODO: ASH maybe get signature
-//TODO: erstetzem
+//TODO: erstetzen mit Klo Wand Foto
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -51,7 +50,7 @@ export default function HomeScreen() {
       if (groupId) {
         await gameApi.recordProgress(groupId, "challenge-3-story-share");
       }
-      router.navigate("/game/challenge_4");
+      router.push("/game/challenge_4");
     } catch (error) {
       console.error("challenge_3 progress update failed", error);
       showAlert({
@@ -90,16 +89,16 @@ export default function HomeScreen() {
           <ThemedText type="title">Challenge 3</ThemedText>
           <ThemedText type="subtitle">Ihr sieht geil aus! 🔥</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
-            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und l!
+            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und ladet davon ein Foto hoch!
           </ThemedText>
         </ThemedView>
 
         <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
-            Markiert die Challenge als erledigt, sobald ihr eure Stories präsentiert habt.
+            Macht hier ein Foto von eurem Kunstwerk.
           </ThemedText>
-          <Button onPress={handleComplete} iconText="checkmark.circle.outline">
-            {buttonLabel}
+          <Button onPress={handleComplete} iconText="camera">
+            Foto machen
           </Button>
         </ThemedView>
       </ParallaxScrollView>
