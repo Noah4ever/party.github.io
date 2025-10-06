@@ -27,7 +27,7 @@ You can start developing by editing the files inside the **app** directory. This
 
 ### Admin tools & authentication
 
-- The admin area is protected behind a password prompt. The default password is `ashlii`.
+- The admin area is protected behind a password prompt.
 - To change it, set `ADMIN_PASSWORD=<your-secret>` in the root `.env` file (or in `server/.env`).
 - A successful login stores a temporary Bearer token in secure storage and sends it on every mutating request.
 - Tokens expire automatically after 12 hours or when you log out from the **Control** tab.
