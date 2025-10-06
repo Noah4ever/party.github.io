@@ -5,6 +5,8 @@ import "react-native-reanimated";
 
 import { ThemePreferenceProvider } from "@/contexts/ThemePreferenceContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { enableScreens } from 'react-native-screens';
+enableScreens();
 
 export const unstable_settings = {
   anchor: "(tabs)",

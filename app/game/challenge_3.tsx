@@ -86,7 +86,7 @@ export default function HomeScreen() {
         }>
         <ThemedView
           style={[styles.textContainer, styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
-          <ThemedText type="title">Challenge 3</ThemedText>
+          <ThemedText type="title">Klo Malerei🎨</ThemedText>
           <ThemedText type="subtitle">Ihr sieht geil aus! 🔥</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
             Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und ladet davon ein Foto hoch!
