@@ -77,7 +77,7 @@ export default function HomeScreen() {
           if (groupId) {
             await gameApi.recordProgress(groupId, "challenge-4-never-have-i-ever");
           }
-          router.navigate("/game/questions");
+          router.navigate("/game/challenge_3");
         } catch (err) {
           console.error("NHIE progress update failed", err);
           showAlert({

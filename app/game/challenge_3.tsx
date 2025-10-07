@@ -2,7 +2,6 @@ import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
 import { Button } from "@/components/game/Button";
-import { PopupModal } from "@/components/game/hint";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -18,13 +17,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const [modalVisible, setModalVisible] = useState(false);
   const [groupId, setGroupId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    setModalVisible(true);
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -50,7 +44,7 @@ export default function HomeScreen() {
       if (groupId) {
         await gameApi.recordProgress(groupId, "challenge-3-story-share");
       }
-      router.push("/game/challenge_4");
+      router.push("/game/questions");
     } catch (error) {
       console.error("challenge_3 progress update failed", error);
       showAlert({
@@ -64,12 +58,7 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <PopupModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        title="🎉 Willkommen!"
-        content="PS: Schummeln ist für Loser, es geht hier um Spaß!"
-      />
+      
       <ParallaxScrollView
         headerBackgroundColor={{ light: "#FDE68A", dark: "#1F2937" }}
         headerHeight={180}
@@ -86,7 +75,7 @@ export default function HomeScreen() {
         }>
         <ThemedView
           style={[styles.textContainer, styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
-          <ThemedText type="title">Challenge 3</ThemedText>
+          <ThemedText type="title">Klo Malerei🎨</ThemedText>
           <ThemedText type="subtitle">Ihr sieht geil aus! 🔥</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
             Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und ladet davon ein Foto hoch!

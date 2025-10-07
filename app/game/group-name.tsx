@@ -113,7 +113,7 @@ export default function GroupNameScreen() {
       await groupsApi.update(groupId, payload);
       await AsyncStorage.setItem("groupName", trimmedName);
       setInitialName(trimmedName);
-      router.navigate("/game/challenge_3");
+      router.navigate("/game/challenge_4");
     } catch (err) {
       console.error("group-name save failed", err);
       setError("Der Teamname konnte nicht gespeichert werden. Prüft eure Verbindung und versucht es erneut.");

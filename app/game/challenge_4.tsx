@@ -2,17 +2,31 @@ import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
 
 import { Button } from "@/components/game/Button";
+import { PopupModal } from "@/components/game/hint";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
+    const [modalVisible, setModalVisible] = useState(false);
+  
+ useEffect(() => {
+    setModalVisible(true);
+  }, []);
+
   return (
     <ThemedView style={{ flex: 1 }}>
+      <PopupModal
+              visible={modalVisible}
+              onClose={() => setModalVisible(false)}
+              title="🎉 Willkommen!"
+              content="PS: Schummeln ist für Loser, es geht hier um Spaß!"
+            />
       <ParallaxScrollView
         headerBackgroundColor={{ light: "#FDE68A", dark: "#1F2937" }}
         headerHeight={180}
