@@ -10,6 +10,7 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
 import { gameApi, type FinalScoreEntryDTO, type FinalSummaryDTO } from "@/lib/api";
+import confetti from "canvas-confetti";
 
 const FINALIST_LIMIT = 4;
 
@@ -33,6 +34,29 @@ export default function FinalScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<FinalSummaryDTO | null>(null);
+
+useEffect(() => {
+  const timeout = setTimeout(() => {
+    const duration = 2 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+      
+      confetti({
+        particleCount: 5,
+        angle: 280,
+        spread: 60,
+        origin: { y:-1 },
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    })();
+  }, 600);
+
+  return () => clearTimeout(timeout);
+}, []);
 
   useEffect(() => {
     let mounted = true;
@@ -728,4 +752,5 @@ const styles = StyleSheet.create({
     right: 0,
     position: "absolute",
   },
+  
 });

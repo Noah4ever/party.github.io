@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-//TODO: ASH add questions
+//TODO: ASH add questions with pics
 
 export default function HomeScreen() {
   const globalStyles = useGlobalStyles();

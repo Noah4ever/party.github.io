@@ -11,7 +11,7 @@ import { showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 
-//TODO: ASH add questions with pictures
+//TODO: ASH add questions 
 
 export default function HomeScreen() {
   const router = useRouter();
