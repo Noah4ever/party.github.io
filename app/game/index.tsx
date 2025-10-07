@@ -16,7 +16,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import QRCodeStyled from "react-native-qrcode-styled";
 
 //TODO: TG change colors
-//TODO: add animation between pages
 
 export default function HomeScreen() {
   const theme = useTheme();

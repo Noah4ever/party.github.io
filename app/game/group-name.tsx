@@ -131,7 +131,7 @@ export default function GroupNameScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPink]} />
             <View style={[styles.partyGlow, styles.partyGlowBlue]} />
-            <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="contain" />
+            <Image source={require("@/assets/images/papa/group.png")} style={styles.partyCrown} contentFit="contain" />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
@@ -340,8 +340,10 @@ const styles = StyleSheet.create({
     transform: [{ translateX: 60 }, { translateY: 20 }],
   },
   partyCrown: {
-    width: 210,
-    height: 150,
+    width: 320,
+    height: 220,
+    left:-30,
+    
   },
   confetti: {
     position: "absolute",

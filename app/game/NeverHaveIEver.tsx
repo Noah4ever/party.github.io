@@ -11,7 +11,7 @@ import { showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 
-//TODO: ASH add questions
+//TODO: ASH add questions with pictures
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -118,7 +118,7 @@ export default function HomeScreen() {
         <View style={styles.partyHeader}>
           <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
           <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-          <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
+          <Image source={require("@/assets/images/Hummel/HummelPool.png")} style={styles.papaLogo} />
           <View style={[styles.confetti, styles.confettiOne]} />
           <View style={[styles.confetti, styles.confettiTwo]} />
           <View style={[styles.confetti, styles.confettiThree]} />
@@ -227,10 +227,10 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "24deg" }],
   },
   papaLogo: {
-    height: 280,
-    width: 230,
+    height: 190,
+    width: 200,
     bottom: 0,
-    left: 0,
+    left: 20,
     top: 0,
     right: 0,
     position: "absolute",

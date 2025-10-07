@@ -35,7 +35,7 @@ export default function HomeScreen() {
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
             <Image
-              source={require("@/assets/images/papa/crown.png")}
+              source={require("@/assets/images/papa/pool.png")}
               style={styles.papaLogo}
             />
             <View style={[styles.confetti, styles.confettiOne]} />
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "24deg" }],
   },
   papaLogo: {
-    height: 280,
+    height: 250,
     width: 230,
     bottom: 0,
     left: 0,
@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
     right: 0,
     position: "absolute",
     borderRadius: 200,
-    opacity: 0.55,
   },
   partyGlowPink: {
     backgroundColor: "rgba(236,72,153,0.4)",

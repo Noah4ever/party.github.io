@@ -13,6 +13,8 @@ import { gameApi, type FinalScoreEntryDTO, type FinalSummaryDTO } from "@/lib/ap
 
 const FINALIST_LIMIT = 4;
 
+//TODO: add suprised papa pic into header
+
 function formatDuration(ms: number): string {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));
   const hours = Math.floor(totalSeconds / 3600);

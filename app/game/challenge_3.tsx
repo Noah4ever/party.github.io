@@ -12,7 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-//TODO: erstetzen mit Klo Wand Foto
+//TODO: NOAH add route and function to upload photo
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -66,7 +66,7 @@ export default function HomeScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-            <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
+            <Image source={require("@/assets/images/papa/sunny.png")} style={styles.papaLogo} />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
@@ -159,15 +159,14 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "24deg" }],
   },
   papaLogo: {
-    height: 280,
+    height: 190,
     width: 230,
     bottom: 0,
-    left: 0,
+    left: 40,
     top: 0,
     right: 0,
     position: "absolute",
     borderRadius: 200,
-    opacity: 0.55,
   },
 
   textContainer: {

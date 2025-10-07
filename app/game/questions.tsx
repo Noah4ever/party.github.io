@@ -325,7 +325,7 @@ export default function QuizScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-            <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
+            <Image source={require("@/assets/images/papa/banana.png")} style={styles.papaLogo} />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "24deg" }],
   },
   papaLogo: {
-    height: 280,
+    height: 200,
     width: 230,
     bottom: 0,
     left: 0,

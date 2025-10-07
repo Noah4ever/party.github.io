@@ -102,7 +102,7 @@ export default function ChallengeTwoScreen() {
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
             <Image
-              source={require("@/assets/images/papa/crown.png")}
+              source={require("@/assets/images/papa/melon_hat.png")}
               style={styles.papaLogo}
             />
             <View style={[styles.confetti, styles.confettiOne]} />
@@ -305,12 +305,11 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "24deg" }],
   },
   papaLogo: {
-    height: 280,
-    width: 230,
+    height: 180,
+    width: 400,
     bottom: 0,
-    left: 0,
+    left: -100,
     top: 0,
-    right: 0,
     position: "absolute",
   },
   card: {
