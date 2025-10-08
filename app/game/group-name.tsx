@@ -102,7 +102,7 @@ export default function GroupNameScreen() {
       return;
     }
     if (!hasChanges) {
-      router.navigate("/game/challenge_3");
+      router.navigate("/game/challenge_4");
       return;
     }
 

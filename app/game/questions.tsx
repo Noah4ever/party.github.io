@@ -315,7 +315,7 @@ export default function QuizScreen() {
       <PopupModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        title="🎉 Finale Challenge!"
+        title="🎉 Ihr seid fast am Ziel"
         content="Ihr müsst eine Reihe von Fragen per Multiple Choice richtig
             beantworten um an den Schlüssel fürs Finale zu kommen"
       />
