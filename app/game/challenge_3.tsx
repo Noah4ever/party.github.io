@@ -20,6 +20,7 @@ export default function HomeScreen() {
   const [groupId, setGroupId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+
   useEffect(() => {
     (async () => {
       try {
@@ -86,7 +87,7 @@ export default function HomeScreen() {
           <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
             Macht hier ein Foto von eurem Kunstwerk.
           </ThemedText>
-          <Button onPress={handleComplete} iconText="camera">
+          <Button onPress={()=> router.navigate("/game/modal/kloSelfie")} iconText="camera">
             Foto machen
           </Button>
         </ThemedView>

@@ -192,7 +192,7 @@ useEffect(() => {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-            <Image source={require("@/assets/images/papa/crown.png")} style={styles.papaLogo} />
+            <Image source={require("@/assets/images/papa/suprised.png")} style={styles.papaLogo} />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
     height: 36,
     backgroundColor: "#F97316",
     top: 28,
-    left: 50,
+    left: 130,
     transform: [{ rotate: "18deg" }],
   },
   confettiTwo: {
@@ -744,8 +744,8 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "24deg" }],
   },
   papaLogo: {
-    height: 280,
-    width: 230,
+    height: 200,
+    width: 240,
     bottom: 0,
     left: 0,
     top: 0,
