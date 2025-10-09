@@ -185,7 +185,7 @@ export default function kloSelfieModal() {
       if (groupId) {
         formData.append("groupId", groupId);
       }
-      formData.append("challengeId", "challenge_2");
+      formData.append("challengeId", "Klo Challenge");
 
       const response = await gameApi.uploadSelfie(formData);
       if (response && typeof response === "object" && "url" in response && typeof response.url === "string") {
@@ -200,11 +200,11 @@ export default function kloSelfieModal() {
               ? response.uploadedAt
               : new Date().toISOString(),
         };
-        await AsyncStorage.setItem("challenge2Selfie", JSON.stringify(payload));
+        await AsyncStorage.setItem("KloFoto", JSON.stringify(payload));
       }
       if (groupId) {
         try {
-          await gameApi.recordProgress(groupId, "challenge-2-selfie");
+          await gameApi.recordProgress(groupId, "klo_Challenge");
         } catch (progressError) {
           console.warn("progress update failed", progressError);
         }
@@ -235,9 +235,9 @@ export default function kloSelfieModal() {
     setPreview(null);
     setFeedback(null);
     setUploading(false);
-    await AsyncStorage.removeItem("challenge2Selfie");
+    await AsyncStorage.removeItem("KloFoto");
     router.back();
-    router.navigate("/game/challenge_3");
+    router.navigate("/game/questions");
   }, [router]);
 
   const permissionStatusLabel = useMemo(() => {
