@@ -131,7 +131,7 @@ export default function HomeScreen() {
 
         <View style={styles.midContainer}>
           <Animated.View style={[styles.bubble, { borderColor: theme.primary, transform: [{ scale: animate }] }]}>
-            <ThemedText type="subtitle">
+            <ThemedText type="subtitle" style={styles.questionContainer}>
               {loading
                 ? " loading..."
                 : completionSubmitting
@@ -243,6 +243,7 @@ const styles = StyleSheet.create({
     textShadowColor: "#4c1fffff",
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 6,
+    alignItems: "center"
   },
   midContainer: {
     gap: 35,
@@ -264,4 +265,7 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 10,
   },
+  questionContainer:{
+    textAlign: "center",
+  }
 });
