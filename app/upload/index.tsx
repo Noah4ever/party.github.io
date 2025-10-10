@@ -236,8 +236,7 @@ export default function UploadMemoriesScreen() {
 
         if (Platform.OS === "web") {
           if (item.file instanceof File) {
-            const fileFromPicker = new File([item.file], fileName, { type: mimeType || item.file.type || "" });
-            formData.append("media", fileFromPicker);
+            formData.append("media", item.file, fileName);
           } else {
             let blob: Blob | null = null;
             try {
@@ -278,7 +277,8 @@ export default function UploadMemoriesScreen() {
         setCompletedCount(successCount);
       } catch (error) {
         console.error("media upload error", error);
-        failed.push(item.fileName);
+        const message = error instanceof Error ? error.message : "Unbekannter Fehler";
+        failed.push(`${item.fileName} (${message})`);
       }
     }
 
