@@ -31,6 +31,7 @@ type SelectedMedia = {
   duration?: number | null;
   mimeType?: string | null;
   base64?: string | null;
+  file?: File | null;
 };
 
 function inferMimeType(options: {
@@ -182,6 +183,7 @@ export default function UploadMemoriesScreen() {
             duration: asset.duration ?? null,
             mimeType: inferredMime,
             base64: asset.base64 ?? null,
+            file: asset.file instanceof File ? asset.file : null,
           });
         });
         return next;
@@ -233,28 +235,33 @@ export default function UploadMemoriesScreen() {
         const fileName = ensureFileName(item.fileName, mimeType, item.type);
 
         if (Platform.OS === "web") {
-          let blob: Blob | null = null;
-          try {
-            const response = await fetch(item.uri);
-            blob = await response.blob();
-          } catch (fetchError) {
-            console.warn("media blob fetch failed, attempting base64 fallback", fetchError);
-          }
-
-          if (!blob && item.base64) {
+          if (item.file instanceof File) {
+            const fileFromPicker = new File([item.file], fileName, { type: mimeType || item.file.type || "" });
+            formData.append("media", fileFromPicker);
+          } else {
+            let blob: Blob | null = null;
             try {
-              blob = base64ToBlob(item.base64, mimeType);
-            } catch (base64Error) {
-              console.error("media base64 conversion failed", base64Error);
+              const response = await fetch(item.uri);
+              blob = await response.blob();
+            } catch (fetchError) {
+              console.warn("media blob fetch failed, attempting base64 fallback", fetchError);
             }
-          }
 
-          if (!blob) {
-            throw new Error("UPLOAD_SOURCE_UNAVAILABLE");
-          }
+            if (!blob && item.base64) {
+              try {
+                blob = base64ToBlob(item.base64, mimeType);
+              } catch (base64Error) {
+                console.error("media base64 conversion failed", base64Error);
+              }
+            }
 
-          const file = new File([blob], fileName, { type: blob.type || mimeType });
-          formData.append("media", file);
+            if (!blob) {
+              throw new Error("UPLOAD_SOURCE_UNAVAILABLE");
+            }
+
+            const file = new File([blob], fileName, { type: blob.type || mimeType });
+            formData.append("media", file);
+          }
         } else {
           const normalizedUri = item.uri.startsWith("file://") ? item.uri : `file://${item.uri}`;
           formData.append("media", {
