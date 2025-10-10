@@ -1,3 +1,4 @@
+import archiver from "archiver";
 import { Router } from "express";
 import { promises as fs } from "fs";
 import { nanoid } from "nanoid";
@@ -79,6 +80,71 @@ gamesRouter.get("/gallery", async (_req, res) => {
     console.error("gallery uploads listing failed", error);
     res.status(500).json({ message: "Failed to read uploads directory" });
   }
+});
+
+gamesRouter.post("/gallery/archive", async (req, res) => {
+  const raw = req?.body?.filenames;
+  const filenames = Array.isArray(raw)
+    ? raw
+        .map((name) => (typeof name === "string" ? name.trim() : ""))
+        .filter((name) => name && !name.includes("/") && !name.includes("\\") && !name.includes(".."))
+    : [];
+
+  if (filenames.length === 0) {
+    return res.status(400).json({ message: "No valid filenames provided." });
+  }
+
+  const uploadDir = path.resolve("uploads");
+  const missing: string[] = [];
+  const files: { filename: string; filePath: string }[] = [];
+
+  for (const filename of filenames) {
+    const filePath = path.join(uploadDir, filename);
+    try {
+      const stats = await fs.stat(filePath);
+      if (!stats.isFile()) {
+        missing.push(filename);
+        continue;
+      }
+      files.push({ filename, filePath });
+    } catch {
+      missing.push(filename);
+    }
+  }
+
+  if (files.length === 0) {
+    return res.status(404).json({ message: "None of the requested files exist.", missing });
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const archiveName =
+    files.length === 1 ? `${files[0].filename.replace(/\.zip$/i, "")}-${timestamp}.zip` : `gallery-${timestamp}.zip`;
+
+  res.status(200);
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${archiveName}"`);
+  if (missing.length > 0) {
+    res.setHeader("X-Missing-Uploads", missing.join(","));
+  }
+
+  const archive = archiver("zip", { zlib: { level: 9 } });
+
+  archive.on("error", (error: Error) => {
+    console.error("gallery archive failed", error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Failed to create archive." });
+    } else {
+      res.end();
+    }
+  });
+
+  archive.pipe(res);
+
+  for (const { filename, filePath } of files) {
+    archive.file(filePath, { name: filename });
+  }
+
+  void archive.finalize();
 });
 
 gamesRouter.get("/quiz-penalty", async (_req, res) => {

@@ -1,3 +1,5 @@
+import * as ExpoConstants from "expo-constants";
+
 // Simple API client for https://api.thiering.org
 // Provides typed helper methods with JSON handling, query param support, abort timeout, and token injection.
 
@@ -8,6 +10,48 @@ const normalizeBase = (url: string) => url.replace(/\/$/, "");
 const env: Record<string, string | undefined> =
   typeof process !== "undefined" && process.env ? (process.env as Record<string, string | undefined>) : {};
 
+const DEV_SERVER_PORT = (env.EXPO_PUBLIC_DEV_SERVER_PORT ?? "5000").replace(/^:/, "");
+const DEV_SERVER_PROTOCOL = env.EXPO_PUBLIC_DEV_SERVER_PROTOCOL ?? "http";
+
+function resolveDevBaseUrl(defaultUrl: string): string {
+  const build = (host: string | null | undefined, protocolHint?: string) => {
+    if (!host) return null;
+    const hostname = host.split(":")[0];
+    if (!hostname) return null;
+    const protocol = DEV_SERVER_PROTOCOL || (protocolHint === "https:" ? "https" : "http");
+    return `${protocol}://${hostname}:${DEV_SERVER_PORT}/api`;
+  };
+
+  try {
+    if (typeof window !== "undefined" && window.location?.hostname) {
+      const candidate = build(window.location.hostname, window.location.protocol);
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    const constantsAny = ExpoConstants as any;
+    const hostCandidates: (string | undefined)[] = [
+      constantsAny?.expoConfig?.hostUri,
+      constantsAny?.manifest2?.extra?.expoClient?.hostUri,
+      constantsAny?.manifest?.hostUri,
+      constantsAny?.manifest?.debuggerHost,
+    ];
+
+    for (const host of hostCandidates) {
+      if (!host) continue;
+      const candidate = build(host, undefined);
+      if (candidate) {
+        return candidate;
+      }
+    }
+  } catch (error) {
+    console.warn("[api] dev base resolution failed", error);
+  }
+
+  return defaultUrl;
+}
+
 let unauthorizedHandler: (() => void) | null = null;
 
 export function setUnauthorizedHandler(handler: (() => void) | null) {
@@ -15,6 +59,8 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 }
 const rawOverride = env.EXPO_PUBLIC_API_BASE ?? env.API_BASE_URL ?? env.NEXT_PUBLIC_API_BASE; // support multiple conventions
 const rawDevFlag = env.EXPO_PUBLIC_DEV_PARTY ?? false;
+
+const DEFAULT_DEV_BASE = `${DEV_SERVER_PROTOCOL}://localhost:${DEV_SERVER_PORT}/api`;
 
 const isDevFlag = (() => {
   if (rawDevFlag === undefined) return false;
@@ -27,7 +73,7 @@ let BASE_URL = "https://api.thiering.org/api"; // production default
 if (rawOverride) {
   BASE_URL = normalizeBase(rawOverride);
 } else if (isDevFlag) {
-  BASE_URL = "http://localhost:5000/api"; // local development
+  BASE_URL = resolveDevBaseUrl(DEFAULT_DEV_BASE);
 }
 
 console.log(`[api] base URL: ${BASE_URL} (dev=${isDevFlag})`);
@@ -368,7 +414,7 @@ export interface AdminUploadEntryDTO {
   challengeId?: string | null;
 }
 
-export interface GalleryUploadEntryDTO extends AdminUploadEntryDTO {}
+export type GalleryUploadEntryDTO = AdminUploadEntryDTO;
 
 export interface GalleryUploadListDTO {
   files: GalleryUploadEntryDTO[];
@@ -587,6 +633,8 @@ export const gameApi = {
     }),
   getGameState: () => api.get<GameStateDTO>("/games/state"),
   getGalleryUploads: () => api.get<GalleryUploadListDTO>("/games/gallery"),
+  archiveGalleryUploads: (filenames: string[]) =>
+    api.post<Response, { filenames: string[] }>("/games/gallery/archive", { filenames }, { raw: true }),
   getPartnerClues: (guestId: string) =>
     api.get<{
       unlocked: boolean;

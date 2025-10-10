@@ -6,60 +6,17 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
-import { gameApi } from "@/lib/api";
-import { showAlert } from "@/lib/dialogs";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React from "react";
 
 //TODO: NOAH add route and function to upload photo
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const [groupId, setGroupId] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const storedGroupId = await AsyncStorage.getItem("groupId");
-        if (storedGroupId) {
-          setGroupId(storedGroupId);
-        }
-      } catch (err) {
-        console.warn("challenge_3 groupId load failed", err);
-      }
-    })();
-  }, []);
-
-  const buttonLabel = useMemo(() => (submitting ? "Wird gespeichert…" : "Erledigt!"), [submitting]);
-
-  const handleComplete = useCallback(async () => {
-    if (submitting) {
-      return;
-    }
-    setSubmitting(true);
-    try {
-      if (groupId) {
-        await gameApi.recordProgress(groupId, "challenge-3-story-share");
-      }
-      router.push("/game/questions");
-    } catch (error) {
-      console.error("challenge_3 progress update failed", error);
-      showAlert({
-        title: "Speichern fehlgeschlagen",
-        message: "Wir konnten euren Fortschritt nicht sichern. Versucht es bitte noch einmal.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  }, [groupId, router, submitting]);
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      
       <ParallaxScrollView
         headerBackgroundColor={{ light: "#FDE68A", dark: "#1F2937" }}
         headerHeight={180}
@@ -86,7 +43,7 @@ export default function HomeScreen() {
           <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
             Macht hier ein Foto von eurem Kunstwerk.
           </ThemedText>
-          <Button onPress={()=> router.navigate("/game/modal/kloSelfie")} iconText="camera">
+          <Button onPress={() => router.navigate("/game/modal/kloSelfie")} iconText="camera">
             Foto machen
           </Button>
         </ThemedView>

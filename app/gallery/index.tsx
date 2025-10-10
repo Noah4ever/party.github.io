@@ -24,6 +24,7 @@ import {
   ViewToken,
   useWindowDimensions,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm|avi)$/i;
 
@@ -71,6 +72,7 @@ export default function GalleryScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState<GalleryUploadEntryDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -149,6 +151,7 @@ export default function GalleryScreen() {
 
   const selectedItems = useMemo(() => items.filter((item) => selected.has(item.filename)), [items, selected]);
   const selectedCount = selectedItems.length;
+  const allSelected = items.length > 0 && selected.size === items.length;
 
   const clearSelection = useCallback(() => {
     setSelected(new Set());
@@ -268,6 +271,66 @@ export default function GalleryScreen() {
     [assetsBase, ensureMediaPermission]
   );
 
+  const downloadArchive = useCallback(async (entries: GalleryUploadEntryDTO[]) => {
+    if (entries.length === 0 || Platform.OS !== "web") {
+      return false;
+    }
+
+    const doc = getDocument();
+    if (!doc || !doc.body) {
+      showAlert({
+        title: "Downloads nicht verfügbar",
+        message: "Mehrfach-Downloads werden nur im Browser unterstützt.",
+      });
+      return false;
+    }
+
+    try {
+      const response = (await gameApi.archiveGalleryUploads(entries.map((entry) => entry.filename))) as Response;
+      const blob = await response.blob();
+      const header = response.headers.get("content-disposition");
+      const fallbackName = `gallery-${new Date().toISOString().replace(/[:.]/g, "-")}.zip`;
+      const zipName = getFilenameFromContentDisposition(header, fallbackName);
+
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = doc.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = zipName;
+      anchor.style.display = "none";
+      anchor.rel = "noopener";
+      doc.body.appendChild(anchor);
+      anchor.click();
+      doc.body.removeChild(anchor);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+      const missingHeader = response.headers.get("X-Missing-Uploads");
+      if (missingHeader) {
+        const missingList = missingHeader
+          .split(",")
+          .map((name) => name.trim())
+          .filter(Boolean);
+        if (missingList.length > 0) {
+          showAlert({
+            title: "Einige Dateien fehlten",
+            message: missingList.join("\n"),
+          });
+        }
+      }
+
+      showAlert({
+        title: "Download gestartet",
+        message: `${entries.length} Dateien werden als ZIP gespeichert.`,
+      });
+
+      return true;
+    } catch (err: any) {
+      console.error("gallery archive download failed", err);
+      const message = err?.message || "Die Auswahl konnte nicht heruntergeladen werden.";
+      showAlert({ title: "Download fehlgeschlagen", message });
+      return false;
+    }
+  }, []);
+
   const toggleSelect = useCallback((filename: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -280,8 +343,28 @@ export default function GalleryScreen() {
     });
   }, []);
 
+  const toggleSelectAll = useCallback(() => {
+    setSelected((prev) => {
+      if (items.length === 0) {
+        return prev;
+      }
+      if (prev.size === items.length) {
+        return new Set();
+      }
+      return new Set(items.map((item) => item.filename));
+    });
+  }, [items]);
+
   const handleDownloadSelected = useCallback(async () => {
     if (selectedItems.length === 0) return;
+
+    if (Platform.OS === "web" && selectedItems.length > 1) {
+      const ok = await downloadArchive(selectedItems);
+      if (ok) {
+        clearSelection();
+      }
+      return;
+    }
 
     let successCount = 0;
     const failed: string[] = [];
@@ -312,7 +395,7 @@ export default function GalleryScreen() {
         message: failed.join("\n"),
       });
     }
-  }, [clearSelection, downloadMedia, selectedItems]);
+  }, [clearSelection, downloadArchive, downloadMedia, selectedItems]);
 
   const renderHeader = useCallback(
     () => (
@@ -333,58 +416,9 @@ export default function GalleryScreen() {
             Stöbert durch alle hochgeladenen Erinnerungen und ladet eure Favoriten herunter.
           </ThemedText>
         </ThemedView>
-
-        {selectionMode ? (
-          <ThemedView
-            style={[styles.selectionBanner, { borderColor: theme.border, backgroundColor: theme.backgroundAlt }]}
-            accessibilityLiveRegion="polite">
-            <ThemedText style={[styles.selectionTitle, { color: theme.text }]}>
-              {selectedCount} Datei{selectedCount === 1 ? "" : "en"} ausgewählt
-            </ThemedText>
-            <View style={styles.selectionActions}>
-              <TouchableOpacity
-                onPress={() => void handleDownloadSelected()}
-                disabled={selectedCount === 0}
-                style={[
-                  styles.selectionActionButton,
-                  {
-                    borderColor: theme.border,
-                    backgroundColor: theme.overlay,
-                    opacity: selectedCount === 0 ? 0.6 : 1,
-                  },
-                ]}>
-                <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
-                <ThemedText style={[styles.selectionActionText, { color: theme.accent }]}>Download</ThemedText>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={clearSelection}
-                style={[styles.selectionActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}
-                accessibilityHint="Auswahl zurücksetzen">
-                <IconSymbol name="xmark.circle" size={18} color={theme.icon} />
-                <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>Auswahl leeren</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </ThemedView>
-        ) : null}
       </View>
     ),
-    [
-      clearSelection,
-      handleDownloadSelected,
-      router,
-      selectionMode,
-      selectedCount,
-      theme.backgroundAlt,
-      theme.border,
-      theme.card,
-      theme.primary,
-      theme.primaryMuted,
-      theme.accent,
-      theme.icon,
-      theme.overlay,
-      theme.text,
-      theme.textMuted,
-    ]
+    [router, theme.border, theme.card, theme.primary, theme.primaryMuted, theme.text, theme.textMuted]
   );
 
   const renderEmpty = useCallback(() => {
@@ -562,6 +596,58 @@ export default function GalleryScreen() {
         />
       </SafeAreaView>
 
+      {selectionMode ? (
+        <View pointerEvents="box-none" style={styles.selectionOverlayWrapper}>
+          <ThemedView
+            style={[
+              styles.selectionBanner,
+              {
+                borderColor: theme.border,
+                backgroundColor: theme.backgroundAlt,
+                paddingBottom: insets.bottom + 12,
+                marginBottom: 0,
+              },
+            ]}
+            accessibilityLiveRegion="polite">
+            <ThemedText style={[styles.selectionTitle, { color: theme.text }]}>
+              {selectedCount} Datei{selectedCount === 1 ? "" : "en"} ausgewählt
+            </ThemedText>
+            <View style={styles.selectionActions}>
+              <TouchableOpacity
+                onPress={toggleSelectAll}
+                style={[styles.selectionActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}
+                accessibilityHint={allSelected ? "Auswahl aufheben" : "Alle Dateien auswählen"}>
+                <IconSymbol name={allSelected ? "xmark.circle" : "checkmark.circle"} size={18} color={theme.primary} />
+                <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>
+                  {allSelected ? "Auswahl aufheben" : "Alles auswählen"}
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => void handleDownloadSelected()}
+                disabled={selectedCount === 0}
+                style={[
+                  styles.selectionActionButton,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.overlay,
+                    opacity: selectedCount === 0 ? 0.6 : 1,
+                  },
+                ]}>
+                <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
+                <ThemedText style={[styles.selectionActionText, { color: theme.accent }]}>Download</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={clearSelection}
+                style={[styles.selectionActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}
+                accessibilityHint="Auswahl zurücksetzen">
+                <IconSymbol name="trash.fill" size={18} color={theme.icon} />
+                <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>Auswahl leeren</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </ThemedView>
+        </View>
+      ) : null}
+
       <Modal visible={viewerVisible} transparent animationType="fade" onRequestClose={handleCloseViewer}>
         <TouchableWithoutFeedback onPress={handleCloseViewer}>
           <View style={[styles.viewerBackdrop, { backgroundColor: theme.backdrop }]}>
@@ -666,7 +752,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 48,
+    paddingBottom: 160,
     paddingTop: 8,
   },
   headerWrapper: {
@@ -708,6 +794,11 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     gap: 12,
+    shadowColor: "rgba(0,0,0,0.15)",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
   },
   selectionTitle: {
     fontSize: 16,
@@ -717,12 +808,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
-  },
-  selectionButton: {
-    alignSelf: "stretch",
-  },
-  selectionButtonSecondary: {
-    alignSelf: "stretch",
   },
   selectionActionButton: {
     flexDirection: "row",
@@ -736,6 +821,14 @@ const styles = StyleSheet.create({
   selectionActionText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  selectionOverlayWrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 0,
   },
   emptyState: {
     alignItems: "center",
