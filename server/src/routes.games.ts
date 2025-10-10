@@ -1,5 +1,7 @@
 import { Router } from "express";
+import { promises as fs } from "fs";
 import { nanoid } from "nanoid";
+import path from "path";
 import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
 import { buildScoreboard, computeGroupScore, parseIsoTime } from "./scoreboard.js";
@@ -14,6 +16,7 @@ import {
   QuizPenaltyConfig,
   QuizQuestion,
   TimePenaltyEntry,
+  UploadRecord,
 } from "./types.js";
 
 export const gamesRouter = Router();
@@ -31,6 +34,51 @@ gamesRouter.get("/state", async (_req, res) => {
   const data = await loadData();
   const state: GameState = data.gameState ?? { started: false };
   res.json(state);
+});
+
+gamesRouter.get("/gallery", async (_req, res) => {
+  const uploadDir = path.resolve("uploads");
+  try {
+    const data = await loadData();
+    const entries = await fs.readdir(uploadDir, { withFileTypes: true });
+    const files = await Promise.all(
+      entries
+        .filter((entry) => entry.isFile() && !/\.txt$/i.test(entry.name))
+        .map(async (entry) => {
+          const filePath = path.join(uploadDir, entry.name);
+          const stats = await fs.stat(filePath);
+          const record: UploadRecord | undefined = Array.isArray(data.uploads)
+            ? data.uploads.find((item) => item.filename === entry.name)
+            : undefined;
+          const guest = record?.guestId ? data.guests.find((g) => g.id === record.guestId) ?? null : null;
+          const group = record?.groupId ? data.groups.find((g) => g.id === record.groupId) ?? null : null;
+
+          return {
+            filename: entry.name,
+            size: stats.size,
+            createdAt: stats.birthtime.toISOString(),
+            updatedAt: stats.mtime.toISOString(),
+            url: `/uploads/${entry.name}`,
+            guestId: record?.guestId ?? null,
+            guestName: guest?.name ?? null,
+            groupId: record?.groupId ?? null,
+            groupName: group?.name ?? null,
+            uploadedAt: record?.uploadedAt ?? stats.birthtime.toISOString(),
+            challengeId: record?.challengeId ?? null,
+          };
+        })
+    );
+
+    files.sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1));
+
+    res.json({ files });
+  } catch (error: any) {
+    if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT") {
+      return res.json({ files: [] });
+    }
+    console.error("gallery uploads listing failed", error);
+    res.status(500).json({ message: "Failed to read uploads directory" });
+  }
 });
 
 gamesRouter.get("/quiz-penalty", async (_req, res) => {

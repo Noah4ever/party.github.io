@@ -64,23 +64,23 @@ export default function HomeScreen() {
                 alignSelf: isCompactLayout ? "center" : "flex-start",
               },
             ]}>
-            <IconSymbol name="tray.and.arrow.up" size={48} color={theme.primary} />
+            <IconSymbol name="images.outline" size={48} color={theme.primary} />
           </View>
           <View style={[styles.shortcutsContent, isCompactLayout && styles.shortcutsContentCompact]}>
-            <ThemedText style={[styles.shortcutsHeading, { color: theme.text }]}>Upload</ThemedText>
+            <ThemedText style={[styles.shortcutsHeading, { color: theme.text }]}>Galerie</ThemedText>
             <ThemedText
               style={[
                 styles.shortcutsBody,
                 { color: theme.textMuted },
                 isCompactLayout && styles.shortcutsBodyCompact,
               ]}>
-              Teile Fotos oder Videos von euren Highlights.
+              Entdeckt alle geteilten Fotos & Videos und ladet neue Erinnerungen hoch.
             </ThemedText>
             <Button
-              onPress={() => router.push("/upload")}
-              iconText="arrow.up.circle"
+              onPress={() => router.push("/gallery")}
+              iconText="photo.on.rectangle"
               style={[styles.shortcutsButton, isCompactLayout && styles.shortcutsButtonCompact]}>
-              Zum Upload-Bereich
+              Zur Galerie
             </Button>
           </View>
         </View>

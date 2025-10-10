@@ -21,7 +21,8 @@ export default function RootLayout() {
           <Stack.Screen name="admin" options={{ headerShown: false }} />
           <Stack.Screen name="game" options={{ headerShown: false, presentation: "card" }} />
           <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
-          <Stack.Screen name="upload" options={{ headerShown: false }} />
+          <Stack.Screen name="gallery" options={{ headerShown: false }} />
+          <Stack.Screen name="upload/index" options={{ headerShown: false, presentation: "modal" }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

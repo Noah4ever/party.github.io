@@ -67,6 +67,7 @@ const MAPPING = {
   logout: "log-out",
   podium: "podium-outline",
   "doc.text": "document-text-outline",
+  "images.outline": "images-outline",
 } as const satisfies IconMapping;
 
 // To add new icons:

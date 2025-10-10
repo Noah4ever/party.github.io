@@ -368,6 +368,12 @@ export interface AdminUploadEntryDTO {
   challengeId?: string | null;
 }
 
+export interface GalleryUploadEntryDTO extends AdminUploadEntryDTO {}
+
+export interface GalleryUploadListDTO {
+  files: GalleryUploadEntryDTO[];
+}
+
 export interface AdminUploadListDTO {
   files: AdminUploadEntryDTO[];
 }
@@ -580,6 +586,7 @@ export const gameApi = {
       guestId,
     }),
   getGameState: () => api.get<GameStateDTO>("/games/state"),
+  getGalleryUploads: () => api.get<GalleryUploadListDTO>("/games/gallery"),
   getPartnerClues: (guestId: string) =>
     api.get<{
       unlocked: boolean;
