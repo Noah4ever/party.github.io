@@ -82,12 +82,28 @@ const envOrigins = (process.env.ALLOWED_ORIGINS || "")
 
 const allowedOrigins = [...new Set([...DEFAULT_ALLOWED_ORIGINS, ...envOrigins])];
 
+const isPrivateNetworkOrigin = (origin: string): boolean => {
+  try {
+    const url = new URL(origin);
+    const host = url.hostname;
+    return (
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(host) ||
+      host === "0.0.0.0"
+    );
+  } catch {
+    return false;
+  }
+};
+
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true); // mobile apps / curl
     if (allowedOrigins.includes(origin)) return callback(null, true);
     if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
     if (/^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)) return callback(null, true);
+    if (isPrivateNetworkOrigin(origin)) return callback(null, true);
     if (origin.endsWith(".thiering.org")) return callback(null, true);
     return callback(new Error(`Origin not allowed by CORS: ${origin}`));
   },
