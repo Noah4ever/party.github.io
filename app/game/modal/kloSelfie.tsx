@@ -15,7 +15,7 @@ import { ActivityIndicator, Animated, Platform, ScrollView, StyleSheet, Touchabl
 
 const CAPTURE_QUALITY = 1;
 
-export default function kloSelfieModal() {
+export default function KloSelfieModal() {
   const theme = useTheme();
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();

@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, View, useWindowDimensions } from "react-native";
 
 import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -7,19 +7,14 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
-import { Link, useRouter } from "expo-router";
-
-const GAME_STEPS = [
-  { label: "Challenge 1 – Never Have I Ever", href: "/game" },
-  { label: "Challenge 2 – Quiz Questions", href: "/game/challenge_2" },
-  { label: "Challenge 3 – Funny Questions", href: "/game/challenge_3" },
-  { label: "Challenge 4 – Passwords", href: "/game/challenge_4" },
-  { label: "Final Challenge – Group Photo", href: "/game/challenge_5" },
-];
+import { useRouter } from "expo-router";
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+
+  const isCompactLayout = width < 720 || Platform.OS === "ios" || Platform.OS === "android";
 
   return (
     <ParallaxScrollView
@@ -28,104 +23,77 @@ export default function HomeScreen() {
         <View style={styles.partyHeader}>
           <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
           <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-          <Image
-            source={require("@/assets/images/crown.png")}
-            style={styles.partyCrown}
-            contentFit="cover"
-          />
+          <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="cover" />
           <View style={[styles.confetti, styles.confettiOne]} />
           <View style={[styles.confetti, styles.confettiTwo]} />
           <View style={[styles.confetti, styles.confettiThree]} />
           <View style={[styles.confetti, styles.confettiFour]} />
         </View>
       }
-      headerHeight={180}
-    >
-      <ThemedView
-        style={[
-          styles.heroCard,
-          { borderColor: theme.border, backgroundColor: theme.card },
-        ]}
-      >
+      headerHeight={180}>
+      <ThemedView style={[styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
         <ThemedText type="title" style={styles.heroTitle}>
-          Party Central
+          Party Hub
         </ThemedText>
-        <ThemedText style={styles.heroSubtitle}>
-          Launch the festivities or hop into the control center.
-        </ThemedText>
+        <ThemedText style={styles.heroSubtitle}>Eure Erinnerungen. Eure Momente. Ein gemeinsamer Abend.</ThemedText>
         <View style={styles.heroActions}>
-          <Button
-            onPress={() => router.navigate("/game")}
-            iconText="play.circle.fill"
-          >
+          <Button onPress={() => router.navigate("/game")} iconText="play.circle.fill">
             Start the Game!
           </Button>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={[
-              styles.secondaryAction,
-              {
-                borderColor: theme.border,
-                backgroundColor: theme.backgroundAlt,
-              },
-            ]}
-            onPress={() => router.push("/admin")}
-          >
-            <IconSymbol name="settings" size={20} color={theme.icon} />
-            <ThemedText
-              style={[styles.secondaryActionText, { color: theme.text }]}
-            >
-              Admin Dashboard
-            </ThemedText>
-          </TouchableOpacity>
         </View>
       </ThemedView>
 
-      <ThemedView
-        style={[
-          styles.sectionCard,
-          { borderColor: theme.border, backgroundColor: theme.card },
-        ]}
-      >
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Development shortcuts
-        </ThemedText>
-        <ThemedText
-          style={[styles.sectionSubtitle, { color: theme.textMuted }]}
-        >
-          Current flow checkpoints
-        </ThemedText>
-        <View style={styles.stepList}>
-          {GAME_STEPS.map((step) => (
-            <Link
-              key={step.href}
-              href={step.href as any}
+      <ThemedView style={[styles.sectionCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <View
+          style={[
+            styles.shortcutsContainer,
+            {
+              borderColor: theme.border,
+              backgroundColor: theme.backgroundAlt,
+              flexDirection: isCompactLayout ? "column" : "row",
+              alignItems: isCompactLayout ? "stretch" : "center",
+              gap: isCompactLayout ? 16 : 20,
+            },
+          ]}>
+          <View
+            style={[
+              styles.shortcutsIconWrapper,
+              {
+                backgroundColor: theme.primaryMuted,
+                borderColor: theme.border,
+                alignSelf: isCompactLayout ? "center" : "flex-start",
+              },
+            ]}>
+            <IconSymbol name="tray.and.arrow.up" size={48} color={theme.primary} />
+          </View>
+          <View style={[styles.shortcutsContent, isCompactLayout && styles.shortcutsContentCompact]}>
+            <ThemedText style={[styles.shortcutsHeading, { color: theme.text }]}>Upload</ThemedText>
+            <ThemedText
               style={[
-                styles.stepLink,
-                { backgroundColor: theme.backgroundAlt },
-              ]}
-            >
-              <View
-                style={[
-                  styles.stepIcon,
-                  {
-                    backgroundColor: theme.primaryMuted,
-                    borderColor: theme.border,
-                    marginRight: 12,
-                  },
-                ]}
-              >
-                <IconSymbol
-                  name="chevron.right"
-                  size={14}
-                  color={theme.primary}
-                />
-              </View>
-              <ThemedText style={styles.stepText}>{step.label}</ThemedText>
-            </Link>
-          ))}
+                styles.shortcutsBody,
+                { color: theme.textMuted },
+                isCompactLayout && styles.shortcutsBodyCompact,
+              ]}>
+              Teile Fotos oder Videos von euren Highlights.
+            </ThemedText>
+            <Button
+              onPress={() => router.push("/upload")}
+              iconText="arrow.up.circle"
+              style={[styles.shortcutsButton, isCompactLayout && styles.shortcutsButtonCompact]}>
+              Zum Upload-Bereich
+            </Button>
+          </View>
         </View>
       </ThemedView>
+
+      <TouchableOpacity
+        accessibilityRole="button"
+        onPress={() => router.push("/admin")}
+        style={styles.footerAdminLink}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+        <IconSymbol name="settings" size={16} color={theme.icon} />
+        <ThemedText style={[styles.footerAdminText, { color: theme.textMuted }]}>Admin</ThemedText>
+      </TouchableOpacity>
     </ParallaxScrollView>
   );
 }
@@ -210,20 +178,6 @@ const styles = StyleSheet.create({
   heroActions: {
     gap: 12,
   },
-  secondaryAction: {
-    borderRadius: 18,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  secondaryActionText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
   sectionCard: {
     borderRadius: 20,
     padding: 20,
@@ -236,25 +190,59 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 14,
   },
-  stepList: {
-    gap: 10,
-  },
-  stepLink: {
+  shortcutsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingBlock: 8,
+    gap: 20,
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 20,
   },
-  stepIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
+  shortcutsIconWrapper: {
+    width: 90,
+    height: 90,
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: StyleSheet.hairlineWidth,
   },
-  stepText: {
-    fontSize: 15,
-    flexShrink: 1,
+  shortcutsContent: {
+    flex: 1,
+    gap: 12,
+  },
+  shortcutsContentCompact: {
+    alignItems: "center",
+  },
+  shortcutsHeading: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  shortcutsBody: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  shortcutsBodyCompact: {
+    textAlign: "center",
+  },
+  shortcutsButton: {
+    alignSelf: "flex-start",
+    minWidth: 220,
+  },
+  shortcutsButtonCompact: {
+    alignSelf: "stretch",
+    minWidth: undefined,
+  },
+  footerAdminLink: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 12,
+    paddingTop: 24,
+    opacity: 0.6,
+  },
+  footerAdminText: {
+    fontSize: 13,
+    fontWeight: "500",
   },
 });

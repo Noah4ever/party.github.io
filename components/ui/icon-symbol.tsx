@@ -45,6 +45,8 @@ const MAPPING = {
   "checkmark.circle.outline": "checkmark-circle-outline",
   "checkmark.seal": "ribbon-outline",
   "play.circle.fill": "play-circle",
+  photo: "image-outline",
+  "photo.on.rectangle": "images-outline",
   "scanner.circle": "scan-outline",
   "qrcode.viewfinder": "scan-circle-outline",
   "camera.viewfinder": "camera-outline",

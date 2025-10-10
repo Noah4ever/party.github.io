@@ -1,10 +1,5 @@
 import { useTheme } from "@/constants/theme";
-import {
-  StyleProp,
-  StyleSheet,
-  TouchableOpacity,
-  ViewStyle,
-} from "react-native";
+import { StyleProp, StyleSheet, TouchableOpacity, ViewStyle } from "react-native";
 import { ThemedText } from "../themed-text";
 import { IconSymbol, IconSymbolName } from "../ui/icon-symbol";
 
@@ -13,20 +8,26 @@ interface ButtonType {
   children: React.ReactNode;
   iconText: IconSymbolName;
   style?: StyleProp<ViewStyle>;
+  disabled?: boolean;
 }
 
-export function Button({ onPress, children, iconText, style }: ButtonType) {
+export function Button({ onPress, children, iconText, style, disabled = false }: ButtonType) {
   const theme = useTheme();
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
-      style={[styles.primaryAction, { backgroundColor: theme.primary }, style]}
-      onPress={onPress}
-    >
+      activeOpacity={disabled ? 1 : 0.9}
+      disabled={disabled}
+      style={[
+        styles.primaryAction,
+        {
+          backgroundColor: disabled ? theme.primaryMuted : theme.primary,
+          opacity: disabled ? 0.7 : 1,
+        },
+        style,
+      ]}
+      onPress={onPress}>
       <IconSymbol name={iconText} size={22} color="#fff" />
-      <ThemedText style={[styles.primaryActionText, { color: "#fff" }]}>
-        {children}
-      </ThemedText>
+      <ThemedText style={[styles.primaryActionText, { color: "#fff" }]}>{children}</ThemedText>
     </TouchableOpacity>
   );
 }

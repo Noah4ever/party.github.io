@@ -54,9 +54,14 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 7 * 1024 * 1024, // ~7MB
+    fileSize: 50 * 1024 * 1024, // ~50MB to allow short videos
   },
 });
+
+const uploadMiddleware = upload.fields([
+  { name: "image", maxCount: 1 },
+  { name: "media", maxCount: 1 },
+]);
 
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:19000",
@@ -105,21 +110,28 @@ app.use("/api/groups", groupsRouter);
 app.use("/api/games", gamesRouter);
 
 // Add comment so server restarts on change
-// Simple image upload (returns URL). Use field name 'image'.
-app.post("/api/upload", upload.single("image"), async (req, res) => {
+// Simple media upload (returns URL). Accepts image or video via 'image' or 'media' field name.
+app.post("/api/upload", uploadMiddleware, async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "image required" });
+    const files = req.files as Record<string, Express.Multer.File[]> | undefined;
+    const file: Express.Multer.File | undefined =
+      files?.media?.[0] ??
+      files?.image?.[0] ??
+      (Array.isArray(req.file) ? req.file[0] : (req.file as Express.Multer.File | undefined));
+
+    if (!file) {
+      return res.status(400).json({ message: "media required" });
     }
 
-    if (!req.file.mimetype?.startsWith?.("image/")) {
-      await fs.unlink(req.file.path).catch(() => undefined);
-      return res.status(415).json({ message: "only image uploads allowed" });
+    const isSupported = file.mimetype?.startsWith?.("image/") || file.mimetype?.startsWith?.("video/");
+    if (!isSupported) {
+      await fs.unlink(file.path).catch(() => undefined);
+      return res.status(415).json({ message: "only image or video uploads allowed" });
     }
 
     const { guestId, groupId, challengeId } = req.body || {};
     const uploadedAt = new Date().toISOString();
-    const url = `/uploads/${req.file.filename}`;
+    const url = `/uploads/${file.filename}`;
     const absoluteUrl = `${req.protocol}://${req.get("host")}${url}`;
 
     const normalizeId = (value: unknown): string | null => {
@@ -151,7 +163,7 @@ app.post("/api/upload", upload.single("image"), async (req, res) => {
     }
 
     const normalizedUpload = {
-      filename: req.file.filename,
+      filename: file.filename,
       guestId: normalizedGuestId,
       groupId: normalizedGroupId,
       challengeId: normalizedChallengeId,
