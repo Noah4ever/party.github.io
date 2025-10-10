@@ -11,7 +11,7 @@ const env: Record<string, string | undefined> =
   typeof process !== "undefined" && process.env ? (process.env as Record<string, string | undefined>) : {};
 
 const DEV_SERVER_PORT = (env.EXPO_PUBLIC_DEV_SERVER_PORT ?? "5000").replace(/^:/, "");
-const DEV_SERVER_PROTOCOL = env.EXPO_PUBLIC_DEV_SERVER_PROTOCOL ?? "http";
+const DEV_SERVER_PROTOCOL = env.EXPO_PUBLIC_DEV_SERVER_PROTOCOL;
 
 function resolveDevBaseUrl(defaultUrl: string): string {
   const extractHostname = (value: string | null | undefined): string | null => {
@@ -36,10 +36,22 @@ function resolveDevBaseUrl(defaultUrl: string): string {
     return hostname || null;
   };
 
+  const resolveProtocol = (protocolHint?: string): string => {
+    if (DEV_SERVER_PROTOCOL && DEV_SERVER_PROTOCOL.trim().length > 0) {
+      return DEV_SERVER_PROTOCOL.trim();
+    }
+    if (protocolHint === "https:") return "https";
+    if (protocolHint === "http:") return "http";
+    if (typeof window !== "undefined" && window.location?.protocol) {
+      return window.location.protocol === "https:" ? "https" : "http";
+    }
+    return "http";
+  };
+
   const build = (host: string | null | undefined, protocolHint?: string) => {
     const hostname = extractHostname(host);
     if (!hostname) return null;
-    const protocol = DEV_SERVER_PROTOCOL || (protocolHint === "https:" ? "https" : "http");
+    const protocol = resolveProtocol(protocolHint);
     return `${protocol}://${hostname}:${DEV_SERVER_PORT}/api`;
   };
 
@@ -81,7 +93,7 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 const rawOverride = env.EXPO_PUBLIC_API_BASE ?? env.API_BASE_URL ?? env.NEXT_PUBLIC_API_BASE; // support multiple conventions
 const rawDevFlag = env.EXPO_PUBLIC_DEV_PARTY ?? false;
 
-const DEFAULT_DEV_BASE = `${DEV_SERVER_PROTOCOL}://localhost:${DEV_SERVER_PORT}/api`;
+const DEFAULT_DEV_BASE = `${DEV_SERVER_PROTOCOL?.trim() || "http"}://localhost:${DEV_SERVER_PORT}/api`;
 
 const isDevFlag = (() => {
   if (rawDevFlag === undefined) return false;
