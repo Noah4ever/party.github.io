@@ -6,7 +6,7 @@ import { useTheme } from "@/constants/theme";
 import { gameApi } from "@/lib/api";
 import { showAlert } from "@/lib/dialogs";
 import { ResizeMode, Video } from "expo-av";
-import { Image } from "expo-image";
+import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Stack } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -33,6 +33,74 @@ type SelectedMedia = {
   base64?: string | null;
   file?: File | null;
 };
+
+const WEB_IMAGE_MAX_SIZE_MB = 3.5;
+const WEB_IMAGE_MAX_DIMENSION = 2048;
+const WEB_IMAGE_TARGET_QUALITY = 0.82;
+
+function isWebEnvironment(): boolean {
+  return typeof window !== "undefined" && typeof document !== "undefined";
+}
+
+async function loadImageFromFile(file: File): Promise<HTMLImageElement> {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = document.createElement("img");
+      img.onload = () => resolve(img);
+      img.onerror = (event: string | Event) => reject(event);
+      img.src = objectUrl;
+    });
+    return image;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function maybeCompressWebImage(file: File): Promise<File> {
+  if (!isWebEnvironment()) return file;
+  if (!file.type?.startsWith("image/")) return file;
+
+  const sizeMb = file.size / (1024 * 1024);
+  if (sizeMb <= WEB_IMAGE_MAX_SIZE_MB) {
+    return file;
+  }
+
+  try {
+    const img = await loadImageFromFile(file);
+    const width = img.width || WEB_IMAGE_MAX_DIMENSION;
+    const height = img.height || WEB_IMAGE_MAX_DIMENSION;
+
+    const scale = Math.min(1, WEB_IMAGE_MAX_DIMENSION / width, WEB_IMAGE_MAX_DIMENSION / height);
+    const targetWidth = Math.max(1, Math.round(width * scale));
+    const targetHeight = Math.max(1, Math.round(height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return file;
+    }
+
+    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((value) => resolve(value), "image/jpeg", WEB_IMAGE_TARGET_QUALITY)
+    );
+
+    if (!blob) {
+      return file;
+    }
+
+    const baseName = file.name.replace(/\.(heic|heif|png|jpeg|jpg|gif|webp)$/i, "") || "upload";
+    return new File([blob], `${baseName}-compressed.jpg`, { type: "image/jpeg" });
+  } catch (error) {
+    console.warn("web image compression failed", error);
+    return file;
+  }
+}
 
 function inferMimeType(options: {
   mediaType: MediaType;
@@ -235,8 +303,9 @@ export default function UploadMemoriesScreen() {
         const fileName = ensureFileName(item.fileName, mimeType, item.type);
 
         if (Platform.OS === "web") {
+          let uploadFile: File | null = null;
           if (item.file instanceof File) {
-            formData.append("media", item.file, fileName);
+            uploadFile = item.file;
           } else {
             let blob: Blob | null = null;
             try {
@@ -258,9 +327,18 @@ export default function UploadMemoriesScreen() {
               throw new Error("UPLOAD_SOURCE_UNAVAILABLE");
             }
 
-            const file = new File([blob], fileName, { type: blob.type || mimeType });
-            formData.append("media", file);
+            uploadFile = new File([blob], fileName, { type: blob.type || mimeType });
           }
+
+          if (uploadFile?.type?.startsWith("image/")) {
+            uploadFile = await maybeCompressWebImage(uploadFile);
+          }
+
+          if (!uploadFile) {
+            throw new Error("UPLOAD_FILE_MISSING");
+          }
+
+          formData.append("media", uploadFile, uploadFile.name || fileName);
         } else {
           const normalizedUri = item.uri.startsWith("file://") ? item.uri : `file://${item.uri}`;
           formData.append("media", {
@@ -411,7 +489,7 @@ export default function UploadMemoriesScreen() {
                     ]}>
                     <View style={styles.mediaThumbnailWrapper}>
                       {item.type === "image" ? (
-                        <Image source={{ uri: item.uri }} style={styles.mediaThumbnail} contentFit="cover" />
+                        <ExpoImage source={{ uri: item.uri }} style={styles.mediaThumbnail} contentFit="cover" />
                       ) : (
                         <Video
                           source={{ uri: item.uri }}
