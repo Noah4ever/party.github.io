@@ -829,6 +829,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 16,
     paddingBottom: 0,
+    marginBottom: 8,
   },
   emptyState: {
     alignItems: "center",

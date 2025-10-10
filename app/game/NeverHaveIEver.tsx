@@ -11,7 +11,7 @@ import { showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 
-//TODO: ASH add questions 
+//TODO: ASH add questions
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -77,7 +77,7 @@ export default function HomeScreen() {
           if (groupId) {
             await gameApi.recordProgress(groupId, "challenge-4-never-have-i-ever");
           }
-          router.navigate("/game/challenge_3");
+          router.navigate("/game/questions");
         } catch (err) {
           console.error("NHIE progress update failed", err);
           showAlert({
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     textShadowColor: "#4c1fffff",
     textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 6,
-    alignItems: "center"
+    alignItems: "center",
   },
   midContainer: {
     gap: 35,
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 10,
   },
-  questionContainer:{
+  questionContainer: {
     textAlign: "center",
-  }
+  },
 });
