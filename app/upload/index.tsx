@@ -30,7 +30,81 @@ type SelectedMedia = {
   size?: number | null;
   duration?: number | null;
   mimeType?: string | null;
+  base64?: string | null;
 };
+
+function inferMimeType(options: {
+  mediaType: MediaType;
+  explicitMime?: string | null;
+  fileName?: string | null;
+  uri?: string | null;
+}): string {
+  if (options.explicitMime) {
+    return options.explicitMime;
+  }
+
+  const name = options.fileName ?? options.uri ?? "";
+  const lowerName = name.toLowerCase();
+
+  if (lowerName.endsWith(".mov") || lowerName.endsWith(".qt")) {
+    return "video/quicktime";
+  }
+  if (lowerName.endsWith(".m4v")) {
+    return "video/x-m4v";
+  }
+  if (lowerName.endsWith(".mp4")) {
+    return "video/mp4";
+  }
+  if (lowerName.endsWith(".png")) {
+    return "image/png";
+  }
+  if (lowerName.endsWith(".heic") || lowerName.endsWith(".heif")) {
+    return "image/heic";
+  }
+  if (lowerName.endsWith(".gif")) {
+    return "image/gif";
+  }
+
+  return options.mediaType === "video" ? "video/mp4" : "image/jpeg";
+}
+
+function preferredExtensionFromMime(mime: string, fallback: MediaType): string {
+  const lower = mime.toLowerCase();
+  if (lower === "video/quicktime") return ".mov";
+  if (lower === "video/x-m4v") return ".m4v";
+  if (lower === "video/mp4") return ".mp4";
+  if (lower === "image/png") return ".png";
+  if (lower === "image/gif") return ".gif";
+  if (lower === "image/heic" || lower === "image/heif") return ".heic";
+  return fallback === "video" ? ".mp4" : ".jpg";
+}
+
+function ensureFileName(fileName: string | null | undefined, mime: string, mediaType: MediaType): string {
+  const safeName = fileName?.trim();
+  if (safeName) {
+    return safeName;
+  }
+  const ext = preferredExtensionFromMime(mime, mediaType);
+  return `party-${mediaType}-${Date.now()}${ext}`;
+}
+
+function base64ToBlob(base64Input: string, mimeType: string): Blob {
+  const cleaned = base64Input.includes(",") ? base64Input.split(",").pop() ?? "" : base64Input;
+  const decode =
+    typeof globalThis !== "undefined" && typeof (globalThis as { atob?: (value: string) => string }).atob === "function"
+      ? (globalThis as { atob: (value: string) => string }).atob
+      : null;
+  if (!decode) {
+    throw new Error("BASE64_DECODE_UNSUPPORTED");
+  }
+  const byteCharacters = decode(cleaned);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i += 1) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
+}
 
 function formatBytes(bytes?: number | null): string {
   if (!bytes || Number.isNaN(bytes)) return "–";
@@ -76,6 +150,7 @@ export default function UploadMemoriesScreen() {
         selectionLimit: 20,
         quality: 1,
         videoExportPreset: ImagePicker.VideoExportPreset.Passthrough,
+        base64: Platform.OS === "web",
       });
 
       if (result.canceled || !result.assets || result.assets.length === 0) {
@@ -91,8 +166,13 @@ export default function UploadMemoriesScreen() {
             return;
           }
           const type: MediaType = asset.type === "video" ? "video" : "image";
-          const defaultExtension = type === "video" ? ".mp4" : ".jpg";
-          const fileName = asset.fileName ?? `party-${type}-${Date.now()}${defaultExtension}`;
+          const inferredMime = inferMimeType({
+            mediaType: type,
+            explicitMime: asset.mimeType ?? null,
+            fileName: asset.fileName,
+            uri: asset.uri,
+          });
+          const fileName = ensureFileName(asset.fileName, inferredMime, type);
           next.push({
             id,
             uri: asset.uri,
@@ -100,7 +180,8 @@ export default function UploadMemoriesScreen() {
             fileName,
             size: asset.fileSize ?? null,
             duration: asset.duration ?? null,
-            mimeType: asset.mimeType ?? null,
+            mimeType: inferredMime,
+            base64: asset.base64 ?? null,
           });
         });
         return next;
@@ -142,13 +223,36 @@ export default function UploadMemoriesScreen() {
     for (const item of media) {
       try {
         const formData = new FormData();
-        const fallbackMime = item.type === "video" ? "video/mp4" : "image/jpeg";
-        const mimeType = item.mimeType ?? fallbackMime;
-        const fileName = item.fileName || `upload-${Date.now()}.${item.type === "video" ? "mp4" : "jpg"}`;
+        const mimeType =
+          item.mimeType ??
+          inferMimeType({
+            mediaType: item.type,
+            fileName: item.fileName,
+            uri: item.uri,
+          });
+        const fileName = ensureFileName(item.fileName, mimeType, item.type);
 
         if (Platform.OS === "web") {
-          const response = await fetch(item.uri);
-          const blob = await response.blob();
+          let blob: Blob | null = null;
+          try {
+            const response = await fetch(item.uri);
+            blob = await response.blob();
+          } catch (fetchError) {
+            console.warn("media blob fetch failed, attempting base64 fallback", fetchError);
+          }
+
+          if (!blob && item.base64) {
+            try {
+              blob = base64ToBlob(item.base64, mimeType);
+            } catch (base64Error) {
+              console.error("media base64 conversion failed", base64Error);
+            }
+          }
+
+          if (!blob) {
+            throw new Error("UPLOAD_SOURCE_UNAVAILABLE");
+          }
+
           const file = new File([blob], fileName, { type: blob.type || mimeType });
           formData.append("media", file);
         } else {

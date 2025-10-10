@@ -14,9 +14,30 @@ const DEV_SERVER_PORT = (env.EXPO_PUBLIC_DEV_SERVER_PORT ?? "5000").replace(/^:/
 const DEV_SERVER_PROTOCOL = env.EXPO_PUBLIC_DEV_SERVER_PROTOCOL ?? "http";
 
 function resolveDevBaseUrl(defaultUrl: string): string {
+  const extractHostname = (value: string | null | undefined): string | null => {
+    if (!value) return null;
+    let candidate = String(value).trim();
+    if (!candidate) return null;
+
+    try {
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(candidate)) {
+        const parsed = new URL(candidate);
+        if (parsed.hostname) {
+          return parsed.hostname;
+        }
+      }
+    } catch {
+      /* fall through and try manual parsing */
+    }
+
+    candidate = candidate.replace(/^[^/]+:\/\//, "");
+    const withoutPath = candidate.split("/")[0] ?? "";
+    const hostname = withoutPath.split(":")[0]?.trim();
+    return hostname || null;
+  };
+
   const build = (host: string | null | undefined, protocolHint?: string) => {
-    if (!host) return null;
-    const hostname = host.split(":")[0];
+    const hostname = extractHostname(host);
     if (!hostname) return null;
     const protocol = DEV_SERVER_PROTOCOL || (protocolHint === "https:" ? "https" : "http");
     return `${protocol}://${hostname}:${DEV_SERVER_PORT}/api`;
