@@ -136,9 +136,11 @@ export default function GalleryScreen() {
     const capped = Math.min(clamped, MAX_MEDIA_HEIGHT);
     return Math.max(capped / Math.max(fontScale, 1), MIN_MEDIA_WIDTH);
   }, [fontScale, viewerCardMaxHeight]);
-  const selectionPadding = fontScale > 1.1 ? 12 : 16;
-  const selectionGap = fontScale > 1.1 ? 8 : 12;
-  const selectionButtonPadding = fontScale > 1.1 ? 8 : 10;
+  const selectionPadding = fontScale > 1.3 ? 6 : fontScale > 1.1 ? 8 : 12;
+  const selectionGap = fontScale > 1.3 ? 6 : fontScale > 1.1 ? 8 : 10;
+  const selectionButtonPadding = fontScale > 1.3 ? 6 : fontScale > 1.1 ? 7 : 8;
+  const selectionFontSize = fontScale > 1.3 ? 12 : fontScale > 1.1 ? 13 : 14;
+  const selectionIconSize = fontScale > 1.3 ? 16 : 18;
 
   useEffect(() => {
     sliderActiveValueRef.current = columns;
@@ -276,7 +278,9 @@ export default function GalleryScreen() {
     const containerWidth = width - 32; // Account for padding
     const gap = 16;
     const totalGaps = (columns - 1) * gap;
-    return (containerWidth - totalGaps) / columns;
+    const calculatedWidth = (containerWidth - totalGaps) / columns;
+    // Ensure items don't overflow by using Math.floor
+    return Math.floor(calculatedWidth);
   }, [width, columns]);
 
   const assetsBase = useMemo(() => getBaseUrl().replace(/\/?api$/, ""), []);
@@ -632,7 +636,7 @@ export default function GalleryScreen() {
                 {sliderDescription}
               </ThemedText>
             </View>
-            <View style={styles.columnSliderRow}>
+            <View style={styles.columnTopRow}>
               <TouchableOpacity
                 onPress={() => handleColumnChange(null)}
                 style={[
@@ -650,6 +654,14 @@ export default function GalleryScreen() {
                   Auto
                 </ThemedText>
               </TouchableOpacity>
+              <View
+                style={[styles.columnSliderValuePill, { backgroundColor: theme.overlay, borderColor: theme.border }]}>
+                <ThemedText style={[styles.columnSliderValueText, { color: theme.text }]}>
+                  {sliderColumnsDisplay} Spalten
+                </ThemedText>
+              </View>
+            </View>
+            <View style={styles.columnSliderWrapper}>
               <View
                 style={[styles.columnSliderTrack, { backgroundColor: theme.overlay }]}
                 onLayout={(event) => {
@@ -694,12 +706,6 @@ export default function GalleryScreen() {
                   ]}>
                   <View style={[styles.columnSliderThumbInner, { backgroundColor: theme.primary }]} />
                 </Animated.View>
-              </View>
-              <View
-                style={[styles.columnSliderValuePill, { backgroundColor: theme.overlay, borderColor: theme.border }]}>
-                <ThemedText style={[styles.columnSliderValueText, { color: theme.text }]}>
-                  {sliderColumnsDisplay} Spalten
-                </ThemedText>
               </View>
             </View>
           </View>
@@ -982,7 +988,7 @@ export default function GalleryScreen() {
                 : null,
             ]}
             accessibilityLiveRegion="polite">
-            <ThemedText style={[styles.selectionTitle, { color: theme.text }]}>
+            <ThemedText style={[styles.selectionTitle, { color: theme.text, fontSize: selectionFontSize + 2 }]}>
               {selectedCount} Datei{selectedCount === 1 ? "" : "en"} ausgewählt
             </ThemedText>
             <View style={[styles.selectionActions, { gap: selectionGap }]}>
@@ -997,8 +1003,12 @@ export default function GalleryScreen() {
                   },
                 ]}
                 accessibilityHint={allSelected ? "Auswahl aufheben" : "Alle Dateien auswählen"}>
-                <IconSymbol name={allSelected ? "xmark.circle" : "checkmark.circle"} size={18} color={theme.primary} />
-                <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>
+                <IconSymbol
+                  name={allSelected ? "xmark.circle" : "checkmark.circle"}
+                  size={selectionIconSize}
+                  color={theme.primary}
+                />
+                <ThemedText style={[styles.selectionActionText, { color: theme.text, fontSize: selectionFontSize }]}>
                   {allSelected ? "Auswahl aufheben" : "Alles auswählen"}
                 </ThemedText>
               </TouchableOpacity>
@@ -1014,8 +1024,10 @@ export default function GalleryScreen() {
                     paddingVertical: selectionButtonPadding,
                   },
                 ]}>
-                <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
-                <ThemedText style={[styles.selectionActionText, { color: theme.accent }]}>Download</ThemedText>
+                <IconSymbol name="arrow.down.circle" size={selectionIconSize} color={theme.accent} />
+                <ThemedText style={[styles.selectionActionText, { color: theme.accent, fontSize: selectionFontSize }]}>
+                  Download
+                </ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={clearSelection}
@@ -1028,8 +1040,10 @@ export default function GalleryScreen() {
                   },
                 ]}
                 accessibilityHint="Auswahl zurücksetzen">
-                <IconSymbol name="trash.fill" size={18} color={theme.icon} />
-                <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>Auswahl leeren</ThemedText>
+                <IconSymbol name="trash.fill" size={selectionIconSize} color={theme.icon} />
+                <ThemedText style={[styles.selectionActionText, { color: theme.text, fontSize: selectionFontSize }]}>
+                  Auswahl leeren
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </ThemedView>
@@ -1246,11 +1260,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
+  columnTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  columnSliderWrapper: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+  },
   columnAutoButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
+    flexShrink: 0,
   },
   columnAutoButtonText: {
     fontSize: 14,
@@ -1353,11 +1379,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   selectionBanner: {
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    gap: 12,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    gap: 10,
     shadowColor: "rgba(0,0,0,0.25)",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
@@ -1365,25 +1391,25 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   selectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
   },
   selectionActions: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 10,
   },
   selectionActionButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   selectionActionText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   selectionOverlayWrapper: {
