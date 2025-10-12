@@ -54,7 +54,7 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: {
-    fileSize: 50 * 1024 * 1024, // ~50MB to allow short videos
+    fileSize: 500 * 1024 * 1024, // ~500MB to allow large videos
   },
 });
 
@@ -112,7 +112,7 @@ const corsOptions: CorsOptions = {
 
 const app = express();
 app.use(cors(corsOptions));
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use("/uploads", express.static("uploads"));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true, time: new Date().toISOString() }));
@@ -124,6 +124,171 @@ app.use("/api/admin", adminRouter);
 app.use("/api/guests", guestsRouter);
 app.use("/api/groups", groupsRouter);
 app.use("/api/games", gamesRouter);
+
+// Chunked upload support for large files
+const chunkedUploads = new Map<
+  string,
+  {
+    chunks: Buffer[];
+    metadata: any;
+    receivedSize: number;
+    totalSize: number;
+  }
+>();
+
+// Initialize chunked upload
+app.post("/api/upload/init", express.json(), async (req, res) => {
+  try {
+    const { fileName, fileSize, mimeType, totalChunks } = req.body;
+    if (!fileName || !fileSize || !totalChunks) {
+      return res.status(400).json({ message: "fileName, fileSize, and totalChunks required" });
+    }
+
+    const uploadId = nanoid();
+    chunkedUploads.set(uploadId, {
+      chunks: [],
+      metadata: { fileName, fileSize, mimeType, totalChunks },
+      receivedSize: 0,
+      totalSize: fileSize,
+    });
+
+    res.status(201).json({ uploadId });
+  } catch (error) {
+    console.error("chunked upload init error", error);
+    res.status(500).json({ message: "init failed" });
+  }
+});
+
+// Upload chunk
+app.post("/api/upload/chunk", express.raw({ limit: "10mb", type: "application/octet-stream" }), async (req, res) => {
+  try {
+    const { uploadId, chunkIndex } = req.query;
+    if (!uploadId || chunkIndex === undefined) {
+      return res.status(400).json({ message: "uploadId and chunkIndex required" });
+    }
+
+    const upload = chunkedUploads.get(uploadId as string);
+    if (!upload) {
+      return res.status(404).json({ message: "upload not found" });
+    }
+
+    const chunkIdx = parseInt(chunkIndex as string, 10);
+    upload.chunks[chunkIdx] = Buffer.from(req.body);
+    upload.receivedSize += req.body.length;
+
+    res.status(200).json({
+      received: chunkIdx,
+      progress: (upload.receivedSize / upload.totalSize) * 100,
+    });
+  } catch (error) {
+    console.error("chunked upload chunk error", error);
+    res.status(500).json({ message: "chunk upload failed" });
+  }
+});
+
+// Finalize chunked upload
+app.post("/api/upload/finalize", express.json(), async (req, res) => {
+  try {
+    const { uploadId, guestId, groupId, challengeId } = req.body;
+    if (!uploadId) {
+      return res.status(400).json({ message: "uploadId required" });
+    }
+
+    const upload = chunkedUploads.get(uploadId);
+    if (!upload) {
+      return res.status(404).json({ message: "upload not found" });
+    }
+
+    // Combine all chunks
+    const completeBuffer = Buffer.concat(upload.chunks);
+    const { fileName } = upload.metadata;
+
+    // Save to disk
+    const ext = extname(fileName || "").toLowerCase() || ".jpg";
+    const segments = [Date.now().toString()];
+
+    const normalizeSegment = (value: unknown) => {
+      if (typeof value !== "string") return null;
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      const cleaned = trimmed
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, "")
+        .slice(0, 32);
+      return cleaned || null;
+    };
+
+    const groupSegment = normalizeSegment(groupId);
+    if (groupSegment) segments.push(`grp-${groupSegment}`);
+
+    const guestSegment = normalizeSegment(guestId);
+    if (guestSegment) segments.push(`guest-${guestSegment}`);
+
+    segments.push(nanoid(6));
+    const finalFileName = `${segments.join("-")}${ext}`;
+    const filePath = `uploads/${finalFileName}`;
+
+    await fs.writeFile(filePath, completeBuffer);
+
+    // Clean up
+    chunkedUploads.delete(uploadId);
+
+    // Update data store
+    const uploadedAt = new Date().toISOString();
+    const url = `/uploads/${finalFileName}`;
+    const absoluteUrl = `${req.protocol}://${req.get("host")}${url}`;
+
+    const normalizeId = (value: unknown): string | null => {
+      if (typeof value !== "string") return null;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    };
+
+    const normalizedGuestId = normalizeId(guestId);
+    const normalizedGroupId = normalizeId(groupId);
+    const normalizedChallengeId = normalizeId(challengeId);
+
+    if (normalizedGroupId) {
+      await mutate((data) => {
+        const group = data.groups.find((g) => g.id === normalizedGroupId);
+        if (group) {
+          if (!group.progress) {
+            group.progress = { completedGames: [] };
+          }
+          group.progress.selfieUrl = url;
+          group.progress.selfieUploadedAt = uploadedAt;
+          if (normalizedChallengeId) {
+            group.progress.lastSelfieChallenge = normalizedChallengeId;
+          }
+        }
+      });
+    }
+
+    const normalizedUpload = {
+      filename: finalFileName,
+      guestId: normalizedGuestId,
+      groupId: normalizedGroupId,
+      challengeId: normalizedChallengeId,
+      uploadedAt,
+    } as const;
+
+    await mutate((data) => {
+      if (!Array.isArray(data.uploads)) {
+        data.uploads = [];
+      }
+      data.uploads.push({ ...normalizedUpload });
+    });
+
+    res.status(201).json({
+      url,
+      absoluteUrl,
+      ...normalizedUpload,
+    });
+  } catch (error) {
+    console.error("chunked upload finalize error", error);
+    res.status(500).json({ message: "finalize failed" });
+  }
+});
 
 // Add comment so server restarts on change
 // Simple media upload (returns URL). Accepts image or video via 'image' or 'media' field name.

@@ -709,8 +709,8 @@ export const gameApi = {
     >(`/games/groups/${groupId}/time-penalty`, data),
   getQuizPenaltyConfig: () => api.get<QuizPenaltyConfigDTO>("/games/quiz-penalty"),
   getFinalSummary: (groupId: string) => api.get<FinalSummaryDTO>("/games/final-summary", { groupId }),
-  uploadSelfie: (data: FormData) => api.post<UploadSelfieResponse, FormData>("/upload", data, { timeoutMs: 20000 }),
-  uploadMedia: (data: FormData) => api.post<UploadSelfieResponse, FormData>("/upload", data, { timeoutMs: 60000 }),
+  uploadSelfie: (data: FormData) => api.post<UploadSelfieResponse, FormData>("/upload", data, { timeoutMs: 30000 }),
+  uploadMedia: (data: FormData) => api.post<UploadSelfieResponse, FormData>("/upload", data, { timeoutMs: 120000 }),
 };
 
 // Example usage (remove or comment out in production):

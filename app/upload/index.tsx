@@ -32,11 +32,14 @@ type SelectedMedia = {
   mimeType?: string | null;
   base64?: string | null;
   file?: File | null;
+  uploadProgress?: number;
 };
 
 const WEB_IMAGE_MAX_SIZE_MB = 3.5;
 const WEB_IMAGE_MAX_DIMENSION = 2048;
 const WEB_IMAGE_TARGET_QUALITY = 0.82;
+const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+const LARGE_FILE_THRESHOLD = 50 * 1024 * 1024; // 50MB - use chunked upload above this
 
 function isWebEnvironment(): boolean {
   return typeof window !== "undefined" && typeof document !== "undefined";
@@ -175,6 +178,71 @@ function base64ToBlob(base64Input: string, mimeType: string): Blob {
   return new Blob([byteArray], { type: mimeType });
 }
 
+async function uploadFileInChunks(
+  file: File,
+  onProgress: (progress: number) => void
+): Promise<{ url: string; absoluteUrl: string }> {
+  // Import api module to get base URL
+  const { getBaseUrl } = await import("@/lib/api");
+  const BASE_URL = getBaseUrl();
+
+  // Initialize upload
+  const initResponse = await fetch(`${BASE_URL}/upload/init`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      fileName: file.name,
+      fileSize: file.size,
+      mimeType: file.type,
+      totalChunks: Math.ceil(file.size / CHUNK_SIZE),
+    }),
+  });
+
+  if (!initResponse.ok) {
+    throw new Error("Failed to initialize chunked upload");
+  }
+
+  const { uploadId } = await initResponse.json();
+
+  // Upload chunks
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+    const start = chunkIndex * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    const chunkBuffer = await chunk.arrayBuffer();
+    const chunkResponse = await fetch(`${BASE_URL}/upload/chunk?uploadId=${uploadId}&chunkIndex=${chunkIndex}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: chunkBuffer,
+    });
+
+    if (!chunkResponse.ok) {
+      throw new Error(`Failed to upload chunk ${chunkIndex}`);
+    }
+
+    const progress = ((chunkIndex + 1) / totalChunks) * 100;
+    onProgress(progress);
+  }
+
+  // Finalize upload
+  const finalizeResponse = await fetch(`${BASE_URL}/upload/finalize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      uploadId,
+      uploadedBy: "guest-upload",
+    }),
+  });
+
+  if (!finalizeResponse.ok) {
+    throw new Error("Failed to finalize chunked upload");
+  }
+
+  return await finalizeResponse.json();
+}
+
 function formatBytes(bytes?: number | null): string {
   if (!bytes || Number.isNaN(bytes)) return "–";
   if (bytes < 1024) return `${bytes} B`;
@@ -292,7 +360,6 @@ export default function UploadMemoriesScreen() {
 
     for (const item of media) {
       try {
-        const formData = new FormData();
         const mimeType =
           item.mimeType ??
           inferMimeType({
@@ -338,19 +405,36 @@ export default function UploadMemoriesScreen() {
             throw new Error("UPLOAD_FILE_MISSING");
           }
 
-          formData.append("media", uploadFile, uploadFile.name || fileName);
+          // Use chunked upload for large files
+          const fileSize = uploadFile.size;
+          if (fileSize > LARGE_FILE_THRESHOLD) {
+            // Chunked upload
+            await uploadFileInChunks(uploadFile, (progress) => {
+              setMedia((prevMedia) =>
+                prevMedia.map((m) => (m.id === item.id ? { ...m, uploadProgress: progress } : m))
+              );
+            });
+          } else {
+            // Standard upload for smaller files
+            const formData = new FormData();
+            formData.append("media", uploadFile, uploadFile.name || fileName);
+            formData.append("uploadedBy", "guest-upload");
+            await gameApi.uploadMedia(formData);
+          }
         } else {
+          // Mobile: always use standard upload
+          const formData = new FormData();
           const normalizedUri = item.uri.startsWith("file://") ? item.uri : `file://${item.uri}`;
           formData.append("media", {
             uri: normalizedUri,
             name: fileName,
             type: mimeType,
           } as any);
+          formData.append("uploadedBy", "guest-upload");
+
+          await gameApi.uploadMedia(formData);
         }
 
-        formData.append("uploadedBy", "guest-upload");
-
-        await gameApi.uploadMedia(formData);
         successCount += 1;
         setCompletedCount(successCount);
       } catch (error) {
@@ -522,6 +606,19 @@ export default function UploadMemoriesScreen() {
                           </ThemedText>
                         ) : null}
                       </View>
+                      {item.uploadProgress !== undefined && item.uploadProgress < 100 ? (
+                        <View style={styles.progressBarContainer}>
+                          <View
+                            style={[
+                              styles.progressBar,
+                              { width: `${item.uploadProgress}%`, backgroundColor: theme.primary },
+                            ]}
+                          />
+                          <ThemedText style={[styles.progressText, { color: theme.text }]}>
+                            {Math.round(item.uploadProgress)}%
+                          </ThemedText>
+                        </View>
+                      ) : null}
                     </View>
                     <TouchableOpacity
                       style={[styles.removeButton, { backgroundColor: theme.card, borderColor: theme.border }]}
@@ -718,6 +815,32 @@ const styles = StyleSheet.create({
   alertText: {
     flex: 1,
     fontSize: 13,
+    fontWeight: "600",
+  },
+  progressBarContainer: {
+    height: 24,
+    backgroundColor: "rgba(0,0,0,0.08)",
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+    marginTop: 4,
+  },
+  progressBar: {
+    height: "100%",
+    borderRadius: 12,
+    position: "absolute",
+    left: 0,
+    top: 0,
+  },
+  progressText: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    textAlign: "center",
+    lineHeight: 24,
+    fontSize: 12,
     fontWeight: "600",
   },
 });
