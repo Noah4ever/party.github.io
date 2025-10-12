@@ -39,7 +39,7 @@ const WEB_IMAGE_MAX_SIZE_MB = 3.5;
 const WEB_IMAGE_MAX_DIMENSION = 2048;
 const WEB_IMAGE_TARGET_QUALITY = 0.82;
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
-const LARGE_FILE_THRESHOLD = 50 * 1024 * 1024; // 50MB - use chunked upload above this
+const LARGE_FILE_THRESHOLD = 50 * 1024 * 1024; // 50MB - use chunked upload for truly large files
 
 function isWebEnvironment(): boolean {
   return typeof window !== "undefined" && typeof document !== "undefined";
@@ -187,6 +187,9 @@ async function uploadFileInChunks(
   const BASE_URL = getBaseUrl();
 
   // Initialize upload
+  console.log(
+    `Initializing chunked upload for ${file.name}, size: ${file.size}, chunks: ${Math.ceil(file.size / CHUNK_SIZE)}`
+  );
   const initResponse = await fetch(`${BASE_URL}/upload/init`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -199,7 +202,9 @@ async function uploadFileInChunks(
   });
 
   if (!initResponse.ok) {
-    throw new Error("Failed to initialize chunked upload");
+    const errorText = await initResponse.text();
+    console.error(`Init failed with status ${initResponse.status}:`, errorText);
+    throw new Error(`Failed to initialize chunked upload: ${initResponse.status} ${errorText}`);
   }
 
   const { uploadId } = await initResponse.json();
@@ -212,6 +217,7 @@ async function uploadFileInChunks(
     const chunk = file.slice(start, end);
 
     const chunkBuffer = await chunk.arrayBuffer();
+    console.log(`Uploading chunk ${chunkIndex + 1}/${totalChunks}, size: ${chunkBuffer.byteLength} bytes`);
     const chunkResponse = await fetch(`${BASE_URL}/upload/chunk?uploadId=${uploadId}&chunkIndex=${chunkIndex}`, {
       method: "POST",
       headers: { "Content-Type": "application/octet-stream" },
@@ -219,7 +225,9 @@ async function uploadFileInChunks(
     });
 
     if (!chunkResponse.ok) {
-      throw new Error(`Failed to upload chunk ${chunkIndex}`);
+      const errorText = await chunkResponse.text();
+      console.error(`Chunk ${chunkIndex} failed with status ${chunkResponse.status}:`, errorText);
+      throw new Error(`Failed to upload chunk ${chunkIndex}: ${chunkResponse.status}`);
     }
 
     const progress = ((chunkIndex + 1) / totalChunks) * 100;
