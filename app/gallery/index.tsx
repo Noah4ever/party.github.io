@@ -15,12 +15,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  FlatList,
   GestureResponderEvent,
   Modal,
   PanResponder,
   Platform,
+  RefreshControl,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -96,6 +97,8 @@ export default function GalleryScreen() {
   const [mediaRatios, setMediaRatios] = useState<Record<string, number>>({});
   const [sliderTrackWidth, setSliderTrackWidth] = useState(0);
   const videoRef = useRef<Video | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollPositionRef = useRef<number>(0);
 
   const rememberMediaRatio = useCallback((filename: string, width?: number | null, height?: number | null) => {
     if (!filename || !width || !height) return;
@@ -777,6 +780,7 @@ export default function GalleryScreen() {
               opacity: selectionMode && !isSelected ? 0.85 : 1,
             },
             isSelected ? [styles.mediaCardSelected, { borderColor: theme.primary }] : null,
+            columns > 2 ? styles.mediaCardCompact : null,
           ]}>
           <View style={styles.thumbnailWrapper}>
             {isVideo(item.filename) ? (
@@ -796,9 +800,11 @@ export default function GalleryScreen() {
             </View>
           </View>
           <View style={styles.mediaFooter}>
-            <ThemedText numberOfLines={1} style={[styles.mediaTitle, { color: theme.text }]}>
-              {item.filename}
-            </ThemedText>
+            {columns === 1 ? (
+              <ThemedText numberOfLines={1} style={[styles.mediaTitle, { color: theme.text }]}>
+                {item.filename}
+              </ThemedText>
+            ) : null}
             <TouchableOpacity
               onPress={(event) => {
                 event.stopPropagation();
@@ -810,21 +816,27 @@ export default function GalleryScreen() {
                   backgroundColor: isSelected ? theme.primaryMuted : theme.card,
                   borderColor: isSelected ? theme.primary : theme.border,
                 },
+                columns > 1 ? styles.mediaCheckboxButtonCompact : null,
               ]}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: isSelected }}
               accessibilityLabel={isSelected ? "Auswahl entfernen" : "Auswahl hinzufügen"}>
               <IconSymbol
                 name={isSelected ? "checkmark.circle" : "circle"}
-                size={18}
+                size={columns > 1 ? 16 : 18}
                 color={isSelected ? theme.primary : theme.icon}
               />
+              {columns === 1 ? (
+                <ThemedText style={[styles.mediaCheckboxLabel, { color: isSelected ? theme.primary : theme.text }]}>
+                  {isSelected ? "Ausgewählt" : "Auswählen"}
+                </ThemedText>
+              ) : null}
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
       );
     },
-    [assetsBase, handleOpenViewer, itemWidth, selectionMode, selected, theme, toggleSelect]
+    [assetsBase, columns, handleOpenViewer, itemWidth, selectionMode, selected, theme, toggleSelect]
   );
   const currentItem = items[currentIndex];
   const mediaUri = currentItem ? `${assetsBase}${currentItem.url}` : null;
@@ -894,20 +906,35 @@ export default function GalleryScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <FlatList
-          key={`gallery-${columns}`}
-          data={items}
-          keyExtractor={(item) => item.filename}
-          renderItem={renderItem}
+        <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.listContent}
-          columnWrapperStyle={columns > 1 ? styles.row : undefined}
-          numColumns={columns}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmpty}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
           showsVerticalScrollIndicator={false}
-        />
+          onScroll={(event) => {
+            scrollPositionRef.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={theme.primary}
+              colors={[theme.primary]}
+            />
+          }>
+          {renderHeader()}
+          {loading || error || items.length === 0 ? (
+            renderEmpty()
+          ) : (
+            <View style={styles.gridContainer}>
+              {items.map((item, index) => (
+                <View key={item.filename} style={{ width: itemWidth }}>
+                  {renderItem({ item, index })}
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
       </SafeAreaView>
 
       {selectionMode ? (
@@ -1103,6 +1130,11 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   row: {
+    gap: 16,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 16,
   },
   headerWrapper: {
@@ -1329,6 +1361,11 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     marginBottom: 16,
   },
+  mediaCardCompact: {
+    borderRadius: 12,
+    paddingBottom: 4,
+    marginBottom: 12,
+  },
   mediaCardSelected: {
     shadowColor: "rgba(0,0,0,0.15)",
     shadowOffset: { width: 0, height: 6 },
@@ -1360,10 +1397,11 @@ const styles = StyleSheet.create({
   mediaFooter: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 8,
     gap: 12,
+    minHeight: 44,
   },
   mediaTitle: {
     fontSize: 15,
@@ -1378,6 +1416,15 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 12,
     paddingVertical: 6,
+    minWidth: 44,
+    minHeight: 32,
+    justifyContent: "center",
+  },
+  mediaCheckboxButtonCompact: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    minWidth: 32,
+    minHeight: 32,
   },
   mediaCheckboxLabel: {
     fontSize: 13,
