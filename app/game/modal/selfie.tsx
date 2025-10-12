@@ -236,7 +236,7 @@ export default function SelfieModal() {
     setUploading(false);
     await AsyncStorage.removeItem("challenge2Selfie");
     router.back();
-    router.navigate("/game/challenge_3");
+    router.navigate("/game/group-name");
   }, [router]);
 
   const permissionStatusLabel = useMemo(() => {
