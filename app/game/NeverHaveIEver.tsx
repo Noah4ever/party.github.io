@@ -68,21 +68,29 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (!completionTriggeredRef.current && questions.length > 0 && counter >= questions.length) {
+    if (
+      !completionTriggeredRef.current &&
+      questions.length > 0 &&
+      counter >= questions.length
+    ) {
       completionTriggeredRef.current = true;
       setCompletionSubmitting(true);
 
       (async () => {
         try {
           if (groupId) {
-            await gameApi.recordProgress(groupId, "challenge-4-never-have-i-ever");
+            await gameApi.recordProgress(
+              groupId,
+              "challenge-4-never-have-i-ever"
+            );
           }
-          router.navigate("/game/questions");
+          router.navigate("/game/klo_challenge");
         } catch (err) {
           console.error("NHIE progress update failed", err);
           showAlert({
             title: "Speichern fehlgeschlagen",
-            message: "Euer Fortschritt konnte nicht gespeichert werden. Versucht es bitte erneut.",
+            message:
+              "Euer Fortschritt konnte nicht gespeichert werden. Versucht es bitte erneut.",
           });
           completionTriggeredRef.current = false;
         } finally {
@@ -118,19 +126,33 @@ export default function HomeScreen() {
         <View style={styles.partyHeader}>
           <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
           <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-          <Image source={require("@/assets/images/Hummel/HummelPool.png")} style={styles.papaLogo} />
+          <Image
+            source={require("@/assets/images/Hummel/HummelPool.png")}
+            style={styles.papaLogo}
+          />
           <View style={[styles.confetti, styles.confettiOne]} />
           <View style={[styles.confetti, styles.confettiTwo]} />
           <View style={[styles.confetti, styles.confettiThree]} />
           <View style={[styles.confetti, styles.confettiFour]} />
         </View>
-      }>
-      <View style={[styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      }
+    >
+      <View
+        style={[
+          styles.heroCard,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
         <ThemedText type="title">Ich hab noch nie... 🍻</ThemedText>
         <View style={styles.textContainer}></View>
 
         <View style={styles.midContainer}>
-          <Animated.View style={[styles.bubble, { borderColor: theme.primary, transform: [{ scale: animate }] }]}>
+          <Animated.View
+            style={[
+              styles.bubble,
+              { borderColor: theme.primary, transform: [{ scale: animate }] },
+            ]}
+          >
             <ThemedText type="subtitle" style={styles.questionContainer}>
               {loading
                 ? " loading..."
@@ -142,7 +164,10 @@ export default function HomeScreen() {
             </ThemedText>
           </Animated.View>
           <View>
-            <Button onPress={() => incrementCounter()} iconText="arrow.right.circle">
+            <Button
+              onPress={() => incrementCounter()}
+              iconText="arrow.right.circle"
+            >
               Weiter
             </Button>
           </View>

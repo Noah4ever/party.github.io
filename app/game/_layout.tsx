@@ -23,7 +23,7 @@ export default function RootLayout() {
           options={{ presentation: "modal", title: "Modal" }}
         />
         <Stack.Screen name="challenge_2" options={{ headerShown: false }} />
-        <Stack.Screen name="challenge_3" options={{ headerShown: false }} />
+        <Stack.Screen name="klo_challenge" options={{ headerShown: false }} />
         <Stack.Screen name="challenge_4" options={{ headerShown: false }} />
       </Stack>
 

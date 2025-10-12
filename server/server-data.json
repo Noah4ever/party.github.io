@@ -18,7 +18,7 @@
   "groups": [
     {
       "id": "zFdDQCO6",
-      "name": "Group 1",
+      "name": "Group 1aa",
       "guestIds": [
         "ks5K-ZDm",
         "QixtJLqi"
@@ -26,14 +26,21 @@
       "progress": {
         "completedGames": [
           "partner-found",
-          "challenge-2-selfie"
+          "challenge-2-selfie",
+          "challenge-4-never-have-i-ever",
+          "challenge-5-quiz",
+          "challenge-6-questionary",
+          "password-solved"
         ],
-        "attempts": 0,
-        "currentGame": "challenge-2-selfie",
+        "attempts": 1,
+        "currentGame": "password-solved",
         "selfieUrl": "/uploads/1759532166175-guest-A9LGsB.jpg",
         "selfieUploadedAt": "2025-10-03T22:56:06.177Z",
         "lastSelfieChallenge": "challenge_2"
-      }
+      },
+      "startedAt": "2025-10-12T13:35:39.259Z",
+      "passwordSolved": true,
+      "finishedAt": "2025-10-12T13:36:31.790Z"
     }
   ],
   "neverHaveIEverPacks": [
@@ -374,11 +381,44 @@
       "guestId": "ks5K-ZDm",
       "answer": "s",
       "createdAt": "2025-10-05T12:53:37.783Z"
+    },
+    {
+      "id": "J8K00QexHd",
+      "questionId": "gaPtByXw",
+      "guestId": "ks5K-ZDm",
+      "answer": "d",
+      "createdAt": "2025-10-05T13:32:40.315Z"
+    },
+    {
+      "id": "3Yq2RkmSgx",
+      "questionId": "7TSeUY_X",
+      "guestId": "ks5K-ZDm",
+      "answer": "s",
+      "createdAt": "2025-10-05T13:32:41.308Z"
+    },
+    {
+      "id": "0LTWPR3Y3p",
+      "questionId": "gaPtByXw",
+      "guestId": "ks5K-ZDm",
+      "answer": "d",
+      "createdAt": "2025-10-12T13:36:26.509Z"
+    },
+    {
+      "id": "jqF3Y4AsbB",
+      "questionId": "7TSeUY_X",
+      "guestId": "ks5K-ZDm",
+      "answer": "r",
+      "createdAt": "2025-10-12T13:36:28.106Z"
     }
   ],
+  "uploads": [],
   "gameState": {
     "started": true,
     "startedAt": "2025-10-02T11:36:10.445Z",
     "cluesUnlockedAt": "2025-10-03T19:47:03.694Z"
+  },
+  "quizPenaltyConfig": {
+    "minorPenaltySeconds": 60,
+    "majorPenaltySeconds": 180
   }
 }
