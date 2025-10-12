@@ -68,6 +68,8 @@ const MAPPING = {
   podium: "podium-outline",
   "doc.text": "document-text-outline",
   "images.outline": "images-outline",
+  "chevron-right": "chevron-forward-outline",
+  "chevron-left": "chevron-back-outline",
 } as const satisfies IconMapping;
 
 // To add new icons:

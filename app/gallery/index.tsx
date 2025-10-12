@@ -5,28 +5,41 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
 import { GalleryUploadEntryDTO, GalleryUploadListDTO, gameApi, getBaseUrl } from "@/lib/api";
 import { showAlert } from "@/lib/dialogs";
-import { ResizeMode, Video } from "expo-av";
+import { AVPlaybackStatus, ResizeMode, Video } from "expo-av";
 import { File as ExpoFile, Paths as ExpoPaths } from "expo-file-system";
+import * as Haptics from "expo-haptics";
 import { Image } from "expo-image";
 import { requestPermissionsAsync as requestMediaPermissionsAsync, saveToLibraryAsync } from "expo-media-library";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
+  Animated,
+  GestureResponderEvent,
   Modal,
+  PanResponder,
+  PixelRatio,
   Platform,
+  RefreshControl,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-  ViewToken,
   useWindowDimensions,
+  type AccessibilityActionEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 const VIDEO_EXTENSIONS = /\.(mp4|mov|m4v|webm|avi)$/i;
+const DEFAULT_VIDEO_RATIO = 16 / 9;
+const DEFAULT_IMAGE_RATIO = 4 / 3;
+const MAX_MEDIA_HEIGHT = 600;
+const MIN_MEDIA_WIDTH = 200;
+const VIEWER_MEDIA_PADDING = 48;
+const MIN_COLUMNS = 1;
+const MAX_COLUMNS = 4;
+const SLIDER_THUMB_SIZE = 32;
 
 function getDocument(): Document | undefined {
   if (typeof globalThis === "undefined") return undefined;
@@ -71,7 +84,7 @@ function getFilenameFromContentDisposition(disposition: string | null, fallback:
 export default function GalleryScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<GalleryUploadEntryDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,13 +94,194 @@ export default function GalleryScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mediaPermissionGranted, setMediaPermissionGranted] = useState<boolean>(Platform.OS === "web");
-  const viewerListRef = useRef<FlatList<GalleryUploadEntryDTO>>(null);
+  const [userColumns, setUserColumns] = useState<number | null>(null);
+  const [mediaRatios, setMediaRatios] = useState<Record<string, number>>({});
+  const [sliderTrackWidth, setSliderTrackWidth] = useState(0);
+  const videoRef = useRef<Video | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollPositionRef = useRef<number>(0);
+  const fontScale = PixelRatio.getFontScale();
 
-  const columns = useMemo(() => {
-    if (width >= 1000) return 3;
-    if (width >= 700) return 2;
+  const rememberMediaRatio = useCallback((filename: string, width?: number | null, height?: number | null) => {
+    if (!filename || !width || !height) return;
+    if (!Number.isFinite(width) || !Number.isFinite(height)) return;
+    if (height === 0) return;
+    const ratio = width / height;
+    if (!Number.isFinite(ratio) || ratio <= 0) return;
+    setMediaRatios((prev) => {
+      if (prev[filename]) return prev;
+      return { ...prev, [filename]: ratio };
+    });
+  }, []);
+
+  const autoColumns = useMemo(() => {
+    if (width >= 1200) return 4;
+    if (width >= 900) return 3;
+    if (width >= 600) return 2;
     return 1;
   }, [width]);
+
+  const columns = userColumns ?? autoColumns;
+  const sliderRange = MAX_COLUMNS - MIN_COLUMNS;
+  const sliderAnimatedFill = useRef(new Animated.Value(0)).current;
+  const sliderAnimatedThumb = useRef(new Animated.Value(0)).current;
+  const sliderActiveValueRef = useRef<number>(columns);
+  const viewerCardMaxHeight = useMemo(
+    () => Math.max(height - (insets.top + insets.bottom) - 48, 360),
+    [height, insets.bottom, insets.top]
+  );
+  const effectiveMediaMaxHeight = useMemo(() => {
+    const available = viewerCardMaxHeight - 220;
+    const clamped = Math.max(available, MIN_MEDIA_WIDTH);
+    const capped = Math.min(clamped, MAX_MEDIA_HEIGHT);
+    return Math.max(capped / Math.max(fontScale, 1), MIN_MEDIA_WIDTH);
+  }, [fontScale, viewerCardMaxHeight]);
+  const selectionPadding = fontScale > 1.3 ? 6 : fontScale > 1.1 ? 8 : 12;
+  const selectionGap = fontScale > 1.3 ? 6 : fontScale > 1.1 ? 8 : 10;
+  const selectionButtonPadding = fontScale > 1.3 ? 6 : fontScale > 1.1 ? 7 : 8;
+  const selectionFontSize = fontScale > 1.3 ? 12 : fontScale > 1.1 ? 13 : 14;
+  const selectionIconSize = fontScale > 1.3 ? 16 : 18;
+
+  useEffect(() => {
+    sliderActiveValueRef.current = columns;
+  }, [columns]);
+
+  const sliderColumnsDisplay = useMemo(() => Math.round(columns), [columns]);
+
+  const sliderDescription = useMemo(() => {
+    switch (sliderColumnsDisplay) {
+      case 1:
+        return "Große Vorschau";
+      case 2:
+        return "Standard";
+      case 3:
+        return "Übersichtlich";
+      case 4:
+        return "Viele auf einmal";
+      default:
+        return `${sliderColumnsDisplay} Spalten`;
+    }
+  }, [sliderColumnsDisplay]);
+
+  const handleColumnChange = useCallback((cols: number | null) => {
+    setUserColumns(cols);
+  }, []);
+
+  const animateSlider = useCallback(
+    (ratio: number, animated: boolean) => {
+      if (sliderTrackWidth <= 0) return;
+      const clamped = Math.min(Math.max(ratio, 0), 1);
+      const targetFill = sliderTrackWidth * clamped;
+      const maxThumb = Math.max(sliderTrackWidth - SLIDER_THUMB_SIZE, 0);
+      const targetThumb = Math.min(Math.max(sliderTrackWidth * clamped - SLIDER_THUMB_SIZE / 2, 0), maxThumb);
+
+      if (animated) {
+        Animated.spring(sliderAnimatedFill, {
+          toValue: targetFill,
+          damping: 18,
+          stiffness: 220,
+          mass: 0.7,
+          useNativeDriver: false,
+        }).start();
+        Animated.spring(sliderAnimatedThumb, {
+          toValue: targetThumb,
+          damping: 18,
+          stiffness: 220,
+          mass: 0.7,
+          useNativeDriver: false,
+        }).start();
+      } else {
+        sliderAnimatedFill.setValue(targetFill);
+        sliderAnimatedThumb.setValue(targetThumb);
+      }
+    },
+    [sliderAnimatedFill, sliderAnimatedThumb, sliderTrackWidth]
+  );
+
+  useEffect(() => {
+    const committedRatio = sliderRange === 0 ? 0 : (columns - MIN_COLUMNS) / sliderRange;
+    animateSlider(committedRatio, true);
+  }, [animateSlider, columns, sliderRange]);
+
+  const handleSliderRelease = useCallback(() => {
+    if (sliderTrackWidth <= 0) return;
+    const ratio = sliderRange === 0 ? 0 : (sliderActiveValueRef.current - MIN_COLUMNS) / sliderRange;
+    animateSlider(ratio, true);
+  }, [animateSlider, sliderRange, sliderTrackWidth]);
+
+  const handleSliderInteraction = useCallback(
+    (locationX: number, animated: boolean) => {
+      if (sliderTrackWidth <= 0) return;
+      const ratio = Math.min(Math.max(locationX / sliderTrackWidth, 0), 1);
+      const rawValue = MIN_COLUMNS + ratio * sliderRange;
+      animateSlider(ratio, animated);
+
+      const nearest = Math.round(rawValue);
+      if (nearest !== sliderActiveValueRef.current) {
+        sliderActiveValueRef.current = nearest;
+        handleColumnChange(nearest);
+        if (Platform.OS !== "web") {
+          Haptics.selectionAsync().catch(() => undefined);
+        }
+      }
+    },
+    [animateSlider, handleColumnChange, sliderActiveValueRef, sliderRange, sliderTrackWidth]
+  );
+
+  const handleSliderAccessibility = useCallback(
+    (event: AccessibilityActionEvent) => {
+      const action = event.nativeEvent.actionName;
+      let next = sliderActiveValueRef.current;
+      if (action === "increment") {
+        next = Math.min(MAX_COLUMNS, sliderActiveValueRef.current + 1);
+      } else if (action === "decrement") {
+        next = Math.max(MIN_COLUMNS, sliderActiveValueRef.current - 1);
+      }
+
+      if (next !== sliderActiveValueRef.current) {
+        sliderActiveValueRef.current = next;
+        handleColumnChange(next);
+        const ratio = sliderRange === 0 ? 0 : (next - MIN_COLUMNS) / sliderRange;
+        animateSlider(ratio, true);
+        if (Platform.OS !== "web") {
+          Haptics.selectionAsync().catch(() => undefined);
+        }
+      }
+    },
+    [animateSlider, handleColumnChange, sliderActiveValueRef, sliderRange]
+  );
+
+  const sliderPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponderCapture: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (evt: GestureResponderEvent) => {
+          handleSliderInteraction(evt.nativeEvent.locationX, false);
+        },
+        onPanResponderMove: (evt: GestureResponderEvent) => {
+          handleSliderInteraction(evt.nativeEvent.locationX, false);
+        },
+        onPanResponderRelease: () => {
+          handleSliderRelease();
+        },
+        onPanResponderTerminate: () => {
+          handleSliderRelease();
+        },
+        onPanResponderTerminationRequest: () => false,
+      }),
+    [handleSliderInteraction, handleSliderRelease]
+  );
+
+  const itemWidth = useMemo(() => {
+    const containerWidth = width - 32; // Account for padding
+    const gap = 16;
+    const totalGaps = (columns - 1) * gap;
+    const calculatedWidth = (containerWidth - totalGaps) / columns;
+    // Ensure items don't overflow by using Math.floor
+    return Math.floor(calculatedWidth);
+  }, [width, columns]);
 
   const assetsBase = useMemo(() => getBaseUrl().replace(/\/?api$/, ""), []);
 
@@ -160,14 +354,27 @@ export default function GalleryScreen() {
   const handleOpenViewer = useCallback((index: number) => {
     setCurrentIndex(index);
     setViewerVisible(true);
-    requestAnimationFrame(() => {
-      viewerListRef.current?.scrollToIndex({ index, animated: false });
-    });
   }, []);
 
   const handleCloseViewer = useCallback(() => {
     setViewerVisible(false);
+    const player = videoRef.current;
+    if (player) {
+      player.pauseAsync().catch(() => undefined);
+      player.setPositionAsync(0).catch(() => undefined);
+    }
   }, []);
+
+  useEffect(() => {
+    if (viewerVisible) {
+      return;
+    }
+    const player = videoRef.current;
+    if (player) {
+      player.pauseAsync().catch(() => undefined);
+      player.setPositionAsync(0).catch(() => undefined);
+    }
+  }, [viewerVisible]);
 
   const ensureMediaPermission = useCallback(async () => {
     if (Platform.OS === "web") return true;
@@ -400,6 +607,19 @@ export default function GalleryScreen() {
   const renderHeader = useCallback(
     () => (
       <View style={styles.headerWrapper}>
+        <ThemedView style={[styles.welcomeCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+          <View style={[styles.welcomeIconWrapper, { backgroundColor: theme.primaryMuted }]}>
+            <IconSymbol name="photo.on.rectangle" size={32} color={theme.primary} />
+          </View>
+          <ThemedText type="title" style={[styles.welcomeTitle, { color: theme.text }]}>
+            Willkommen in der Galerie! 📸
+          </ThemedText>
+          <ThemedText style={[styles.welcomeMessage, { color: theme.textMuted }]}>
+            Hier findet ihr alle gemeinsamen Momente eurer Party. Ladet eure Favoriten herunter, teilt sie mit Freunden
+            oder stöbert einfach durch die schönsten Erinnerungen!
+          </ThemedText>
+        </ThemedView>
+
         <ThemedView style={[styles.headerCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <View style={styles.headerTopRow}>
             <View style={[styles.headerIcon, { backgroundColor: theme.primaryMuted }]}>
@@ -409,16 +629,119 @@ export default function GalleryScreen() {
               Upload starten
             </Button>
           </View>
-          <ThemedText type="title" style={[styles.headerTitle, { color: theme.text }]}>
-            Gemeinsame Galerie
-          </ThemedText>
-          <ThemedText style={[styles.headerSubtitle, { color: theme.textMuted }]}>
-            Stöbert durch alle hochgeladenen Erinnerungen und ladet eure Favoriten herunter.
-          </ThemedText>
+          <View style={styles.columnSelectorWrapper}>
+            <View style={styles.columnSliderHeader}>
+              <ThemedText style={[styles.columnSelectorLabel, { color: theme.textMuted }]}>Darstellung</ThemedText>
+              <ThemedText style={[styles.columnSliderDescription, { color: theme.text }]}>
+                {sliderDescription}
+              </ThemedText>
+            </View>
+            <View style={styles.columnTopRow}>
+              <TouchableOpacity
+                onPress={() => handleColumnChange(null)}
+                style={[
+                  styles.columnAutoButton,
+                  {
+                    backgroundColor: userColumns === null ? theme.primary : theme.inputBackground,
+                    borderColor: theme.border,
+                  },
+                ]}>
+                <ThemedText
+                  style={[
+                    styles.columnAutoButtonText,
+                    { color: userColumns === null ? theme.background : theme.text },
+                  ]}>
+                  Auto
+                </ThemedText>
+              </TouchableOpacity>
+              <View
+                style={[styles.columnSliderValuePill, { backgroundColor: theme.overlay, borderColor: theme.border }]}>
+                <ThemedText style={[styles.columnSliderValueText, { color: theme.text }]}>
+                  {sliderColumnsDisplay} Spalten
+                </ThemedText>
+              </View>
+            </View>
+            <View style={styles.columnSliderWrapper}>
+              <View
+                style={[styles.columnSliderTrack, { backgroundColor: theme.overlay }]}
+                onLayout={(event) => {
+                  const layoutWidth = event.nativeEvent.layout.width;
+                  setSliderTrackWidth(layoutWidth);
+                  const commitRatio =
+                    sliderRange === 0 ? 0 : (sliderActiveValueRef.current - MIN_COLUMNS) / sliderRange;
+                  sliderAnimatedFill.setValue(layoutWidth * commitRatio);
+                  const maxThumb = Math.max(layoutWidth - SLIDER_THUMB_SIZE, 0);
+                  const targetThumb = Math.min(
+                    Math.max(layoutWidth * commitRatio - SLIDER_THUMB_SIZE / 2, 0),
+                    maxThumb
+                  );
+                  sliderAnimatedThumb.setValue(targetThumb);
+                }}
+                accessibilityRole="adjustable"
+                accessibilityLabel="Spaltenanzahl einstellen"
+                accessibilityValue={{ text: `${sliderActiveValueRef.current} Spalten` }}
+                accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
+                onAccessibilityAction={handleSliderAccessibility}
+                {...sliderPanResponder.panHandlers}>
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.columnSliderFill,
+                    {
+                      backgroundColor: theme.primary,
+                      width: sliderAnimatedFill,
+                    },
+                  ]}
+                />
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    styles.columnSliderThumb,
+                    {
+                      backgroundColor: theme.background,
+                      borderColor: theme.border,
+                      shadowColor: theme.shadowColor,
+                      transform: [{ translateX: sliderAnimatedThumb }],
+                    },
+                  ]}>
+                  <View style={[styles.columnSliderThumbInner, { backgroundColor: theme.primary }]} />
+                </Animated.View>
+              </View>
+            </View>
+          </View>
+          <TouchableOpacity
+            onPress={toggleSelectAll}
+            style={[styles.selectAllCheckbox, { borderColor: theme.border, backgroundColor: theme.card }]}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: allSelected }}
+            accessibilityLabel="Alle Dateien auswählen">
+            <IconSymbol
+              name={allSelected ? "checkmark.circle" : "circle"}
+              size={20}
+              color={allSelected ? theme.primary : theme.textMuted}
+            />
+            <ThemedText style={[styles.selectAllCheckboxLabel, { color: theme.text }]}>
+              {allSelected ? "Auswahl aufheben" : "Alles auswählen"}
+            </ThemedText>
+          </TouchableOpacity>
         </ThemedView>
       </View>
     ),
-    [router, theme.border, theme.card, theme.primary, theme.primaryMuted, theme.text, theme.textMuted]
+    [
+      allSelected,
+      handleColumnChange,
+      handleSliderAccessibility,
+      router,
+      sliderColumnsDisplay,
+      sliderDescription,
+      sliderPanResponder,
+      sliderAnimatedFill,
+      sliderAnimatedThumb,
+      sliderRange,
+      theme,
+      toggleSelectAll,
+      userColumns,
+    ]
   );
 
   const renderEmpty = useCallback(() => {
@@ -456,9 +779,6 @@ export default function GalleryScreen() {
   const renderItem = useCallback(
     ({ item, index }: { item: GalleryUploadEntryDTO; index: number }) => {
       const mediaUri = `${assetsBase}${item.url}`;
-      const marginRight = columns > 1 && index % columns !== columns - 1 ? 16 : 0;
-      const uploadedAt = item.uploadedAt ?? item.createdAt ?? item.updatedAt;
-      const uploadedLabel = uploadedAt ? dateFormatter.format(new Date(uploadedAt)) : "Unbekannt";
       const isSelected = selected.has(item.filename);
       return (
         <TouchableOpacity
@@ -477,10 +797,11 @@ export default function GalleryScreen() {
             {
               borderColor: theme.border,
               backgroundColor: theme.card,
-              marginRight,
+              width: itemWidth,
               opacity: selectionMode && !isSelected ? 0.85 : 1,
             },
             isSelected ? [styles.mediaCardSelected, { borderColor: theme.primary }] : null,
+            columns > 2 ? styles.mediaCardCompact : null,
           ]}>
           <View style={styles.thumbnailWrapper}>
             {isVideo(item.filename) ? (
@@ -499,126 +820,195 @@ export default function GalleryScreen() {
               <IconSymbol name={isVideo(item.filename) ? "play.circle.fill" : "photo"} size={16} color={theme.text} />
             </View>
           </View>
-          <TouchableOpacity
-            onPress={(event) => {
-              event.stopPropagation();
-              toggleSelect(item.filename);
-            }}
-            style={[
-              styles.selectionToggle,
-              {
-                backgroundColor: isSelected ? theme.primaryMuted : theme.card,
-                borderColor: isSelected ? theme.primary : theme.border,
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isSelected }}
-            accessibilityLabel={isSelected ? "Auswahl entfernen" : "Auswahl hinzufügen"}>
-            <IconSymbol
-              name={isSelected ? "checkmark.circle" : "circle"}
-              size={22}
-              color={isSelected ? theme.primary : theme.icon}
-            />
-          </TouchableOpacity>
-          <View style={styles.mediaInfo}>
-            <ThemedText numberOfLines={1} style={[styles.mediaTitle, { color: theme.text }]}>
-              {item.filename}
-            </ThemedText>
-            <ThemedText style={[styles.mediaMeta, { color: theme.textMuted }]}>Hochgeladen: {uploadedLabel}</ThemedText>
-            <ThemedText style={[styles.mediaMeta, { color: theme.textMuted }]}>
-              Größe: {formatBytes(item.size)}
-            </ThemedText>
-            {item.groupName ? (
-              <ThemedText style={[styles.mediaMeta, { color: theme.textMuted }]} numberOfLines={1}>
-                Gruppe: {item.groupName}
+          <View style={styles.mediaFooter}>
+            {columns === 1 ? (
+              <ThemedText numberOfLines={1} style={[styles.mediaTitle, { color: theme.text }]}>
+                {item.filename}
               </ThemedText>
             ) : null}
-            {item.guestName ? (
-              <ThemedText style={[styles.mediaMeta, { color: theme.textMuted }]} numberOfLines={1}>
-                Hochgeladen von: {item.guestName}
-              </ThemedText>
-            ) : null}
-          </View>
-          <View style={styles.mediaFooterRow}>
             <TouchableOpacity
               onPress={(event) => {
                 event.stopPropagation();
-                void downloadMedia(item);
+                toggleSelect(item.filename);
               }}
-              style={[styles.inlineDownloadButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}>
-              <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
-              <ThemedText style={[styles.inlineDownloadText, { color: theme.accent }]}>Download</ThemedText>
+              style={[
+                styles.mediaCheckboxButton,
+                {
+                  backgroundColor: isSelected ? theme.primaryMuted : theme.card,
+                  borderColor: isSelected ? theme.primary : theme.border,
+                },
+                columns > 1 ? styles.mediaCheckboxButtonCompact : null,
+              ]}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isSelected }}
+              accessibilityLabel={isSelected ? "Auswahl entfernen" : "Auswahl hinzufügen"}>
+              <IconSymbol
+                name={isSelected ? "checkmark.circle" : "circle"}
+                size={columns > 1 ? 16 : 18}
+                color={isSelected ? theme.primary : theme.icon}
+              />
+              {columns === 1 ? (
+                <ThemedText style={[styles.mediaCheckboxLabel, { color: isSelected ? theme.primary : theme.text }]}>
+                  {isSelected ? "Ausgewählt" : "Auswählen"}
+                </ThemedText>
+              ) : null}
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
       );
     },
-    [assetsBase, columns, dateFormatter, downloadMedia, handleOpenViewer, selectionMode, selected, theme, toggleSelect]
+    [assetsBase, columns, handleOpenViewer, itemWidth, selectionMode, selected, theme, toggleSelect]
   );
-
-  const viewabilityConfig = useMemo(() => ({ viewAreaCoveragePercentThreshold: 60 }), []);
-
-  const handleViewableChange = useCallback(
-    ({
-      viewableItems,
-    }: {
-      viewableItems: ViewToken<GalleryUploadEntryDTO>[];
-      changed: ViewToken<GalleryUploadEntryDTO>[];
-    }) => {
-      const firstVisible = viewableItems.find((token) => typeof token.index === "number");
-      if (firstVisible?.index != null) {
-        setCurrentIndex(firstVisible.index);
-      }
-    },
-    []
-  );
-
   const currentItem = items[currentIndex];
+  const mediaUri = currentItem ? `${assetsBase}${currentItem.url}` : null;
+
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex < items.length - 1;
+
+  const handleShowPrevious = useCallback(() => {
+    setCurrentIndex((index) => (index <= 0 ? 0 : index - 1));
+  }, []);
+
+  const handleShowNext = useCallback(() => {
+    setCurrentIndex((index) => {
+      const lastIndex = Math.max(items.length - 1, 0);
+      return index >= lastIndex ? lastIndex : index + 1;
+    });
+  }, [items.length]);
+
+  const mediaDimensions = useMemo(() => {
+    const fallbackRatio = currentItem
+      ? isVideo(currentItem.filename)
+        ? DEFAULT_VIDEO_RATIO
+        : DEFAULT_IMAGE_RATIO
+      : DEFAULT_IMAGE_RATIO;
+    const ratio = currentItem ? mediaRatios[currentItem.filename] ?? fallbackRatio : fallbackRatio;
+
+    const baseMaxWidth = Math.max(viewerPageWidth - VIEWER_MEDIA_PADDING, MIN_MEDIA_WIDTH);
+    const availableWidth = Math.max(width - 48, MIN_MEDIA_WIDTH);
+    const maxWidth = Math.min(baseMaxWidth, availableWidth);
+    const maxHeight = effectiveMediaMaxHeight;
+
+    let resolvedWidth = maxWidth;
+    let resolvedHeight = resolvedWidth / ratio;
+
+    if (resolvedHeight > maxHeight) {
+      resolvedHeight = maxHeight;
+      resolvedWidth = resolvedHeight * ratio;
+    }
+
+    if (resolvedWidth > maxWidth) {
+      resolvedWidth = maxWidth;
+      resolvedHeight = resolvedWidth / ratio;
+    }
+
+    if (resolvedWidth < MIN_MEDIA_WIDTH) {
+      resolvedWidth = MIN_MEDIA_WIDTH;
+      resolvedHeight = resolvedWidth / ratio;
+    }
+
+    if (resolvedHeight > maxHeight) {
+      resolvedHeight = maxHeight;
+      resolvedWidth = resolvedHeight * ratio;
+    }
+
+    return {
+      width: resolvedWidth,
+      height: resolvedHeight,
+    };
+  }, [currentItem, effectiveMediaMaxHeight, mediaRatios, viewerPageWidth, width]);
+
   const currentUploadedAt = currentItem?.uploadedAt ?? currentItem?.createdAt ?? currentItem?.updatedAt;
   const currentUploadedLabel = currentUploadedAt ? dateFormatter.format(new Date(currentUploadedAt)) : "Unbekannt";
+
+  useEffect(() => {
+    if (!currentItem || !isVideo(currentItem.filename)) {
+      videoRef.current = null;
+    }
+  }, [currentItem]);
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
-        <FlatList
-          key={columns}
-          data={items}
-          numColumns={columns}
-          keyExtractor={(item) => item.filename}
-          renderItem={renderItem}
+        <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.listContent}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={renderEmpty}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
           showsVerticalScrollIndicator={false}
-        />
+          onScroll={(event) => {
+            scrollPositionRef.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={theme.primary}
+              colors={[theme.primary]}
+            />
+          }>
+          {renderHeader()}
+          {loading || error || items.length === 0 ? (
+            renderEmpty()
+          ) : (
+            <View style={styles.gridContainer}>
+              {items.map((item, index) => (
+                <View key={item.filename} style={{ width: itemWidth }}>
+                  {renderItem({ item, index })}
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
       </SafeAreaView>
 
       {selectionMode ? (
-        <View pointerEvents="box-none" style={styles.selectionOverlayWrapper}>
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.selectionOverlayWrapper,
+            Platform.OS === "web" ? styles.selectionOverlayWrapperWeb : null,
+            { paddingTop: insets.top + 8 },
+          ]}>
           <ThemedView
             style={[
               styles.selectionBanner,
               {
                 borderColor: theme.border,
                 backgroundColor: theme.backgroundAlt,
-                paddingBottom: insets.bottom + 12,
-                marginBottom: 0,
+                paddingTop: selectionPadding,
+                paddingBottom: selectionPadding,
+                gap: selectionGap,
+                shadowColor: theme.shadowColor,
               },
+              Platform.OS === "web"
+                ? {
+                    boxShadow: `0 3px 14px ${theme.shadowColor ?? "rgba(0, 0, 0, 0.13)"}`,
+                  }
+                : null,
             ]}
             accessibilityLiveRegion="polite">
-            <ThemedText style={[styles.selectionTitle, { color: theme.text }]}>
+            <ThemedText style={[styles.selectionTitle, { color: theme.text, fontSize: selectionFontSize + 2 }]}>
               {selectedCount} Datei{selectedCount === 1 ? "" : "en"} ausgewählt
             </ThemedText>
-            <View style={styles.selectionActions}>
+            <View style={[styles.selectionActions, { gap: selectionGap }]}>
               <TouchableOpacity
                 onPress={toggleSelectAll}
-                style={[styles.selectionActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}
+                style={[
+                  styles.selectionActionButton,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.overlay,
+                    paddingVertical: selectionButtonPadding,
+                  },
+                ]}
                 accessibilityHint={allSelected ? "Auswahl aufheben" : "Alle Dateien auswählen"}>
-                <IconSymbol name={allSelected ? "xmark.circle" : "checkmark.circle"} size={18} color={theme.primary} />
-                <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>
+                <IconSymbol
+                  name={allSelected ? "xmark.circle" : "checkmark.circle"}
+                  size={selectionIconSize}
+                  color={theme.primary}
+                />
+                <ThemedText style={[styles.selectionActionText, { color: theme.text, fontSize: selectionFontSize }]}>
                   {allSelected ? "Auswahl aufheben" : "Alles auswählen"}
                 </ThemedText>
               </TouchableOpacity>
@@ -631,17 +1021,29 @@ export default function GalleryScreen() {
                     borderColor: theme.border,
                     backgroundColor: theme.overlay,
                     opacity: selectedCount === 0 ? 0.6 : 1,
+                    paddingVertical: selectionButtonPadding,
                   },
                 ]}>
-                <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
-                <ThemedText style={[styles.selectionActionText, { color: theme.accent }]}>Download</ThemedText>
+                <IconSymbol name="arrow.down.circle" size={selectionIconSize} color={theme.accent} />
+                <ThemedText style={[styles.selectionActionText, { color: theme.accent, fontSize: selectionFontSize }]}>
+                  Download
+                </ThemedText>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={clearSelection}
-                style={[styles.selectionActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}
+                style={[
+                  styles.selectionActionButton,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.overlay,
+                    paddingVertical: selectionButtonPadding,
+                  },
+                ]}
                 accessibilityHint="Auswahl zurücksetzen">
-                <IconSymbol name="trash.fill" size={18} color={theme.icon} />
-                <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>Auswahl leeren</ThemedText>
+                <IconSymbol name="trash.fill" size={selectionIconSize} color={theme.icon} />
+                <ThemedText style={[styles.selectionActionText, { color: theme.text, fontSize: selectionFontSize }]}>
+                  Auswahl leeren
+                </ThemedText>
               </TouchableOpacity>
             </View>
           </ThemedView>
@@ -652,10 +1054,14 @@ export default function GalleryScreen() {
         <TouchableWithoutFeedback onPress={handleCloseViewer}>
           <View style={[styles.viewerBackdrop, { backgroundColor: theme.backdrop }]}>
             <TouchableWithoutFeedback>
-              <View style={[styles.viewerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View
+                style={[
+                  styles.viewerCard,
+                  { backgroundColor: theme.card, borderColor: theme.border, maxHeight: viewerCardMaxHeight },
+                ]}>
                 <View style={styles.viewerHeader}>
                   <TouchableOpacity onPress={handleCloseViewer} style={styles.viewerCloseButton}>
-                    <IconSymbol name="xmark.circle" size={18} color={theme.text} />
+                    <IconSymbol name="xmark.circle" size={18} color={theme.textMuted} />
                   </TouchableOpacity>
                   <View style={styles.viewerHeaderRight}>
                     <ThemedText style={[styles.viewerCounter, { color: theme.text }]}>
@@ -674,69 +1080,105 @@ export default function GalleryScreen() {
                     ) : null}
                   </View>
                 </View>
+                {currentItem ? (
+                  <ScrollView
+                    contentContainerStyle={[styles.viewerBody, { paddingBottom: Math.max(insets.bottom, 12) }]}
+                    showsVerticalScrollIndicator={false}
+                    bounces={false}>
+                    <View style={styles.viewerMediaWrapper}>
+                      {hasPrevious ? (
+                        <TouchableOpacity
+                          onPress={handleShowPrevious}
+                          style={[styles.viewerNavButton, { backgroundColor: theme.overlay }]}
+                          accessibilityRole="button"
+                          accessibilityLabel="Vorheriges Medium">
+                          <IconSymbol name="chevron-left" size={24} color={theme.text} />
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={styles.viewerNavSpacer} />
+                      )}
 
-                <FlatList
-                  ref={viewerListRef}
-                  data={items}
-                  horizontal
-                  pagingEnabled
-                  initialNumToRender={1}
-                  keyExtractor={(item) => item.filename}
-                  renderItem={({ item }) => {
-                    const uri = `${assetsBase}${item.url}`;
-                    return (
-                      <View style={[styles.viewerMediaContainer, { width: viewerPageWidth }]}>
-                        {isVideo(item.filename) ? (
+                      <View style={styles.viewerMediaContainer}>
+                        {isVideo(currentItem.filename) ? (
                           <Video
-                            source={{ uri }}
-                            style={styles.viewerMedia}
+                            ref={(instance) => {
+                              videoRef.current = instance;
+                            }}
+                            source={{ uri: mediaUri ?? "" }}
+                            style={[
+                              styles.viewerMedia,
+                              { width: mediaDimensions.width, height: mediaDimensions.height },
+                            ]}
                             resizeMode={ResizeMode.CONTAIN}
-                            shouldPlay
+                            shouldPlay={false}
                             useNativeControls
+                            onLoad={(status: AVPlaybackStatus) => {
+                              if (!status.isLoaded) return;
+                              const naturalSize = (status as any)?.naturalSize;
+                              const naturalWidth = naturalSize?.width ?? naturalSize?.naturalWidth;
+                              const naturalHeight = naturalSize?.height ?? naturalSize?.naturalHeight;
+                              rememberMediaRatio(currentItem.filename, naturalWidth, naturalHeight);
+                            }}
                           />
                         ) : (
-                          <Image source={{ uri }} style={styles.viewerMedia} contentFit="contain" transition={200} />
+                          <Image
+                            source={{ uri: mediaUri ?? "" }}
+                            style={[
+                              styles.viewerMedia,
+                              { width: mediaDimensions.width, height: mediaDimensions.height },
+                            ]}
+                            contentFit="contain"
+                            transition={200}
+                            onLoad={({ source }) => {
+                              rememberMediaRatio(currentItem.filename, source?.width, source?.height);
+                            }}
+                          />
                         )}
                       </View>
-                    );
-                  }}
-                  onViewableItemsChanged={handleViewableChange}
-                  viewabilityConfig={viewabilityConfig}
-                  getItemLayout={(_data, index) => ({
-                    length: viewerPageWidth,
-                    offset: viewerPageWidth * index,
-                    index,
-                  })}
-                  snapToInterval={viewerPageWidth}
-                  snapToAlignment="start"
-                  decelerationRate="fast"
-                  showsHorizontalScrollIndicator={false}
-                />
 
-                {currentItem ? (
-                  <View style={styles.viewerMeta}>
-                    <ThemedText style={[styles.viewerMetaTitle, { color: theme.text }]}>Datei-Infos</ThemedText>
-                    <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]} numberOfLines={1}>
-                      Name: {currentItem.filename}
-                    </ThemedText>
-                    <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]}>
-                      Hochgeladen: {currentUploadedLabel}
-                    </ThemedText>
-                    <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]}>
-                      Größe: {formatBytes(currentItem.size)}
-                    </ThemedText>
-                    {currentItem.groupName ? (
-                      <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]}>
-                        Gruppe: {currentItem.groupName}
+                      {hasNext ? (
+                        <TouchableOpacity
+                          onPress={handleShowNext}
+                          style={[styles.viewerNavButton, { backgroundColor: theme.overlay }]}
+                          accessibilityRole="button"
+                          accessibilityLabel="Nächstes Medium">
+                          <IconSymbol name="chevron-right" size={24} color={theme.text} />
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={styles.viewerNavSpacer} />
+                      )}
+                    </View>
+
+                    <View style={styles.viewerMeta}>
+                      <ThemedText style={[styles.viewerMetaTitle, { color: theme.text }]}>Datei-Infos</ThemedText>
+                      <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]} numberOfLines={1}>
+                        Name: {currentItem.filename}
                       </ThemedText>
-                    ) : null}
-                    {currentItem.guestName ? (
                       <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]}>
-                        Hochgeladen von: {currentItem.guestName}
+                        Hochgeladen: {currentUploadedLabel}
                       </ThemedText>
-                    ) : null}
+                      <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]}>
+                        Größe: {formatBytes(currentItem.size)}
+                      </ThemedText>
+                      {currentItem.groupName ? (
+                        <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]}>
+                          Gruppe: {currentItem.groupName}
+                        </ThemedText>
+                      ) : null}
+                      {currentItem.guestName ? (
+                        <ThemedText style={[styles.viewerMetaRow, { color: theme.textMuted }]}>
+                          Hochgeladen von: {currentItem.guestName}
+                        </ThemedText>
+                      ) : null}
+                    </View>
+                  </ScrollView>
+                ) : (
+                  <View style={styles.viewerPlaceholder}>
+                    <ThemedText style={[styles.viewerPlaceholderText, { color: theme.textMuted }]}>
+                      Keine Datei ausgewählt.
+                    </ThemedText>
                   </View>
-                ) : null}
+                )}
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -754,6 +1196,14 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 160,
     paddingTop: 8,
+  },
+  row: {
+    gap: 16,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
   },
   headerWrapper: {
     gap: 12,
@@ -788,48 +1238,195 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
   },
-  selectionBanner: {
-    borderRadius: 20,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 16,
-    marginBottom: 16,
-    gap: 12,
-    shadowColor: "rgba(0,0,0,0.15)",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 3,
+  columnSelectorWrapper: {
+    gap: 8,
+    marginTop: 4,
   },
-  selectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+  columnSelectorLabel: {
+    fontSize: 14,
+    fontWeight: "600",
   },
-  selectionActions: {
+  columnSliderHeader: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  columnSliderDescription: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  columnSliderRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
-  selectionActionButton: {
+  columnTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  columnSliderWrapper: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  columnAutoButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    flexShrink: 0,
+  },
+  columnAutoButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  columnSliderTrack: {
+    flex: 1,
+    height: 36,
+    borderRadius: 18,
+    overflow: "hidden",
+    position: "relative",
+    justifyContent: "center",
+    paddingHorizontal: 2,
+    cursor: "pointer",
+  },
+  columnSliderFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 18,
+  },
+  columnSliderThumb: {
+    position: "absolute",
+    top: 2,
+    left: 0,
+    width: SLIDER_THUMB_SIZE,
+    height: SLIDER_THUMB_SIZE,
+    borderRadius: SLIDER_THUMB_SIZE / 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "rgba(0,0,0,0.3)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  columnSliderThumbInner: {
+    width: SLIDER_THUMB_SIZE - 12,
+    height: SLIDER_THUMB_SIZE - 12,
+    borderRadius: (SLIDER_THUMB_SIZE - 12) / 2,
+  },
+  columnSliderValuePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  columnSliderValueText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  columnSliderScale: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 4,
+  },
+  columnSliderScaleText: {
+    fontSize: 12,
+  },
+  selectAllCheckbox: {
+    marginTop: 8,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 999,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  selectionActionText: {
+  selectAllCheckboxLabel: {
     fontSize: 14,
+    fontWeight: "600",
+  },
+  welcomeCard: {
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 24,
+    gap: 16,
+    marginBottom: 4,
+    marginTop: 8,
+    alignItems: "center",
+  },
+  welcomeIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  welcomeTitle: {
+    fontSize: 26,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  welcomeMessage: {
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: "center",
+  },
+  selectionBanner: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    gap: 10,
+    shadowColor: "rgba(0,0,0,0.25)",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  selectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  selectionActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  selectionActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  selectionActionText: {
+    fontSize: 13,
     fontWeight: "600",
   },
   selectionOverlayWrapper: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 0,
+    top: 0,
     paddingHorizontal: 16,
     paddingBottom: 0,
-    marginBottom: 8,
+    zIndex: 20,
+  },
+  selectionOverlayWrapperWeb: {
+    position: "fixed",
+    left: 0,
+    right: 0,
+    top: 0,
+    zIndex: 100,
   },
   emptyState: {
     alignItems: "center",
@@ -845,12 +1442,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   mediaCard: {
-    flex: 1,
     borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     paddingBottom: 12,
     marginBottom: 16,
+  },
+  mediaCardCompact: {
+    borderRadius: 12,
+    paddingBottom: 4,
+    marginBottom: 12,
   },
   mediaCardSelected: {
     shadowColor: "rgba(0,0,0,0.15)",
@@ -880,43 +1481,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  selectionToggle: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 4,
-  },
-  mediaInfo: {
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    gap: 6,
-  },
-  mediaTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  mediaMeta: {
-    fontSize: 13,
-  },
-  mediaFooterRow: {
+  mediaFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
     paddingHorizontal: 14,
-    paddingBottom: 12,
+    paddingVertical: 8,
+    gap: 12,
+    minHeight: 44,
   },
-  inlineDownloadButton: {
+  mediaTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
+  mediaCheckboxButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
+    minWidth: 44,
+    minHeight: 32,
+    justifyContent: "center",
   },
-  inlineDownloadText: {
+  mediaCheckboxButtonCompact: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    minWidth: 32,
+    minHeight: 32,
+  },
+  mediaCheckboxLabel: {
     fontSize: 13,
     fontWeight: "600",
   },
@@ -933,6 +1530,12 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: 16,
     gap: 16,
+    flexShrink: 1,
+  },
+  viewerBody: {
+    paddingHorizontal: 8,
+    gap: 16,
+    flexGrow: 1,
   },
   viewerHeader: {
     flexDirection: "row",
@@ -968,20 +1571,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  viewerMediaContainer: {
-    width: 720,
-    maxWidth: "100%",
+  viewerMediaWrapper: {
+    width: "100%",
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 16,
+    paddingVertical: 12,
+  },
+  viewerNavButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "rgba(0,0,0,0.25)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.7,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 10,
+  },
+  viewerMediaContainer: {
+    flexShrink: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
   },
   viewerMedia: {
-    width: "100%",
-    aspectRatio: 4 / 3,
     borderRadius: 12,
     backgroundColor: "rgba(0,0,0,0.1)",
   },
+  viewerNavSpacer: {
+    width: 48,
+    height: 48,
+  },
   viewerMeta: {
     gap: 6,
+    paddingHorizontal: 8,
   },
   viewerMetaTitle: {
     fontSize: 16,
@@ -989,5 +1616,14 @@ const styles = StyleSheet.create({
   },
   viewerMetaRow: {
     fontSize: 14,
+  },
+  viewerPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+  },
+  viewerPlaceholderText: {
+    fontSize: 15,
+    textAlign: "center",
   },
 });
