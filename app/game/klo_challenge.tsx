@@ -9,8 +9,6 @@ import { useTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import React from "react";
 
-//TODO: NOAH add route and function to upload photo
-
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -24,26 +22,44 @@ export default function HomeScreen() {
           <View style={styles.partyHeader}>
             <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
             <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-            <Image source={require("@/assets/images/papa/sunny.png")} style={styles.papaLogo} />
+            <Image
+              source={require("@/assets/images/papa/sunny.png")}
+              style={styles.papaLogo}
+            />
             <View style={[styles.confetti, styles.confettiOne]} />
             <View style={[styles.confetti, styles.confettiTwo]} />
             <View style={[styles.confetti, styles.confettiThree]} />
             <View style={[styles.confetti, styles.confettiFour]} />
           </View>
-        }>
+        }
+      >
         <ThemedView
-          style={[styles.textContainer, styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+          style={[
+            styles.textContainer,
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           <ThemedText type="title">Klo Malerei🎨</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
-            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und ladet davon ein Foto hoch!
+            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und
+            ladet davon ein Foto hoch!
           </ThemedText>
         </ThemedView>
 
-        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        <ThemedView
+          style={[
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
             Macht hier ein Foto von eurem Kunstwerk.
           </ThemedText>
-          <Button onPress={() => router.navigate("/game/modal/kloSelfie")} iconText="camera">
+          <Button
+            onPress={() => router.navigate("/game/modal/kloSelfie")}
+            iconText="camera"
+          >
             Foto machen
           </Button>
         </ThemedView>

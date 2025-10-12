@@ -33,7 +33,7 @@
           "password-solved"
         ],
         "attempts": 1,
-        "currentGame": "password-solved",
+        "currentGame": "challenge-5-quiz",
         "selfieUrl": "/uploads/1759532166175-guest-A9LGsB.jpg",
         "selfieUploadedAt": "2025-10-03T22:56:06.177Z",
         "lastSelfieChallenge": "challenge_2"
@@ -60,105 +60,409 @@
       "title": "Standard Quiz",
       "questions": [
         {
-          "id": "j1glN3fq",
-          "question": "Ist hummel fett?",
+          "id": "q-R1fV0p",
+          "question": "Wie lange sind Ronald und Anni schon verheiratet?",
           "answers": [
             {
-              "id": "89745vb4",
+              "id": "a-J9k4Y2q",
               "text": "Ja",
               "correct": false
             },
             {
-              "id": "ge9prgey",
+              "id": "a-W3r8F1b",
               "text": "Nein",
               "correct": false
             },
             {
-              "id": "yboedchq",
+              "id": "a-L6p7C0x",
               "text": "Sehr",
               "correct": true
             }
           ],
           "difficulty": 123,
-          "imageUrl": "asdasd"
+          "imageUrl": "/assets/images/questions/hochzeit.JPEG"
         },
         {
-          "id": "w4726LoF",
-          "question": "Aasd",
+          "id": "q-X2b3N5t",
+          "question": "Wo ist Ronald hier?",
           "answers": [
             {
-              "id": "f9978wwp",
-              "text": "Ricjtg\\",
+              "id": "a-T8h1K2r",
+              "text": "Ja",
+              "correct": false
+            },
+            {
+              "id": "a-E4g9S0v",
+              "text": "Nein",
+              "correct": false
+            },
+            {
+              "id": "a-P6y7U3w",
+              "text": "Sehr",
+              "correct": true
+            }
+          ],
+          "difficulty": 123,
+          "imageUrl": "/assets/images/questions/scorpion.jpg"
+        },
+        {
+          "id": "q-V5n8K3c",
+          "question": "Braucht Ronald eine Brille?",
+          "answers": [
+            {
+              "id": "a-N1v3T6y",
+              "text": "Ja",
+              "correct": false
+            },
+            {
+              "id": "a-B2u9R0m",
+              "text": "Nein",
+              "correct": false
+            },
+            {
+              "id": "a-H8p4C2s",
+              "text": "Sehr",
+              "correct": true
+            }
+          ],
+          "difficulty": 123,
+          "imageUrl": "/assets/images/questions/brille.jpg"
+        },
+        {
+          "id": "q-M9z1F0l",
+          "question": "Ist das Ronald?",
+          "answers": [
+            {
+              "id": "a-K3e6D5r",
+              "text": "Ja",
+              "correct": false
+            },
+            {
+              "id": "a-Q2x8L7n",
+              "text": "Nein",
+              "correct": false
+            },
+            {
+              "id": "a-Z0b4M1c",
+              "text": "Sehr",
+              "correct": true
+            }
+          ],
+          "difficulty": 123,
+          "imageUrl": "/assets/images/questions/kind.jpg"
+        },
+        {
+          "id": "q-H2w7R3p",
+          "question": "Ist das Ronald oder sein Bruder?",
+          "answers": [
+            {
+              "id": "a-S8t2N5l",
+              "text": "Ja",
+              "correct": false
+            },
+            {
+              "id": "a-O4k9F1m",
+              "text": "Nein",
+              "correct": false
+            },
+            {
+              "id": "a-V3g7A6x",
+              "text": "Sehr",
+              "correct": true
+            }
+          ],
+          "difficulty": 123,
+          "imageUrl": "/assets/images/questions/baby.jpg"
+        },
+        {
+          "id": "q-U8y5B1s",
+          "question": "Was ist die längste Stecke die er bisher gelaufen ist?",
+          "answers": [
+            {
+              "id": "a-F0p3L2d",
+              "text": "Ja",
+              "correct": false
+            },
+            {
+              "id": "a-Y1r7T5v",
+              "text": "Nein",
+              "correct": false
+            },
+            {
+              "id": "a-G6u9E4w",
+              "text": "Sehr",
+              "correct": true
+            }
+          ],
+          "difficulty": 123,
+          "imageUrl": "/assets/images/questions/laufen.jpg"
+        },
+        {
+          "id": "q-D4n9J7h",
+          "question": "Wo ist er auf diesem Bild?",
+          "answers": [
+            {
+              "id": "a-X5p2W6f",
+              "text": "Ja",
+              "correct": false
+            },
+            {
+              "id": "a-M8r3Q0c",
+              "text": "Nein",
+              "correct": false
+            },
+            {
+              "id": "a-T2h1B8j",
+              "text": "Sehr",
+              "correct": true
+            }
+          ],
+          "difficulty": 123,
+          "imageUrl": "/assets/images/questions/ritterfest.jpg"
+        },
+        {
+          "id": "q-J3a1C9v",
+          "question": "Wie alt war Ronald bei der Geburt von Lea/Ashlii?",
+          "answers": [
+            {
+              "id": "a-R9k7Z1b",
+              "text": "Ja",
+              "correct": false
+            },
+            {
+              "id": "a-C5u3N0e",
+              "text": "Nein",
+              "correct": false
+            },
+            {
+              "id": "a-L1v8P4t",
+              "text": "Sehr",
+              "correct": true
+            }
+          ],
+          "difficulty": 123,
+          "imageUrl": "/assets/images/questions/geburt.jpg"
+        },
+        {
+          "id": "bwj9jkKl",
+          "question": "Wo hat Ronald seine Ausbildung gemacht?",
+          "answers": [
+            {
+              "id": "9k2y5wfz",
+              "text": "ja",
               "correct": true
             },
             {
-              "id": "dk4ew9rh",
-              "text": "asd",
+              "id": "6pnlfyia",
+              "text": "nein",
+              "correct": false
+            },
+            {
+              "id": "g25g4gqb",
+              "text": "vlt",
               "correct": false
             }
           ]
         },
         {
-          "id": "2EnqgGnf",
-          "question": "Tets?",
+          "id": "Pit6gTK-",
+          "question": "Wo arbeitet Ronald derzeit?",
           "answers": [
             {
-              "id": "wzdiyhp4",
-              "text": "123",
+              "id": "ts21lzmb",
+              "text": "penis",
               "correct": true
             },
             {
-              "id": "evrsbmg6",
-              "text": "123333",
+              "id": "4f4izyk5",
+              "text": "sd",
+              "correct": false
+            },
+            {
+              "id": "ha879qk0",
+              "text": "sda",
               "correct": false
             }
           ]
         },
         {
-          "id": "_mJXxSxw",
-          "question": "asdasd",
+          "id": "oz4vhHT3",
+          "question": "Wie alt ist er dieses Jahr geworden?",
           "answers": [
             {
-              "id": "0a7zb9qh",
-              "text": "asd",
+              "id": "pfvs4vnl",
+              "text": "49",
               "correct": true
             },
             {
-              "id": "kmy2plv8",
-              "text": "asdddd",
+              "id": "gsfrvald",
+              "text": "47",
               "correct": false
             }
           ]
         },
         {
-          "id": "BBapfUQf",
-          "question": "asdasd",
+          "id": "mAbJ3p7E",
+          "question": "In welchem Volleyball Verein ist er?",
           "answers": [
             {
-              "id": "may2atgv",
-              "text": "asddas",
+              "id": "z2ncp1az",
+              "text": "TSV Neubruchhausen",
               "correct": true
             },
             {
-              "id": "s5faazb3",
-              "text": "asd",
+              "id": "f3f2pjx3",
+              "text": "TSV Syke",
+              "correct": false
+            },
+            {
+              "id": "eqn01nnh",
+              "text": "TSV Bassum",
+              "correct": false
+            },
+            {
+              "id": "tz8piy13",
+              "text": "TSV Heiligenfelde",
               "correct": false
             }
           ]
         },
         {
-          "id": "ioyz3vJF",
-          "question": "asdasd",
+          "id": "nV5p82xf",
+          "question": "Was war Ronalds erstes Auto?",
           "answers": [
             {
-              "id": "ldod0pos",
-              "text": "asd",
+              "id": "sfvf488j",
+              "text": "dia",
               "correct": true
             },
             {
-              "id": "gbztptoi",
-              "text": "asddd",
+              "id": "w068d0ft",
+              "text": "adad",
               "correct": false
+            }
+          ]
+        },
+        {
+          "id": "CiDg_obX",
+          "question": "Wo ist Ronald aufgewachsen?",
+          "answers": [
+            {
+              "id": "njkfmi86",
+              "text": "Syke",
+              "correct": false
+            },
+            {
+              "id": "vyp4xtd2",
+              "text": "Leeste",
+              "correct": true
+            },
+            {
+              "id": "ley9hsmc",
+              "text": "Bremen",
+              "correct": false
+            },
+            {
+              "id": "6y033dgd",
+              "text": "Barrien",
+              "correct": false
+            }
+          ]
+        },
+        {
+          "id": "_4F8qKlC",
+          "question": "Wo sind Anni und Ronald hier?",
+          "answers": [
+            {
+              "id": "ko8zjtye",
+              "text": "Harz",
+              "correct": false
+            },
+            {
+              "id": "9el3dpgd",
+              "text": "Finnland",
+              "correct": false
+            },
+            {
+              "id": "1qdfqurl",
+              "text": "Schweden",
+              "correct": true
+            },
+            {
+              "id": "ybnoqpv2",
+              "text": "Island",
+              "correct": false
+            }
+          ],
+          "imageUrl": "/assets/images/questions/winter.jpg"
+        },
+        {
+          "id": "CaP-ERCI",
+          "question": "Was ist der Kontext von diesem Bild?",
+          "answers": [
+            {
+              "id": "n7ukggpb",
+              "text": "1",
+              "correct": false
+            },
+            {
+              "id": "bz8vd9ep",
+              "text": "2",
+              "correct": true
+            },
+            {
+              "id": "8yiu7bui",
+              "text": "3",
+              "correct": false
+            }
+          ],
+          "imageUrl": "/assets/images/questions/pinkie.jpg"
+        },
+        {
+          "id": "BldORVWf",
+          "question": "Coole Frage",
+          "answers": [
+            {
+              "id": "o93zltq5",
+              "text": "1",
+              "correct": false
+            },
+            {
+              "id": "bul3pz1u",
+              "text": "2",
+              "correct": false
+            },
+            {
+              "id": "54u92cs1",
+              "text": "3",
+              "correct": true
+            }
+          ],
+          "imageUrl": "/assets/images/questions/ladyboys.jpg"
+        },
+        {
+          "id": "S4WZm5WM",
+          "question": "Wie alt ist er auf diesem Bild?",
+          "answers": [
+            {
+              "id": "8dywppi9",
+              "text": "bild holen",
+              "correct": false
+            },
+            {
+              "id": "bvtzfz3f",
+              "text": "ad",
+              "correct": false
+            },
+            {
+              "id": "4axkcvur",
+              "text": "ad",
+              "correct": false
+            },
+            {
+              "id": "7mbtov5h",
+              "text": "ad",
+              "correct": true
             }
           ]
         }
@@ -180,12 +484,6 @@
   ],
   "funnyQuestions": [
     {
-      "id": "gaPtByXw",
-      "question": "warum",
-      "createdAt": "2025-10-03T22:02:41.745Z",
-      "updatedAt": "2025-10-03T22:02:41.745Z"
-    },
-    {
       "id": "7TSeUY_X",
       "question": "warum nicht",
       "createdAt": "2025-10-03T22:02:47.609Z",
@@ -194,53 +492,11 @@
   ],
   "funnyAnswers": [
     {
-      "id": "1NVNRuIH1Z",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "ada",
-      "createdAt": "2025-10-03T22:16:34.028Z"
-    },
-    {
-      "id": "he0v6Ns_nk",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "da",
-      "createdAt": "2025-10-03T22:19:08.262Z"
-    },
-    {
-      "id": "3cbAbiMJT3",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "ad",
-      "createdAt": "2025-10-03T22:19:36.548Z"
-    },
-    {
-      "id": "uKurmTmJB3",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "da",
-      "createdAt": "2025-10-03T22:20:19.081Z"
-    },
-    {
-      "id": "NQOhRkBR1k",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "ad",
-      "createdAt": "2025-10-03T22:24:21.701Z"
-    },
-    {
       "id": "XiSrNvaYXZ",
       "questionId": "7TSeUY_X",
       "guestId": "ks5K-ZDm",
       "answer": "ad",
       "createdAt": "2025-10-03T22:24:25.449Z"
-    },
-    {
-      "id": "z3yR8ZkE0U",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "fsf",
-      "createdAt": "2025-10-03T22:24:42.243Z"
     },
     {
       "id": "QH3gHO5sUw",
@@ -250,25 +506,11 @@
       "createdAt": "2025-10-03T22:24:43.178Z"
     },
     {
-      "id": "B5ttDn7ekJ",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "sfs",
-      "createdAt": "2025-10-03T22:25:06.287Z"
-    },
-    {
       "id": "l6to3y7cH2",
       "questionId": "7TSeUY_X",
       "guestId": "ks5K-ZDm",
       "answer": "sf",
       "createdAt": "2025-10-03T22:25:07.027Z"
-    },
-    {
-      "id": "xzXVqzWemX",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "s",
-      "createdAt": "2025-10-03T22:25:24.759Z"
     },
     {
       "id": "JSYgRy2K2Y",
@@ -278,25 +520,11 @@
       "createdAt": "2025-10-03T22:25:26.773Z"
     },
     {
-      "id": "61QyNENozI",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "fs",
-      "createdAt": "2025-10-03T22:26:58.515Z"
-    },
-    {
       "id": "LyrvBHT06R",
       "questionId": "7TSeUY_X",
       "guestId": "ks5K-ZDm",
       "answer": "fs",
       "createdAt": "2025-10-03T22:26:59.805Z"
-    },
-    {
-      "id": "un6wtILOVy",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "rf",
-      "createdAt": "2025-10-03T22:27:52.850Z"
     },
     {
       "id": "jz_Zr-7-qd",
@@ -306,25 +534,11 @@
       "createdAt": "2025-10-03T22:27:54.138Z"
     },
     {
-      "id": "9H8L0X2QZ8",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "f",
-      "createdAt": "2025-10-03T22:28:48.381Z"
-    },
-    {
       "id": "AH9y-cTHVt",
       "questionId": "7TSeUY_X",
       "guestId": "ks5K-ZDm",
       "answer": "f",
       "createdAt": "2025-10-03T22:28:49.111Z"
-    },
-    {
-      "id": "fJiQkoN-sZ",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "ad",
-      "createdAt": "2025-10-03T22:29:39.856Z"
     },
     {
       "id": "0P5ypZchlD",
@@ -334,32 +548,11 @@
       "createdAt": "2025-10-03T22:29:40.562Z"
     },
     {
-      "id": "o7FZV8hGAU",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "s",
-      "createdAt": "2025-10-03T22:39:18.488Z"
-    },
-    {
-      "id": "0VuCvI1q8f",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "as",
-      "createdAt": "2025-10-03T22:39:52.067Z"
-    },
-    {
       "id": "Ra0o0RJS66",
       "questionId": "7TSeUY_X",
       "guestId": "ks5K-ZDm",
       "answer": "  ad",
       "createdAt": "2025-10-03T22:40:00.419Z"
-    },
-    {
-      "id": "RuF74pQ_iQ",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "da",
-      "createdAt": "2025-10-03T23:47:26.567Z"
     },
     {
       "id": "uGI58-WhRs",
@@ -369,13 +562,6 @@
       "createdAt": "2025-10-03T23:47:32.348Z"
     },
     {
-      "id": "LwevNxJ2-1",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "e",
-      "createdAt": "2025-10-05T12:53:35.515Z"
-    },
-    {
       "id": "pu6lpGQTD_",
       "questionId": "7TSeUY_X",
       "guestId": "ks5K-ZDm",
@@ -383,25 +569,11 @@
       "createdAt": "2025-10-05T12:53:37.783Z"
     },
     {
-      "id": "J8K00QexHd",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "d",
-      "createdAt": "2025-10-05T13:32:40.315Z"
-    },
-    {
       "id": "3Yq2RkmSgx",
       "questionId": "7TSeUY_X",
       "guestId": "ks5K-ZDm",
       "answer": "s",
       "createdAt": "2025-10-05T13:32:41.308Z"
-    },
-    {
-      "id": "0LTWPR3Y3p",
-      "questionId": "gaPtByXw",
-      "guestId": "ks5K-ZDm",
-      "answer": "d",
-      "createdAt": "2025-10-12T13:36:26.509Z"
     },
     {
       "id": "jqF3Y4AsbB",
