@@ -18,6 +18,7 @@ import {
   GestureResponderEvent,
   Modal,
   PanResponder,
+  PixelRatio,
   Platform,
   RefreshControl,
   SafeAreaView,
@@ -83,7 +84,7 @@ function getFilenameFromContentDisposition(disposition: string | null, fallback:
 export default function GalleryScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<GalleryUploadEntryDTO[]>([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +100,7 @@ export default function GalleryScreen() {
   const videoRef = useRef<Video | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollPositionRef = useRef<number>(0);
+  const fontScale = PixelRatio.getFontScale();
 
   const rememberMediaRatio = useCallback((filename: string, width?: number | null, height?: number | null) => {
     if (!filename || !width || !height) return;
@@ -124,6 +126,19 @@ export default function GalleryScreen() {
   const sliderAnimatedFill = useRef(new Animated.Value(0)).current;
   const sliderAnimatedThumb = useRef(new Animated.Value(0)).current;
   const sliderActiveValueRef = useRef<number>(columns);
+  const viewerCardMaxHeight = useMemo(
+    () => Math.max(height - (insets.top + insets.bottom) - 48, 360),
+    [height, insets.bottom, insets.top]
+  );
+  const effectiveMediaMaxHeight = useMemo(() => {
+    const available = viewerCardMaxHeight - 220;
+    const clamped = Math.max(available, MIN_MEDIA_WIDTH);
+    const capped = Math.min(clamped, MAX_MEDIA_HEIGHT);
+    return Math.max(capped / Math.max(fontScale, 1), MIN_MEDIA_WIDTH);
+  }, [fontScale, viewerCardMaxHeight]);
+  const selectionPadding = fontScale > 1.1 ? 12 : 16;
+  const selectionGap = fontScale > 1.1 ? 8 : 12;
+  const selectionButtonPadding = fontScale > 1.1 ? 8 : 10;
 
   useEffect(() => {
     sliderActiveValueRef.current = columns;
@@ -863,35 +878,39 @@ export default function GalleryScreen() {
       : DEFAULT_IMAGE_RATIO;
     const ratio = currentItem ? mediaRatios[currentItem.filename] ?? fallbackRatio : fallbackRatio;
 
-    const maxWidth = Math.max(viewerPageWidth - VIEWER_MEDIA_PADDING, MIN_MEDIA_WIDTH);
-    let width = maxWidth;
-    let height = width / ratio;
+    const baseMaxWidth = Math.max(viewerPageWidth - VIEWER_MEDIA_PADDING, MIN_MEDIA_WIDTH);
+    const availableWidth = Math.max(width - 48, MIN_MEDIA_WIDTH);
+    const maxWidth = Math.min(baseMaxWidth, availableWidth);
+    const maxHeight = effectiveMediaMaxHeight;
 
-    if (height > MAX_MEDIA_HEIGHT) {
-      height = MAX_MEDIA_HEIGHT;
-      width = height * ratio;
+    let resolvedWidth = maxWidth;
+    let resolvedHeight = resolvedWidth / ratio;
+
+    if (resolvedHeight > maxHeight) {
+      resolvedHeight = maxHeight;
+      resolvedWidth = resolvedHeight * ratio;
     }
 
-    if (width > maxWidth) {
-      width = maxWidth;
-      height = width / ratio;
+    if (resolvedWidth > maxWidth) {
+      resolvedWidth = maxWidth;
+      resolvedHeight = resolvedWidth / ratio;
     }
 
-    if (width < MIN_MEDIA_WIDTH) {
-      width = MIN_MEDIA_WIDTH;
-      height = width / ratio;
+    if (resolvedWidth < MIN_MEDIA_WIDTH) {
+      resolvedWidth = MIN_MEDIA_WIDTH;
+      resolvedHeight = resolvedWidth / ratio;
     }
 
-    if (height > MAX_MEDIA_HEIGHT) {
-      height = MAX_MEDIA_HEIGHT;
-      width = height * ratio;
+    if (resolvedHeight > maxHeight) {
+      resolvedHeight = maxHeight;
+      resolvedWidth = resolvedHeight * ratio;
     }
 
     return {
-      width,
-      height,
+      width: resolvedWidth,
+      height: resolvedHeight,
     };
-  }, [currentItem, mediaRatios, viewerPageWidth]);
+  }, [currentItem, effectiveMediaMaxHeight, mediaRatios, viewerPageWidth, width]);
 
   const currentUploadedAt = currentItem?.uploadedAt ?? currentItem?.createdAt ?? currentItem?.updatedAt;
   const currentUploadedLabel = currentUploadedAt ? dateFormatter.format(new Date(currentUploadedAt)) : "Unbekannt";
@@ -938,25 +957,45 @@ export default function GalleryScreen() {
       </SafeAreaView>
 
       {selectionMode ? (
-        <View pointerEvents="box-none" style={styles.selectionOverlayWrapper}>
+        <View
+          pointerEvents="box-none"
+          style={[
+            styles.selectionOverlayWrapper,
+            Platform.OS === "web" ? styles.selectionOverlayWrapperWeb : null,
+            { paddingTop: insets.top + 8 },
+          ]}>
           <ThemedView
             style={[
               styles.selectionBanner,
               {
                 borderColor: theme.border,
                 backgroundColor: theme.backgroundAlt,
-                paddingBottom: insets.bottom + 12,
-                marginBottom: 0,
+                paddingTop: selectionPadding,
+                paddingBottom: selectionPadding,
+                gap: selectionGap,
+                shadowColor: theme.shadowColor,
               },
+              Platform.OS === "web"
+                ? {
+                    boxShadow: `0 3px 14px ${theme.shadowColor ?? "rgba(0, 0, 0, 0.13)"}`,
+                  }
+                : null,
             ]}
             accessibilityLiveRegion="polite">
             <ThemedText style={[styles.selectionTitle, { color: theme.text }]}>
               {selectedCount} Datei{selectedCount === 1 ? "" : "en"} ausgewählt
             </ThemedText>
-            <View style={styles.selectionActions}>
+            <View style={[styles.selectionActions, { gap: selectionGap }]}>
               <TouchableOpacity
                 onPress={toggleSelectAll}
-                style={[styles.selectionActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}
+                style={[
+                  styles.selectionActionButton,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.overlay,
+                    paddingVertical: selectionButtonPadding,
+                  },
+                ]}
                 accessibilityHint={allSelected ? "Auswahl aufheben" : "Alle Dateien auswählen"}>
                 <IconSymbol name={allSelected ? "xmark.circle" : "checkmark.circle"} size={18} color={theme.primary} />
                 <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>
@@ -972,6 +1011,7 @@ export default function GalleryScreen() {
                     borderColor: theme.border,
                     backgroundColor: theme.overlay,
                     opacity: selectedCount === 0 ? 0.6 : 1,
+                    paddingVertical: selectionButtonPadding,
                   },
                 ]}>
                 <IconSymbol name="arrow.down.circle" size={18} color={theme.accent} />
@@ -979,7 +1019,14 @@ export default function GalleryScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={clearSelection}
-                style={[styles.selectionActionButton, { borderColor: theme.border, backgroundColor: theme.overlay }]}
+                style={[
+                  styles.selectionActionButton,
+                  {
+                    borderColor: theme.border,
+                    backgroundColor: theme.overlay,
+                    paddingVertical: selectionButtonPadding,
+                  },
+                ]}
                 accessibilityHint="Auswahl zurücksetzen">
                 <IconSymbol name="trash.fill" size={18} color={theme.icon} />
                 <ThemedText style={[styles.selectionActionText, { color: theme.text }]}>Auswahl leeren</ThemedText>
@@ -993,7 +1040,11 @@ export default function GalleryScreen() {
         <TouchableWithoutFeedback onPress={handleCloseViewer}>
           <View style={[styles.viewerBackdrop, { backgroundColor: theme.backdrop }]}>
             <TouchableWithoutFeedback>
-              <View style={[styles.viewerCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <View
+                style={[
+                  styles.viewerCard,
+                  { backgroundColor: theme.card, borderColor: theme.border, maxHeight: viewerCardMaxHeight },
+                ]}>
                 <View style={styles.viewerHeader}>
                   <TouchableOpacity onPress={handleCloseViewer} style={styles.viewerCloseButton}>
                     <IconSymbol name="xmark.circle" size={18} color={theme.textMuted} />
@@ -1016,7 +1067,10 @@ export default function GalleryScreen() {
                   </View>
                 </View>
                 {currentItem ? (
-                  <>
+                  <ScrollView
+                    contentContainerStyle={[styles.viewerBody, { paddingBottom: Math.max(insets.bottom, 12) }]}
+                    showsVerticalScrollIndicator={false}
+                    bounces={false}>
                     <View style={styles.viewerMediaWrapper}>
                       {hasPrevious ? (
                         <TouchableOpacity
@@ -1103,7 +1157,7 @@ export default function GalleryScreen() {
                         </ThemedText>
                       ) : null}
                     </View>
-                  </>
+                  </ScrollView>
                 ) : (
                   <View style={styles.viewerPlaceholder}>
                     <ThemedText style={[styles.viewerPlaceholderText, { color: theme.textMuted }]}>
@@ -1301,14 +1355,14 @@ const styles = StyleSheet.create({
   selectionBanner: {
     borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 16,
+    paddingHorizontal: 16,
     marginBottom: 16,
     gap: 12,
-    shadowColor: "rgba(0,0,0,0.15)",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowColor: "rgba(0,0,0,0.25)",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 8,
   },
   selectionTitle: {
     fontSize: 16,
@@ -1336,10 +1390,17 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 0,
+    top: 0,
     paddingHorizontal: 16,
     paddingBottom: 0,
-    marginBottom: 8,
+    zIndex: 20,
+  },
+  selectionOverlayWrapperWeb: {
+    position: "fixed",
+    left: 0,
+    right: 0,
+    top: 0,
+    zIndex: 100,
   },
   emptyState: {
     alignItems: "center",
@@ -1443,6 +1504,12 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     padding: 16,
     gap: 16,
+    flexShrink: 1,
+  },
+  viewerBody: {
+    paddingHorizontal: 8,
+    gap: 16,
+    flexGrow: 1,
   },
   viewerHeader: {
     flexDirection: "row",
