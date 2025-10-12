@@ -287,6 +287,7 @@ export default function UploadMemoriesScreen() {
         selectionLimit: 20,
         quality: 1,
         videoExportPreset: ImagePicker.VideoExportPreset.Passthrough,
+        // Always request base64 on web for Safari/iOS compatibility
         base64: Platform.OS === "web",
       });
 
@@ -371,43 +372,59 @@ export default function UploadMemoriesScreen() {
 
         if (Platform.OS === "web") {
           let uploadFile: File | null = null;
+
+          // Priority 1: Use the File object if available (most reliable)
           if (item.file instanceof File) {
+            console.log(`Using File object for ${fileName}, size: ${item.file.size}`);
             uploadFile = item.file;
-          } else {
-            let blob: Blob | null = null;
+          }
+          // Priority 2: Try fetching the blob URL first (works on most browsers)
+          else if (item.uri && !item.base64) {
             try {
+              console.log(`Fetching blob from URI for ${fileName}`);
               const response = await fetch(item.uri);
-              blob = await response.blob();
-            } catch (fetchError) {
-              console.warn("media blob fetch failed, attempting base64 fallback", fetchError);
-            }
-
-            if (!blob && item.base64) {
-              try {
-                blob = base64ToBlob(item.base64, mimeType);
-              } catch (base64Error) {
-                console.error("media base64 conversion failed", base64Error);
+              if (!response.ok) {
+                throw new Error(`Fetch failed with status ${response.status}`);
               }
+              const blob = await response.blob();
+              console.log(`Blob fetched successfully, size: ${blob.size}, type: ${blob.type}`);
+              uploadFile = new File([blob], fileName, { type: blob.type || mimeType });
+            } catch (fetchError) {
+              console.warn("Blob fetch failed, will try base64 fallback", fetchError);
             }
-
-            if (!blob) {
-              throw new Error("UPLOAD_SOURCE_UNAVAILABLE");
-            }
-
-            uploadFile = new File([blob], fileName, { type: blob.type || mimeType });
           }
 
-          if (uploadFile?.type?.startsWith("image/")) {
-            uploadFile = await maybeCompressWebImage(uploadFile);
+          // Priority 3: Try base64 as fallback (for Safari/iOS when blob fetch fails)
+          if (!uploadFile && item.base64) {
+            try {
+              console.log(`Converting base64 to blob for ${fileName}`);
+              const blob = base64ToBlob(item.base64, mimeType);
+              console.log(`Base64 converted successfully, size: ${blob.size}`);
+              uploadFile = new File([blob], fileName, { type: mimeType });
+            } catch (base64Error) {
+              console.error("media base64 conversion failed", base64Error);
+            }
           }
 
           if (!uploadFile) {
-            throw new Error("UPLOAD_FILE_MISSING");
+            throw new Error("UPLOAD_FILE_MISSING - no valid file source");
+          }
+
+          console.log(`Preparing to upload ${fileName}, size: ${uploadFile.size} bytes`);
+
+          // Compress images if needed
+          if (uploadFile.type?.startsWith("image/")) {
+            const originalSize = uploadFile.size;
+            uploadFile = await maybeCompressWebImage(uploadFile);
+            if (uploadFile.size !== originalSize) {
+              console.log(`Image compressed from ${originalSize} to ${uploadFile.size} bytes`);
+            }
           }
 
           // Use chunked upload for large files
           const fileSize = uploadFile.size;
           if (fileSize > LARGE_FILE_THRESHOLD) {
+            console.log(`Using chunked upload for large file: ${formatBytes(fileSize)}`);
             // Chunked upload
             await uploadFileInChunks(uploadFile, (progress) => {
               setMedia((prevMedia) =>
@@ -415,6 +432,7 @@ export default function UploadMemoriesScreen() {
               );
             });
           } else {
+            console.log(`Using standard upload for ${formatBytes(fileSize)}`);
             // Standard upload for smaller files
             const formData = new FormData();
             formData.append("media", uploadFile, uploadFile.name || fileName);
