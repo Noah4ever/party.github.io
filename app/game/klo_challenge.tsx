@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { StyleSheet, View } from "react-native";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 
 import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -7,13 +7,33 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
-//TODO: add animation or popup to show new challenge
+//TODO: show Noah animation
+
 
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 700,
+        easing: Easing.out(Easing.exp),
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 5,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   return (
     <ThemedView style={{ flex: 1 }}>
@@ -35,39 +55,52 @@ export default function HomeScreen() {
           </View>
         }
       >
-        <ThemedView
-          style={[
-            styles.textContainer,
-            styles.card,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
+        {/* ✨ Challenge Card animiert */}
+        <Animated.View
+          style={{
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }],
+          }}
         >
-          <ThemedText type="title">Klo Malerei🎨</ThemedText>
-          <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
-            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand. Macht anschließend direkt hier auf der Website ein Foto davon, einfach auf den „Foto aufnehmen“-Button klicken.
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedView
-          style={[
-            styles.card,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
-          <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
-            Macht hier ein Foto von eurem Kunstwerk.
-          </ThemedText>
-          <Button
-            onPress={() => router.navigate("/game/modal/kloSelfie")}
-            iconText="camera"
+          <ThemedView
+            style={[
+              styles.textContainer,
+              styles.card,
+              { borderColor: theme.border, backgroundColor: theme.card },
+            ]}
           >
-            Foto machen
-          </Button>
-        </ThemedView>
+            <ThemedText type="title">Klo Malerei 🎨</ThemedText>
+            <ThemedText
+              style={[styles.bodyText, { color: theme.textSecondary }]}
+            >
+              Geht auf Klo und schreibt zusammen etwas Lustiges an die Wand. Macht
+              anschließend direkt hier auf der Website ein Foto davon – einfach auf
+              den „Foto aufnehmen“-Button klicken.
+            </ThemedText>
+          </ThemedView>
+
+          <ThemedView
+            style={[
+              styles.card,
+              { borderColor: theme.border, backgroundColor: theme.card },
+            ]}
+          >
+            <ThemedText style={[styles.bodyText, { color: theme.textMuted }]}>
+              Macht hier ein Foto von eurem Kunstwerk.
+            </ThemedText>
+            <Button
+              onPress={() => router.navigate("/game/modal/kloSelfie")}
+              iconText="camera"
+            >
+              Foto machen
+            </Button>
+          </ThemedView>
+        </Animated.View>
       </ParallaxScrollView>
     </ThemedView>
   );
 }
+
 
 const styles = StyleSheet.create({
   partyHeader: {
