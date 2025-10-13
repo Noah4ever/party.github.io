@@ -96,7 +96,7 @@ export default function HomeScreen() {
             return;
           }
         }
-        router.navigate("/game/password");
+        router.navigate("/game/final");
         return;
       }
 

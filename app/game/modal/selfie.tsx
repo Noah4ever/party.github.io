@@ -14,6 +14,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, Animated, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 const CAPTURE_QUALITY = 1;
+//TODO: selfie gespeichert fixen -> kann doch raus?
 
 export default function SelfieModal() {
   const theme = useTheme();

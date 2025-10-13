@@ -92,7 +92,7 @@ export default function ChallengeTwoScreen() {
       <PopupModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        title="🎉 Willkommen!"
+        title="🎉 Yippie ihr habt euch gefunden!"
         content="Hinweis: Ab diesem Zeitpunkt braucht ihr beiden nur noch ein Handy!"
       />
       <ParallaxScrollView
@@ -129,7 +129,8 @@ export default function ChallengeTwoScreen() {
           <ThemedText
             style={[styles.sectionIntro, { color: theme.textSecondary }]}
           >
-            Nutze den Button unten, um deinen persönlichen QR-Code anzuzeigen.
+            {/* TODO: kann das raus? */}
+            Nutze den Button unten, um deinen persönlichen QR-Code anzuzeigen, falls du ihn noch brauchst.
           </ThemedText>
 
           <Collapsible title="QR-Code anzeigen">
@@ -185,9 +186,9 @@ export default function ChallengeTwoScreen() {
           <ThemedText
             style={[styles.sectionIntro, { color: theme.textSecondary }]}
           >
-            Bitte macht gemeinsam ein Selfie und ladet es hoch. Falls das Licht
-            schlecht ist, könnt ihr jederzeit ein neues aufnehmen. Das Foto wird
-            nur für das Event gespeichert.
+            📸 Bitte macht gemeinsam ein Selfie direkt hier auf der Website.
+Nutzt dafür einfach den „Selfie aufnehmen“-Button unten.
+Wenn das Licht nicht passt oder euch das Bild nicht gefällt, könnt ihr es jederzeit neu machen.
           </ThemedText>
           {selfieStatus ? (
             <View

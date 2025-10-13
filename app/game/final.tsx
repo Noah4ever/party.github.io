@@ -12,9 +12,10 @@ import { useTheme } from "@/constants/theme";
 import { gameApi, type FinalScoreEntryDTO, type FinalSummaryDTO } from "@/lib/api";
 import confetti from "canvas-confetti";
 
-const FINALIST_LIMIT = 4;
+const FINALIST_LIMIT = 3;
 
-//TODO: add suprised papa pic into header
+//TODO: add live leaderboard
+//TODO: add names of people in teams to leaderboard
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));
@@ -221,13 +222,13 @@ useEffect(() => {
               ]}>
               <IconSymbol name="podium" size={18} color={theme.primary} />
               <ThemedText style={[styles.placementPillLabel, { color: theme.textMuted }]}>
-                Top {FINALIST_LIMIT} ziehen ins Finale ein
+                Top {FINALIST_LIMIT} gewinnen etwas!
               </ThemedText>
             </View>
           </View>
           <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
             Wir haben eure Zeit mit eingerechneten Strafen ausgewertet. Schaut euch an, wie ihr im Vergleich zu den
-            anderen Teams abgeschnitten habt und ob ihr beim großen Live-Trinkspiel dabei seid.
+            anderen Teams abgeschnitten habt.
           </ThemedText>
         </ThemedView>
 

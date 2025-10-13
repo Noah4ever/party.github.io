@@ -12,6 +12,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 
 //TODO: ASH add questions
+//TODO: add animation so u can see that a new site has loaded
+//TODO: counter of questions
 
 export default function HomeScreen() {
   const router = useRouter();

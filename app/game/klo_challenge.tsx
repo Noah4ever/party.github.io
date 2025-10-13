@@ -9,6 +9,8 @@ import { useTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import React from "react";
 
+//TODO: add animation or popup to show new challenge
+
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -42,8 +44,7 @@ export default function HomeScreen() {
         >
           <ThemedText type="title">Klo Malerei🎨</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
-            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand und
-            ladet davon ein Foto hoch!
+            Geht auf Klo und schreibt zusammen etwas lustiges an die Wand. Macht anschließend direkt hier auf der Website ein Foto davon, einfach auf den „Foto aufnehmen“-Button klicken.
           </ThemedText>
         </ThemedView>
 

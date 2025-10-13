@@ -52,7 +52,7 @@ export default function HomeScreen() {
             { borderColor: theme.border, backgroundColor: theme.card },
           ]}
         >
-          <ThemedText type="title">Ich hab noch nie! 🍻</ThemedText>
+          <ThemedText type="title">Jetzt spielen wir ich hab noch nie! 🍻</ThemedText>
           <ThemedText type="subtitle">Schnappt euch zwei Drinks eurer Wahl (Shots empfohlen 🍸)</ThemedText>
           <ThemedText style={[styles.bodyText, { color: theme.textSecondary }]}>
       Das Spiel zeigt euch einen

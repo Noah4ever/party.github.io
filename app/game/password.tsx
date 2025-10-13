@@ -27,6 +27,8 @@ import { showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 
+//TODO: entfernen
+
 export default function PasswordScreen() {
   const theme = useTheme();
   const router = useRouter();

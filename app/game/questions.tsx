@@ -422,8 +422,7 @@ export default function QuizScreen() {
             <HelloWave />
           </View>
           <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
-            Beantwortet jede Frage gemeinsam. Für falsche Antworten kassiert ihr
-            Zeitstrafen – also wählt mit Bedacht!
+            Beantwortet jede Frage gemeinsam. Für jede falsche Antwort bekommt ihr eine Zeitstrafe, die auf eure gemessene Zeit addiert wird, also überlegt gut, bevor ihr klickt!
           </ThemedText>
           <View
             style={[

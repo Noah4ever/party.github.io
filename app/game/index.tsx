@@ -162,9 +162,12 @@ export default function HomeScreen() {
           </ThemedText>
         </View>
         <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
-          In mehreren Schritten wirst du eine bestimmte Person auf dieser Party
-          durch mehrere Steps kennenlernen. Schafft ihr beide alle challenges
-          kommt ihr ins Finale Trinkspiel und könnt was cooles gewinnen!
+        In mehreren Schritten lernst du eine bestimmte Person auf dieser Party kennen.
+Ab dem Start wird eure Zeit gemessen und die drei schnellsten Teams gewinnen tolle Preise!          
+        </ThemedText>
+        <ThemedText type = "defaultSemiBold" style={[styles.leadText, { color: theme.textSecondary }]}>
+Hinweis: Das Spiel endet erst, wenn alle ihre gesuchte Person gefunden haben
+
         </ThemedText>
         <View
           style={[
