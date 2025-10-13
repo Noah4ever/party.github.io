@@ -9,7 +9,7 @@ import { useTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
 
-//TODO: show Noah animation
+//TODO: show Noah
 
 
 export default function HomeScreen() {

@@ -13,6 +13,26 @@
       "clue1": "Teest",
       "clue2": "teeeee",
       "groupId": "zFdDQCO6"
+    },
+    {
+      "id": "Cgaaj2M3",
+      "name": "Ashley",
+      "clue1": "Blond ",
+      "clue2": "Hot",
+      "groupId": "T4EBE22s"
+    },
+    {
+      "id": "QsxuaGvK",
+      "name": "Noi",
+      "clue1": "gutaussehend ",
+      "clue2": "Schlau",
+      "groupId": "T4EBE22s"
+    },
+    {
+      "id": "B0GRPTfy",
+      "name": "l;[k",
+      "clue1": "",
+      "clue2": ""
     }
   ],
   "groups": [
@@ -41,6 +61,33 @@
       "startedAt": "2025-10-12T13:35:39.259Z",
       "passwordSolved": true,
       "finishedAt": "2025-10-12T13:36:31.790Z"
+    },
+    {
+      "id": "T4EBE22s",
+      "name": "Penis",
+      "guestIds": [
+        "QsxuaGvK",
+        "Cgaaj2M3"
+      ],
+      "progress": {
+        "completedGames": [
+          "partner-found",
+          "challenge-2-selfie",
+          "challenge-4-never-have-i-ever",
+          "klo_Challenge",
+          "challenge-5-quiz",
+          "challenge-6-questionary",
+          "password-solved"
+        ],
+        "attempts": 1,
+        "currentGame": "password-solved",
+        "selfieUrl": "/uploads/1760290961532-pRJ3mG.jpg",
+        "selfieUploadedAt": "2025-10-12T17:42:41.540Z",
+        "lastSelfieChallenge": "Klo Challenge"
+      },
+      "startedAt": "2025-10-12T17:36:35.556Z",
+      "passwordSolved": true,
+      "finishedAt": "2025-10-12T17:48:39.041Z"
     }
   ],
   "neverHaveIEverPacks": [
@@ -48,9 +95,13 @@
       "id": "nhie-default",
       "title": "Standard Pack",
       "statements": [
-        "Test",
-        "Penis",
-        "in die Hose gemacht"
+        "einen Porno geguckt",
+        "einen Dreier gehabt",
+        "mich beim Sex verletzt",
+        "Sex in der Öffentlichkeit gehabt",
+        "in der Öffentlichkeit gekotzt",
+        "etwas geklaut",
+        "nacktbilder verschickt"
       ]
     }
   ],
@@ -484,110 +535,36 @@
   ],
   "funnyQuestions": [
     {
-      "id": "7TSeUY_X",
-      "question": "warum nicht",
-      "createdAt": "2025-10-03T22:02:47.609Z",
-      "updatedAt": "2025-10-03T22:02:47.609Z"
+      "id": "x8_27Rqv",
+      "question": "Was wäre Ronalds Stripper Name? 😏",
+      "createdAt": "2025-10-12T18:06:03.625Z",
+      "updatedAt": "2025-10-12T18:06:03.625Z"
+    },
+    {
+      "id": "uugAAK01",
+      "question": "Weshalb würde Ronald im Knast landen? 👮🏻",
+      "createdAt": "2025-10-12T18:12:25.822Z",
+      "updatedAt": "2025-10-12T18:12:25.822Z"
+    },
+    {
+      "id": "opioKE5Z",
+      "question": "Wer glaubt ihr, wird heute Abend am betrunkensten sein? 🤪",
+      "createdAt": "2025-10-12T18:16:13.162Z",
+      "updatedAt": "2025-10-12T18:16:20.700Z"
+    },
+    {
+      "id": "PW-E5PcS",
+      "question": "Wer geht heute Abend als letztes nach Hause? 🤠",
+      "createdAt": "2025-10-12T18:17:11.035Z",
+      "updatedAt": "2025-10-12T18:17:11.035Z"
     }
   ],
-  "funnyAnswers": [
-    {
-      "id": "XiSrNvaYXZ",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "ad",
-      "createdAt": "2025-10-03T22:24:25.449Z"
-    },
-    {
-      "id": "QH3gHO5sUw",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "sf",
-      "createdAt": "2025-10-03T22:24:43.178Z"
-    },
-    {
-      "id": "l6to3y7cH2",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "sf",
-      "createdAt": "2025-10-03T22:25:07.027Z"
-    },
-    {
-      "id": "JSYgRy2K2Y",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "s",
-      "createdAt": "2025-10-03T22:25:26.773Z"
-    },
-    {
-      "id": "LyrvBHT06R",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "fs",
-      "createdAt": "2025-10-03T22:26:59.805Z"
-    },
-    {
-      "id": "jz_Zr-7-qd",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "f",
-      "createdAt": "2025-10-03T22:27:54.138Z"
-    },
-    {
-      "id": "AH9y-cTHVt",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "f",
-      "createdAt": "2025-10-03T22:28:49.111Z"
-    },
-    {
-      "id": "0P5ypZchlD",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "ad",
-      "createdAt": "2025-10-03T22:29:40.562Z"
-    },
-    {
-      "id": "Ra0o0RJS66",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "  ad",
-      "createdAt": "2025-10-03T22:40:00.419Z"
-    },
-    {
-      "id": "uGI58-WhRs",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "ddddda",
-      "createdAt": "2025-10-03T23:47:32.348Z"
-    },
-    {
-      "id": "pu6lpGQTD_",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "s",
-      "createdAt": "2025-10-05T12:53:37.783Z"
-    },
-    {
-      "id": "3Yq2RkmSgx",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "s",
-      "createdAt": "2025-10-05T13:32:41.308Z"
-    },
-    {
-      "id": "jqF3Y4AsbB",
-      "questionId": "7TSeUY_X",
-      "guestId": "ks5K-ZDm",
-      "answer": "r",
-      "createdAt": "2025-10-12T13:36:28.106Z"
-    }
-  ],
+  "funnyAnswers": [],
   "uploads": [],
   "gameState": {
     "started": true,
     "startedAt": "2025-10-02T11:36:10.445Z",
-    "cluesUnlockedAt": "2025-10-03T19:47:03.694Z"
+    "cluesUnlockedAt": "2025-10-12T17:35:12.445Z"
   },
   "quizPenaltyConfig": {
     "minorPenaltySeconds": 60,

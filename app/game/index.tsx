@@ -15,7 +15,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import QRCodeStyled from "react-native-qrcode-styled";
 
-//TODO: TG change colors
 
 export default function HomeScreen() {
   const theme = useTheme();
