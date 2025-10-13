@@ -12,9 +12,6 @@ import { showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
 
-//TODO: ASH add questions
-//TODO: add animation so u can see that a new site has loaded
-
 export default function HomeScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -25,13 +22,12 @@ export default function HomeScreen() {
   const [groupId, setGroupId] = useState<string | null>(null);
   const [completionSubmitting, setCompletionSubmitting] = useState(false);
 
-  const animate = useRef(new Animated.Value(1)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current; 
+  const popAnim = useRef(new Animated.Value(1)).current;   
   const completionTriggeredRef = useRef(false);
 
   const incrementCounter = useCallback(() => {
-    if (completionSubmitting) {
-      return;
-    }
+    if (completionSubmitting) return;
     setCounter((prev) => prev + 1);
   }, [completionSubmitting]);
 
@@ -60,9 +56,7 @@ export default function HomeScreen() {
     (async () => {
       try {
         const storedGroupId = await AsyncStorage.getItem("groupId");
-        if (storedGroupId) {
-          setGroupId(storedGroupId);
-        }
+        if (storedGroupId) setGroupId(storedGroupId);
       } catch (err) {
         console.warn("NeverHaveIEver groupId load failed", err);
       }
@@ -105,13 +99,13 @@ export default function HomeScreen() {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(animate, {
+        Animated.timing(pulseAnim, {
           toValue: 1.1,
           duration: 800,
           useNativeDriver: true,
           easing: Easing.ease,
         }),
-        Animated.timing(animate, {
+        Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 800,
           useNativeDriver: true,
@@ -119,7 +113,23 @@ export default function HomeScreen() {
         }),
       ])
     ).start();
-  }, [animate]);
+  }, [pulseAnim]);
+
+  // Pop-Animation beim Fragewechsel
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(popAnim, {
+        toValue: 1.15,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.spring(popAnim, {
+        toValue: 1,
+        friction: 4,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [counter]);
 
   return (
     <ParallaxScrollView
@@ -146,24 +156,34 @@ export default function HomeScreen() {
         ]}
       >
         <ThemedText type="title">Ich hab noch nie... 🍻</ThemedText>
-        <ThemedView style={[
+        <ThemedView
+          style={[
             styles.card,
             { borderColor: theme.border, backgroundColor: theme.card },
-          ]}>
-        <ThemedText style={[styles.statusBadgeLabel, { color: theme.textMuted }]}>Frage {counter + 1} von {questions.length}</ThemedText>
+          ]}
+        >
+          <ThemedText
+            style={[styles.statusBadgeLabel, { color: theme.textMuted }]}
+          >
+            Frage {counter + 1} von {questions.length}
+          </ThemedText>
         </ThemedView>
-        <View style={styles.textContainer}></View>
 
         <View style={styles.midContainer}>
           <Animated.View
             style={[
               styles.bubble,
-              { borderColor: theme.primary, transform: [{ scale: animate }] },
+              {
+                borderColor: theme.primary,
+                transform: [
+                  { scale: Animated.multiply(pulseAnim, popAnim) },
+                ],
+              },
             ]}
           >
             <ThemedText type="subtitle" style={styles.questionContainer}>
               {loading
-                ? " loading..."
+                ? "loading..."
                 : completionSubmitting
                 ? "Challenge wird abgeschlossen…"
                 : error
@@ -171,14 +191,10 @@ export default function HomeScreen() {
                 : questions[counter] ?? "Keine weiteren Fragen"}
             </ThemedText>
           </Animated.View>
-          <View>
-            <Button
-              onPress={() => incrementCounter()}
-              iconText="arrow.right.circle"
-            >
-              Weiter
-            </Button>
-          </View>
+
+          <Button onPress={incrementCounter} iconText="arrow.right.circle">
+            Weiter
+          </Button>
         </View>
       </View>
     </ParallaxScrollView>
@@ -186,10 +202,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  body: {
-    flex: 1,
-    backgroundColor: "#f200ff",
-  },
   heroCard: {
     borderRadius: 24,
     padding: 24,
@@ -197,7 +209,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     backgroundColor: "transparent",
   },
-  card:{
+  card: {
     borderRadius: 24,
     width: 130,
     alignItems: "center",
@@ -229,11 +241,6 @@ const styles = StyleSheet.create({
     borderRadius: 140,
     left: 0,
   },
-  partyCrown: {
-    width: 200,
-    height: 150,
-    marginTop: 10,
-  },
   confetti: {
     position: "absolute",
     width: 10,
@@ -253,7 +260,6 @@ const styles = StyleSheet.create({
     right: 60,
     transform: [{ rotate: "-12deg" }],
   },
-  
   confettiThree: {
     height: 22,
     backgroundColor: "#22C55E",
@@ -277,16 +283,6 @@ const styles = StyleSheet.create({
     right: 0,
     position: "absolute",
   },
-  textContainer: {
-    gap: 20,
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#fff",
-    textShadowColor: "#4c1fffff",
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 6,
-    alignItems: "center",
-  },
   midContainer: {
     gap: 35,
     padding: 20,
@@ -298,7 +294,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     width: 230,
     height: 230,
-    textAlign: "center",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#4c1fffff",
@@ -310,7 +305,7 @@ const styles = StyleSheet.create({
   questionContainer: {
     textAlign: "center",
   },
-   statusBadgeLabel: {
+  statusBadgeLabel: {
     fontSize: 16,
     fontWeight: "600",
   },
