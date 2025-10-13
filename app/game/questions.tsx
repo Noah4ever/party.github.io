@@ -33,6 +33,7 @@ const ADVANCE_DELAY_SUCCESS = 900;
 const ADVANCE_DELAY_ERROR = 1300;
 
 //TODO: change time penaltie add 25 or 30 %
+//TODO: add questions and right answers
 
 type AnswerFeedback = "neutral" | "correct" | "incorrect" | "missed";
 export default function QuizScreen() {

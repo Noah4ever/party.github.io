@@ -5,6 +5,7 @@ import { Animated, Easing, StyleSheet, View } from "react-native";
 import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
 import { ApiError, gameApi, NeverHaveIEverPackDTO } from "@/lib/api";
 import { showAlert } from "@/lib/dialogs";
@@ -13,7 +14,6 @@ import { useFocusEffect, useRouter } from "expo-router";
 
 //TODO: ASH add questions
 //TODO: add animation so u can see that a new site has loaded
-//TODO: counter of questions
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -146,6 +146,12 @@ export default function HomeScreen() {
         ]}
       >
         <ThemedText type="title">Ich hab noch nie... 🍻</ThemedText>
+        <ThemedView style={[
+            styles.card,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}>
+        <ThemedText style={[styles.statusBadgeLabel, { color: theme.textMuted }]}>Frage {counter + 1} von {questions.length}</ThemedText>
+        </ThemedView>
         <View style={styles.textContainer}></View>
 
         <View style={styles.midContainer}>
@@ -188,6 +194,14 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     gap: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: "transparent",
+  },
+  card:{
+    borderRadius: 24,
+    width: 130,
+    alignItems: "center",
+    padding: 10,
     borderWidth: StyleSheet.hairlineWidth,
     backgroundColor: "transparent",
   },
@@ -239,6 +253,7 @@ const styles = StyleSheet.create({
     right: 60,
     transform: [{ rotate: "-12deg" }],
   },
+  
   confettiThree: {
     height: 22,
     backgroundColor: "#22C55E",
@@ -294,5 +309,9 @@ const styles = StyleSheet.create({
   },
   questionContainer: {
     textAlign: "center",
+  },
+   statusBadgeLabel: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

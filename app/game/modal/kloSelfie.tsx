@@ -164,8 +164,7 @@ export default function KloSelfieModal() {
 
     try {
       setUploading(true);
-      //TODO: change to foto
-      const filename = `selfie-${guestId}-${Date.now()}.jpg`;
+      const filename = `foto-${guestId}-${Date.now()}.jpg`;
       const formData = new FormData();
 
       if (Platform.OS === "web") {
