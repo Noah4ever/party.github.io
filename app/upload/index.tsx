@@ -8,7 +8,7 @@ import { showAlert } from "@/lib/dialogs";
 import { ResizeMode, Video } from "expo-av";
 import { Image as ExpoImage } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -267,6 +267,7 @@ function formatBytes(bytes?: number | null): string {
 
 export default function UploadMemoriesScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const [media, setMedia] = useState<SelectedMedia[]>([]);
   const [picking, setPicking] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -479,13 +480,16 @@ export default function UploadMemoriesScreen() {
         title: "Danke!",
         message: "Deine Dateien wurden erfolgreich hochgeladen.",
       });
+      setTimeout(() => {
+        router.back();
+      }, 750);
     } else {
       showAlert({
         title: "Einige Uploads sind fehlgeschlagen",
         message: `Bitte überprüfe deine Verbindung und versuche es erneut. Nicht hochgeladen: ${failed.join(", ")}`,
       });
     }
-  }, [media, resetStatus, uploading]);
+  }, [media, resetStatus, uploading, router]);
 
   const heroSubtitle = useMemo(() => {
     if (uploading) {

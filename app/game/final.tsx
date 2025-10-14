@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, PixelRatio, StyleSheet, View, useWindowDimensions } from "react-native";
 
 import { Button } from "@/components/game/Button";
 import { HelloWave } from "@/components/hello-wave";
@@ -36,6 +36,10 @@ function formatDuration(ms: number): string {
 export default function FinalScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const fontScale = PixelRatio.getFontScale ? PixelRatio.getFontScale() : 1;
+  const prefersStackedCards = width < 720 || fontScale > 1.15;
+  const prefersStackedLeaderboard = width < 760 || fontScale > 1.1;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<FinalSummaryDTO | null>(null);
@@ -139,16 +143,6 @@ export default function FinalScreen() {
   const derived = useMemo(() => {
     const currentSummary = summary;
     const groupSummary = currentSummary?.group ?? null;
-
-    // console log all derived values with JSON.stringfy
-    console.log(
-      "derived final",
-      JSON.stringify({
-        summary,
-        currentSummary,
-        groupSummary,
-      })
-    );
 
     if (!currentSummary || !groupSummary) {
       return {
@@ -304,17 +298,29 @@ export default function FinalScreen() {
                     </ThemedText>
                   </View>
                 </View>
-                <View style={styles.metricsRow}>
-                  <View style={[styles.metricCard, styles.metricCardDefault, { backgroundColor: theme.card }]}>
+                <View style={[styles.metricsRow, prefersStackedCards ? styles.metricsRowStacked : null]}>
+                  <View
+                    style={[
+                      styles.metricCard,
+                      styles.metricCardDefault,
+                      { backgroundColor: theme.card },
+                      prefersStackedCards ? styles.metricCardStacked : null,
+                    ]}>
                     <ThemedText style={[styles.metricLabel, { color: theme.textMuted }]}>Gesamtzeit</ThemedText>
                     <ThemedText style={[styles.metricValue, { color: theme.text }]}>{derived.timeLabel}</ThemedText>
                   </View>
-                  <View style={[styles.metricCard, styles.metricCardDefault, { backgroundColor: theme.card }]}>
+                  <View
+                    style={[
+                      styles.metricCard,
+                      styles.metricCardDefault,
+                      { backgroundColor: theme.card },
+                      prefersStackedCards ? styles.metricCardStacked : null,
+                    ]}>
                     <ThemedText style={[styles.metricLabel, { color: theme.textMuted }]}>Reine Laufzeit</ThemedText>
                     <ThemedText style={[styles.metricValueSm, { color: theme.text }]}>
                       {derived.baseTimeLabel}
                     </ThemedText>
-                    <ThemedText style={[styles.metricBadge, { color: theme.textMuted }]}>
+                    <ThemedText style={[styles.metricBadge, { color: theme.textMuted, marginBottom: 30 }]}>
                       {derived.penaltyLabel}
                     </ThemedText>
                   </View>
@@ -323,6 +329,7 @@ export default function FinalScreen() {
                       styles.metricCard,
                       derived.finalist ? styles.metricCardFinalist : styles.metricCardDefault,
                       { backgroundColor: theme.card },
+                      prefersStackedCards ? styles.metricCardStacked : null,
                     ]}>
                     <ThemedText style={[styles.metricLabel, { color: theme.textMuted }]}>Platzierung</ThemedText>
                     <ThemedText
@@ -408,6 +415,7 @@ export default function FinalScreen() {
                           key={entry.id}
                           style={[
                             styles.leaderboardRow,
+                            prefersStackedLeaderboard ? styles.leaderboardRowStacked : null,
                             isTopHighlight ? styles.leaderboardRowPodium : null,
                             isTopHighlight
                               ? {
@@ -416,7 +424,11 @@ export default function FinalScreen() {
                                 }
                               : null,
                           ]}>
-                          <View style={styles.leaderboardRankBadge}>
+                          <View
+                            style={[
+                              styles.leaderboardRankBadge,
+                              prefersStackedLeaderboard ? styles.leaderboardRankBadgeStacked : null,
+                            ]}>
                             <ThemedText
                               style={[
                                 styles.leaderboardRankLabel,
@@ -425,7 +437,11 @@ export default function FinalScreen() {
                               {rank}.
                             </ThemedText>
                           </View>
-                          <View style={styles.leaderboardInfo}>
+                          <View
+                            style={[
+                              styles.leaderboardInfo,
+                              prefersStackedLeaderboard ? styles.leaderboardInfoStacked : null,
+                            ]}>
                             <ThemedText
                               style={[styles.leaderboardName, { color: isTopHighlight ? podiumColor : theme.text }]}
                               numberOfLines={2}>
@@ -442,7 +458,11 @@ export default function FinalScreen() {
                               </ThemedText>
                             ) : null}
                           </View>
-                          <View style={styles.leaderboardTiming}>
+                          <View
+                            style={[
+                              styles.leaderboardTiming,
+                              prefersStackedLeaderboard ? styles.leaderboardTimingStacked : null,
+                            ]}>
                             <ThemedText style={[styles.leaderboardBaseTime, { color: theme.text }]}>
                               {formatDuration(baseDurationMs)}
                             </ThemedText>
@@ -468,12 +488,20 @@ export default function FinalScreen() {
                               backgroundColor: `${theme.primary}1F`,
                             },
                           ]}>
-                          <View style={styles.leaderboardRankBadge}>
+                          <View
+                            style={[
+                              styles.leaderboardRankBadge,
+                              prefersStackedLeaderboard ? styles.leaderboardRankBadgeStacked : null,
+                            ]}>
                             <ThemedText style={[styles.leaderboardRankLabel, { color: theme.text }]}>
                               {ownPlacement}.
                             </ThemedText>
                           </View>
-                          <View style={styles.leaderboardInfo}>
+                          <View
+                            style={[
+                              styles.leaderboardInfo,
+                              prefersStackedLeaderboard ? styles.leaderboardInfoStacked : null,
+                            ]}>
                             <ThemedText style={[styles.leaderboardName, { color: theme.primary }]} numberOfLines={2}>
                               {ownEntry.members?.length
                                 ? `${ownEntry.name} · ${ownEntry.members.join(", ")}`
@@ -485,7 +513,11 @@ export default function FinalScreen() {
                               </ThemedText>
                             )}
                           </View>
-                          <View style={styles.leaderboardTiming}>
+                          <View
+                            style={[
+                              styles.leaderboardTiming,
+                              prefersStackedLeaderboard ? styles.leaderboardTimingStacked : null,
+                            ]}>
                             <ThemedText style={[styles.leaderboardBaseTime, { color: theme.text }]}>
                               {formatDuration(
                                 typeof ownEntry.rawDurationMs === "number"
@@ -634,7 +666,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    gap: 6,
+    gap: 1,
     borderWidth: StyleSheet.hairlineWidth,
   },
   metricCardDefault: {
@@ -681,6 +713,7 @@ const styles = StyleSheet.create({
     padding: 14,
     flexDirection: "row",
     alignItems: "flex-start",
+    flexWrap: "wrap",
     backgroundColor: "rgba(148,163,184,0.18)",
     borderWidth: StyleSheet.hairlineWidth,
     gap: 10,
@@ -689,6 +722,13 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     lineHeight: 22,
+  },
+  metricsRowStacked: {
+    flexDirection: "column",
+    gap: 16,
+  },
+  metricCardStacked: {
+    width: "100%",
   },
   actionsFooter: {
     marginTop: 24,
@@ -734,6 +774,11 @@ const styles = StyleSheet.create({
     borderColor: "rgba(148,163,184,0.25)",
     backgroundColor: "rgba(255,255,255,0.04)",
   },
+  leaderboardRowStacked: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 12,
+  },
   leaderboardRowPodium: {
     borderWidth: 1.4,
   },
@@ -744,6 +789,9 @@ const styles = StyleSheet.create({
     width: 36,
     alignItems: "flex-start",
   },
+  leaderboardRankBadgeStacked: {
+    width: "100%",
+  },
   leaderboardRankLabel: {
     fontSize: 18,
     fontWeight: "700",
@@ -751,6 +799,9 @@ const styles = StyleSheet.create({
   leaderboardInfo: {
     flex: 1,
     gap: 4,
+  },
+  leaderboardInfoStacked: {
+    width: "100%",
   },
   leaderboardName: {
     fontSize: 16,
@@ -769,6 +820,10 @@ const styles = StyleSheet.create({
   leaderboardTiming: {
     alignItems: "flex-end",
     gap: 2,
+  },
+  leaderboardTimingStacked: {
+    alignItems: "flex-start",
+    width: "100%",
   },
   leaderboardBaseTime: {
     fontSize: 18,

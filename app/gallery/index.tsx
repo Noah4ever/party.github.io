@@ -44,7 +44,6 @@ const SLIDER_THUMB_SIZE = 32;
 //TODO: add list of answers to questionary
 //TODO: close upload page after upload
 
-
 function getDocument(): Document | undefined {
   if (typeof globalThis === "undefined") return undefined;
   return (globalThis as any).document;
