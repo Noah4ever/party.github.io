@@ -7,29 +7,11 @@ import { useTheme } from "@/constants/theme";
 import { gameApi } from "@/lib/api";
 import { confirm, showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  CameraCapturedPicture,
-  CameraView,
-  useCameraPermissions,
-} from "expo-camera";
+import { CameraCapturedPicture, CameraView, useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 const CAPTURE_QUALITY = 1;
 
@@ -108,8 +90,7 @@ export default function KloSelfieModal() {
     if (!cameraRef.current || !cameraReady) {
       showAlert({
         title: "Kamera nicht bereit",
-        message:
-          "Wir konnten die Kamera noch nicht vorbereiten. Versuche es in ein paar Sekunden erneut.",
+        message: "Wir konnten die Kamera noch nicht vorbereiten. Versuche es in ein paar Sekunden erneut.",
       });
       return;
     }
@@ -127,8 +108,7 @@ export default function KloSelfieModal() {
       console.error("foto capture error", error);
       showAlert({
         title: "Ups!",
-        message:
-          "Das Foto konnte nicht aufgenommen werden. Bitte probiert es gleich nochmal.",
+        message: "Das Foto konnte nicht aufgenommen werden. Bitte probiert es gleich nochmal.",
       });
     } finally {
       setCaptureInFlight(false);
@@ -144,10 +124,7 @@ export default function KloSelfieModal() {
     setCameraReady(false);
   }, [uploading]);
 
-  const uploadDisabled = useMemo(
-    () => uploading || captureInFlight || !preview,
-    [captureInFlight, preview, uploading]
-  );
+  const uploadDisabled = useMemo(() => uploading || captureInFlight || !preview, [captureInFlight, preview, uploading]);
 
   const handleUpload = useCallback(async () => {
     if (uploadDisabled || (!preview?.uri && !preview?.base64)) {
@@ -156,8 +133,7 @@ export default function KloSelfieModal() {
     if (!guestId) {
       showAlert({
         title: "Fehlende ID",
-        message:
-          "Wir konnten deine Gäst-ID nicht finden. Bitte gehe zurück und versuche es erneut.",
+        message: "Wir konnten deine Gäst-ID nicht finden. Bitte gehe zurück und versuche es erneut.",
       });
       return;
     }
@@ -169,9 +145,7 @@ export default function KloSelfieModal() {
 
       if (Platform.OS === "web") {
         let blob: Blob | null = null;
-        const sourceUri =
-          preview.uri ??
-          (preview.base64 ? `data:image/jpeg;base64,${preview.base64}` : null);
+        const sourceUri = preview.uri ?? (preview.base64 ? `data:image/jpeg;base64,${preview.base64}` : null);
         if (sourceUri) {
           try {
             const response = await fetch(sourceUri);
@@ -190,10 +164,7 @@ export default function KloSelfieModal() {
             const byteArray = new Uint8Array(byteNumbers);
             blob = new Blob([byteArray], { type: "image/jpeg" });
           } catch (blobFromBase64Error) {
-            console.error(
-              "foto blob base64 conversion failed",
-              blobFromBase64Error
-            );
+            console.error("foto blob base64 conversion failed", blobFromBase64Error);
           }
         }
         if (!blob) {
@@ -204,9 +175,7 @@ export default function KloSelfieModal() {
         });
         formData.append("image", file);
       } else {
-        const normalizedUri = preview.uri.startsWith("file://")
-          ? preview.uri
-          : `file://${preview.uri}`;
+        const normalizedUri = preview.uri.startsWith("file://") ? preview.uri : `file://${preview.uri}`;
         formData.append("image", {
           uri: normalizedUri,
           name: filename,
@@ -220,16 +189,9 @@ export default function KloSelfieModal() {
       formData.append("challengeId", "Klo Challenge");
 
       const response = await gameApi.uploadSelfie(formData);
-      if (
-        response &&
-        typeof response === "object" &&
-        "url" in response &&
-        typeof response.url === "string"
-      ) {
+      if (response && typeof response === "object" && "url" in response && typeof response.url === "string") {
         const preferredUrl =
-          "absoluteUrl" in response &&
-          typeof response.absoluteUrl === "string" &&
-          response.absoluteUrl
+          "absoluteUrl" in response && typeof response.absoluteUrl === "string" && response.absoluteUrl
             ? response.absoluteUrl
             : response.url;
         const payload = {
@@ -254,8 +216,7 @@ export default function KloSelfieModal() {
       setFeedback("error");
       showAlert({
         title: "Upload fehlgeschlagen",
-        message:
-          "Das Foto konnte nicht hochgeladen werden. Prüft eure Internetverbindung und versucht es nochmal.",
+        message: "Das Foto konnte nicht hochgeladen werden. Prüft eure Internetverbindung und versucht es nochmal.",
       });
     }
   }, [uploadDisabled, preview, guestId, groupId]);
@@ -276,9 +237,16 @@ export default function KloSelfieModal() {
     setFeedback(null);
     setUploading(false);
     await AsyncStorage.removeItem("KloFoto");
+    if (groupId) {
+      try {
+        await gameApi.recordProgress(groupId, "klo_Challenge");
+      } catch (progressError) {
+        console.warn("progress update failed", progressError);
+      }
+    }
     router.back();
     router.navigate("/game/questions");
-  }, [router]);
+  }, [groupId, router]);
 
   const permissionStatusLabel = useMemo(() => {
     if (hasPermission) {
@@ -292,13 +260,9 @@ export default function KloSelfieModal() {
 
   if (!permission) {
     return (
-      <ThemedView
-        style={[styles.loadingScreen, { backgroundColor: theme.background }]}
-      >
+      <ThemedView style={[styles.loadingScreen, { backgroundColor: theme.background }]}>
         <ActivityIndicator size="large" color={theme.primary} />
-        <ThemedText style={[styles.loadingText, { color: theme.textMuted }]}>
-          Kamera wird vorbereitet …
-        </ThemedText>
+        <ThemedText style={[styles.loadingText, { color: theme.textMuted }]}>Kamera wird vorbereitet …</ThemedText>
       </ThemedView>
     );
   }
@@ -306,13 +270,7 @@ export default function KloSelfieModal() {
   return (
     <ThemedView style={[styles.screen, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <ThemedView
-          style={[
-            styles.card,
-            styles.heroCard,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
+        <ThemedView style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <View style={styles.titleRow}>
             <ThemedText type="title" style={styles.titleText}>
               Klo Foto 🚽
@@ -325,54 +283,33 @@ export default function KloSelfieModal() {
           <View
             style={[
               styles.statusBadge,
-              hasPermission
-                ? { backgroundColor: theme.success }
-                : styles.statusBadgeWaiting,
+              hasPermission ? { backgroundColor: theme.success } : styles.statusBadgeWaiting,
               {
-                borderColor: hasPermission
-                  ? theme.success
-                  : "rgba(148,163,184,0.4)",
+                borderColor: hasPermission ? theme.success : "rgba(148,163,184,0.4)",
               },
-            ]}
-          >
+            ]}>
             <IconSymbol
               name={hasPermission ? "checkmark.circle" : "lock.open"}
               size={18}
               color={hasPermission ? "#16A34A" : theme.textMuted}
             />
-            <ThemedText
-              style={[
-                styles.statusBadgeLabel,
-                { color: hasPermission ? "#14532D" : theme.textMuted },
-              ]}
-            >
+            <ThemedText style={[styles.statusBadgeLabel, { color: hasPermission ? "#14532D" : theme.textMuted }]}>
               {permissionStatusLabel}
             </ThemedText>
           </View>
         </ThemedView>
 
         {!hasPermission ? (
-          <ThemedView
-            style={[
-              styles.card,
-              { borderColor: theme.border, backgroundColor: theme.card },
-            ]}
-          >
+          <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
             <View style={styles.sectionHeaderRow}>
               <ThemedText type="subtitle" style={styles.sectionHeading}>
                 Zugriff freigeben
               </ThemedText>
-              <IconSymbol
-                name="camera.viewfinder"
-                size={20}
-                color={theme.primary}
-              />
+              <IconSymbol name="camera.viewfinder" size={20} color={theme.primary} />
             </View>
-            <ThemedText
-              style={[styles.sectionIntro, { color: theme.textSecondary }]}
-            >
-              Wir benötigen euren Kamera-Zugriff, damit ihr euer Foto aufnehmen
-              könnt. Ihr könnt die Freigabe später jederzeit entziehen.
+            <ThemedText style={[styles.sectionIntro, { color: theme.textSecondary }]}>
+              Wir benötigen euren Kamera-Zugriff, damit ihr euer Foto aufnehmen könnt. Ihr könnt die Freigabe später
+              jederzeit entziehen.
             </ThemedText>
             {permission?.canAskAgain !== false && (
               <Button onPress={handleRequestPermission} iconText="lock.open">
@@ -382,21 +319,14 @@ export default function KloSelfieModal() {
           </ThemedView>
         ) : null}
 
-        <ThemedView
-          style={[
-            styles.card,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
+        <ThemedView style={[styles.card, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <View style={styles.sectionHeaderRow}>
             <ThemedText type="subtitle" style={styles.sectionHeading}>
               Macht euer Foto
             </ThemedText>
             <IconSymbol name="camera" size={20} color={theme.primary} />
           </View>
-          <ThemedText
-            style={[styles.sectionIntro, { color: theme.textSecondary }]}
-          >
+          <ThemedText style={[styles.sectionIntro, { color: theme.textSecondary }]}>
             Macht das Bild so, dass euer Kunstwerk gut erkennbar ist!
           </ThemedText>
           <View
@@ -406,14 +336,9 @@ export default function KloSelfieModal() {
                 borderColor: theme.border,
                 backgroundColor: theme.backgroundAlt,
               },
-            ]}
-          >
+            ]}>
             {preview ? (
-              <Image
-                source={{ uri: preview.uri }}
-                style={styles.previewImage}
-                contentFit="cover"
-              />
+              <Image source={{ uri: preview.uri }} style={styles.previewImage} contentFit="cover" />
             ) : hasPermission ? (
               <View style={styles.cameraPreviewWrapper}>
                 <CameraView
@@ -424,19 +349,9 @@ export default function KloSelfieModal() {
                   onCameraReady={() => setCameraReady(true)}
                 />
                 {!cameraReady && (
-                  <View
-                    style={[
-                      styles.cameraLoadingOverlay,
-                      { backgroundColor: theme.overlay },
-                    ]}
-                  >
+                  <View style={[styles.cameraLoadingOverlay, { backgroundColor: theme.overlay }]}>
                     <ActivityIndicator size="large" color={theme.primary} />
-                    <ThemedText
-                      style={[
-                        styles.cameraLoadingText,
-                        { color: theme.textSecondary },
-                      ]}
-                    >
+                    <ThemedText style={[styles.cameraLoadingText, { color: theme.textSecondary }]}>
                       Kamera wird aktiviert …
                     </ThemedText>
                   </View>
@@ -444,14 +359,8 @@ export default function KloSelfieModal() {
               </View>
             ) : (
               <View style={styles.cameraPlaceholder}>
-                <IconSymbol
-                  name="camera.viewfinder"
-                  size={40}
-                  color={theme.textMuted}
-                />
-                <ThemedText
-                  style={[styles.placeholderText, { color: theme.textMuted }]}
-                >
+                <IconSymbol name="camera.viewfinder" size={40} color={theme.textMuted} />
+                <ThemedText style={[styles.placeholderText, { color: theme.textMuted }]}>
                   Kamera wartet auf Freigabe
                 </ThemedText>
               </View>
@@ -470,19 +379,9 @@ export default function KloSelfieModal() {
                 ]}
                 activeOpacity={0.8}
                 onPress={handleRetake}
-                disabled={uploading}
-              >
-                <IconSymbol
-                  name="arrow.down.circle"
-                  size={18}
-                  color={theme.textSecondary}
-                />
-                <ThemedText
-                  style={[
-                    styles.secondaryButtonText,
-                    { color: theme.textSecondary },
-                  ]}
-                >
+                disabled={uploading}>
+                <IconSymbol name="arrow.down.circle" size={18} color={theme.textSecondary} />
+                <ThemedText style={[styles.secondaryButtonText, { color: theme.textSecondary }]}>
                   Neu aufnehmen
                 </ThemedText>
               </TouchableOpacity>
@@ -495,16 +394,8 @@ export default function KloSelfieModal() {
               {captureInFlight ? "Aufnahme …" : "Foto aufnehmen"}
             </Button>
           )}
-          <TouchableOpacity
-            style={styles.skipLink}
-            onPress={handleSkip}
-            disabled={uploading || captureInFlight}
-          >
-            <ThemedText
-              style={[styles.skipLinkText, { color: theme.textMuted }]}
-            >
-              Foto überspringen
-            </ThemedText>
+          <TouchableOpacity style={styles.skipLink} onPress={handleSkip} disabled={uploading || captureInFlight}>
+            <ThemedText style={[styles.skipLinkText, { color: theme.textMuted }]}>Foto überspringen</ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ScrollView>
@@ -515,33 +406,19 @@ export default function KloSelfieModal() {
           style={[
             styles.feedbackOverlay,
             {
-              backgroundColor:
-                feedback === "success"
-                  ? "rgba(34,197,94,0.18)"
-                  : "rgba(239,68,68,0.18)",
-              borderColor:
-                feedback === "success"
-                  ? "rgba(34,197,94,0.45)"
-                  : "rgba(239,68,68,0.45)",
+              backgroundColor: feedback === "success" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.18)",
+              borderColor: feedback === "success" ? "rgba(34,197,94,0.45)" : "rgba(239,68,68,0.45)",
               opacity: feedbackAnim,
               transform: [{ scale: feedbackScale }],
             },
-          ]}
-        >
+          ]}>
           <IconSymbol
             name={feedback === "success" ? "checkmark.circle" : "xmark.circle"}
             size={56}
             color={feedback === "success" ? theme.success : theme.danger}
           />
-          <ThemedText
-            style={[
-              styles.feedbackText,
-              { color: feedback === "success" ? theme.success : theme.danger },
-            ]}
-          >
-            {feedback === "success"
-              ? "Foto gespeichert!"
-              : "Leider fehlgeschlagen."}
+          <ThemedText style={[styles.feedbackText, { color: feedback === "success" ? theme.success : theme.danger }]}>
+            {feedback === "success" ? "Foto gespeichert!" : "Leider fehlgeschlagen."}
           </ThemedText>
         </Animated.View>
       )}

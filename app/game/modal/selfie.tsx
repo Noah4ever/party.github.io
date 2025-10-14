@@ -236,9 +236,16 @@ export default function SelfieModal() {
     setFeedback(null);
     setUploading(false);
     await AsyncStorage.removeItem("challenge2Selfie");
+    if (groupId) {
+      try {
+        await gameApi.recordProgress(groupId, "challenge-2-selfie");
+      } catch (progressError) {
+        console.warn("progress update failed", progressError);
+      }
+    }
     router.back();
     router.navigate("/game/group-name");
-  }, [router]);
+  }, [groupId, router]);
 
   const permissionStatusLabel = useMemo(() => {
     if (hasPermission) {

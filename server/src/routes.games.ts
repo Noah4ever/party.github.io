@@ -6,13 +6,13 @@ import path from "path";
 import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
 import { buildScoreboard, computeGroupScore, parseIsoTime } from "./scoreboard.js";
+import { broadcastLatestScoreboard } from "./scoreboardBroadcast.js";
 import {
   DEFAULT_DATA,
   FunnyAnswer,
   FunnyQuestion,
   GameState,
   NeverHaveIEverPack,
-  PasswordGameConfig,
   QuizPack,
   QuizPenaltyConfig,
   QuizQuestion,
@@ -176,18 +176,17 @@ gamesRouter.get("/final-summary", async (req, res) => {
 
   const data = await loadData();
   const groups = data.groups ?? [];
+  const guests = data.guests ?? [];
   const targetGroup = groups.find((group) => group.id === groupId);
   if (!targetGroup) {
     return res.status(404).json({ message: "group not found" });
   }
 
-  const passwordConfig = data.passwordGames.find((cfg) => cfg.active) ?? data.passwordGames[0];
-  const fallbackGlobalMs =
-    parseIsoTime(data.gameState?.startedAt) ?? parseIsoTime(passwordConfig?.startedAt) ?? undefined;
-  const scoreboard = buildScoreboard(groups, fallbackGlobalMs);
+  const fallbackGlobalMs = parseIsoTime(data.gameState?.startedAt) ?? undefined;
+  const scoreboard = buildScoreboard(groups, guests, fallbackGlobalMs);
 
   const placementIndex = scoreboard.findIndex((entry) => entry.id === targetGroup.id);
-  const ownScore = computeGroupScore(targetGroup, fallbackGlobalMs);
+  const ownScore = computeGroupScore(targetGroup, guests, fallbackGlobalMs);
 
   res.json({
     group: {
@@ -204,7 +203,6 @@ gamesRouter.get("/final-summary", async (req, res) => {
     totalGroups: groups.length,
     scoreboard,
     fallback: {
-      passwordStartedAt: passwordConfig?.startedAt ?? null,
       gameStartedAt: data.gameState?.startedAt ?? null,
     },
   });
@@ -333,6 +331,7 @@ gamesRouter.post("/partner/verify", async (req, res) => {
   }
 
   res.json(outcome);
+  void broadcastLatestScoreboard();
 });
 
 /**
@@ -369,6 +368,14 @@ gamesRouter.post("/groups/:groupId/progress", async (req, res) => {
     if (!group.startedAt) {
       group.startedAt = new Date().toISOString();
     }
+    const normalizedGameId = gameId.trim().toLowerCase();
+    const isFinalChallenge =
+      normalizedGameId === "challenge-6-questionary" ||
+      normalizedGameId === "final-challenge" ||
+      normalizedGameId.endsWith("questionary");
+    if (!group.finishedAt && isFinalChallenge) {
+      group.finishedAt = new Date().toISOString();
+    }
     return {
       success: true,
       completedGames: group.progress.completedGames,
@@ -384,6 +391,7 @@ gamesRouter.post("/groups/:groupId/progress", async (req, res) => {
   }
 
   res.json(result);
+  void broadcastLatestScoreboard();
 });
 
 /**
@@ -463,6 +471,7 @@ gamesRouter.post("/groups/:groupId/time-penalty", async (req, res) => {
   }
 
   res.json(outcome);
+  void broadcastLatestScoreboard();
 });
 
 async function ensureSingleNeverHaveIEverPack(): Promise<NeverHaveIEverPack> {
@@ -710,90 +719,6 @@ gamesRouter.delete("/quiz/:packId/questions/:qid", requireAuth, async (req, res)
   res.status(204).end();
 });
 
-async function ensureSinglePasswordConfig(): Promise<PasswordGameConfig> {
-  return mutate((d) => {
-    const entries = d.passwordGames as unknown[];
-    let firstConfig: Partial<PasswordGameConfig> | null = null;
-    const collected: string[] = [];
-    const seen = new Set<string>();
-    let aggregatedActive = false;
-    let aggregatedStartedAt: string | undefined;
-    let aggregatedEndedAt: string | undefined;
-    let aggregatedUpdatedAt: string | undefined;
-    let aggregatedRequired: number | undefined;
-
-    const collect = (value: unknown) => {
-      if (typeof value !== "string") {
-        value = value != null ? String(value) : "";
-      }
-      const text = (value as string).trim();
-      if (!text || seen.has(text)) return;
-      seen.add(text);
-      collected.push(text);
-    };
-
-    const pickEarliest = (current: string | undefined, next?: string) => {
-      if (!next) return current;
-      if (!current || next < current) return next;
-      return current;
-    };
-
-    const pickLatest = (current: string | undefined, next?: string) => {
-      if (!next) return current;
-      if (!current || next > current) return next;
-      return current;
-    };
-
-    for (const entry of entries) {
-      if (entry && typeof entry === "object" && Array.isArray((entry as any).validPasswords)) {
-        const cfg = entry as Partial<PasswordGameConfig> & {
-          validPasswords: unknown[];
-        };
-        if (!firstConfig) {
-          firstConfig = { ...cfg };
-        }
-        aggregatedActive = aggregatedActive || !!cfg.active;
-        aggregatedStartedAt = pickEarliest(aggregatedStartedAt, cfg.startedAt);
-        aggregatedEndedAt = pickLatest(aggregatedEndedAt, cfg.endedAt);
-        aggregatedUpdatedAt = pickLatest(aggregatedUpdatedAt, cfg.updatedAt);
-        if (aggregatedRequired === undefined && typeof cfg.requiredCorrectGroups === "number") {
-          aggregatedRequired = cfg.requiredCorrectGroups;
-        }
-        for (const pwd of cfg.validPasswords) {
-          collect(pwd);
-        }
-      } else {
-        collect(entry);
-      }
-    }
-
-    if (!firstConfig) {
-      firstConfig = {
-        id: "password-default",
-        validPasswords: [],
-        active: false,
-      };
-    }
-
-    const primary: PasswordGameConfig = {
-      id: typeof firstConfig.id === "string" && firstConfig.id ? firstConfig.id : "password-default",
-      validPasswords: collected,
-      active: aggregatedActive || !!firstConfig.active,
-      requiredCorrectGroups: aggregatedRequired !== undefined ? aggregatedRequired : firstConfig.requiredCorrectGroups,
-      startedAt: aggregatedStartedAt ?? firstConfig.startedAt,
-      endedAt: aggregatedEndedAt ?? firstConfig.endedAt,
-      updatedAt: aggregatedUpdatedAt ?? firstConfig.updatedAt,
-    };
-
-    if (primary.requiredCorrectGroups === undefined) {
-      delete primary.requiredCorrectGroups;
-    }
-
-    d.passwordGames = [primary];
-    return primary;
-  });
-}
-
 // NEVER HAVE I EVER PACKS
 // GET all packs
 // POST create { title, statements[] }
@@ -880,229 +805,6 @@ gamesRouter.delete("/never-have-i-ever/:packId", requireAuth, async (req, res) =
     return true;
   });
   if (!ok) return res.status(404).json({ message: "pack not found" });
-  res.status(204).end();
-});
-
-/**
- * GET /api/games/password-game
- *
- * Public endpoint that returns the active password game configuration. The backend
- * condenses legacy entries so there is always a single source of truth.
- *
- * Response: PasswordGameConfig
- */
-gamesRouter.get("/password-game", async (_req, res) => {
-  const config = await ensureSinglePasswordConfig();
-  res.json(config);
-});
-
-/**
- * POST /api/games/password-game
- *
- * Replaces the stored password game configuration. Requires admin authentication. When
- * activating, timestamps are updated and `endedAt` cleared.
- *
- * Body: { validPasswords?: string[]; active?: boolean }
- * Response: PasswordGameConfig
- */
-gamesRouter.post("/password-game", requireAuth, async (req, res) => {
-  const { validPasswords, active } = req.body || {};
-  await ensureSinglePasswordConfig();
-  const updated = await mutate((d) => {
-    let cfg = d.passwordGames[0];
-    if (!cfg) {
-      cfg = { id: "password-default", validPasswords: [], active: false };
-      d.passwordGames = [cfg];
-    }
-    if (Array.isArray(validPasswords)) {
-      const sanitized = validPasswords.map((value) => (value != null ? String(value).trim() : "")).filter(Boolean);
-      cfg.validPasswords = Array.from(new Set(sanitized));
-    }
-    if (typeof active === "boolean") {
-      cfg.active = active;
-      if (active) {
-        cfg.startedAt = cfg.startedAt ?? new Date().toISOString();
-        cfg.endedAt = undefined;
-      } else {
-        cfg.endedAt = cfg.endedAt ?? new Date().toISOString();
-      }
-    }
-    cfg.updatedAt = new Date().toISOString();
-    return cfg;
-  });
-  res.json(updated);
-});
-
-/**
- * PATCH /api/games/password-game
- *
- * Partially updates the password game configuration. Requires admin authentication.
- * Behaves like POST but only mutates supplied fields.
- *
- * Body: { validPasswords?: string[]; active?: boolean }
- * Response: PasswordGameConfig
- */
-gamesRouter.patch("/password-game", requireAuth, async (req, res) => {
-  const { validPasswords, active } = req.body || {};
-  await ensureSinglePasswordConfig();
-  const updated = await mutate((d) => {
-    const cfg = d.passwordGames[0]!;
-    if (Array.isArray(validPasswords)) {
-      const sanitized = validPasswords.map((value) => (value != null ? String(value).trim() : "")).filter(Boolean);
-      cfg.validPasswords = Array.from(new Set(sanitized));
-    }
-    if (typeof active === "boolean") {
-      cfg.active = active;
-      if (active) {
-        cfg.startedAt = cfg.startedAt ?? new Date().toISOString();
-        cfg.endedAt = undefined;
-      } else {
-        cfg.endedAt = cfg.endedAt ?? new Date().toISOString();
-      }
-    }
-    cfg.updatedAt = new Date().toISOString();
-    return cfg;
-  });
-  res.json(updated);
-});
-
-const passwordStartPaths = ["/password-game/start", "/password-game/:id/start"];
-/**
- * POST /api/games/password-game/start
- * POST /api/games/password-game/:id/start
- *
- * Admin endpoint to force start a password game configuration. Resets timestamps and marks
- * the game as active regardless of previous state.
- *
- * Response: PasswordGameConfig
- */
-gamesRouter.post(passwordStartPaths, requireAuth, async (_req, res) => {
-  await ensureSinglePasswordConfig();
-  const updated = await mutate((d) => {
-    const cfg = d.passwordGames[0]!;
-    cfg.active = true;
-    cfg.startedAt = new Date().toISOString();
-    cfg.endedAt = undefined;
-    cfg.updatedAt = new Date().toISOString();
-    return cfg;
-  });
-  res.json(updated);
-});
-
-const passwordAttemptPaths = ["/password-game/attempt", "/password-game/:id/attempt"];
-/**
- * POST /api/games/password-game/attempt
- * POST /api/games/password-game/:id/attempt
- *
- * Public endpoint used by groups to attempt the password challenge. Increments attempt
- * counters, records success, and automatically finishes the game when the required number
- * of groups solve the password.
- *
- * Body: { groupId: string; password: string }
- * Response: { correct: boolean; solved: boolean; ended: boolean }
- */
-gamesRouter.post(passwordAttemptPaths, async (req, res) => {
-  const { groupId, password } = req.body || {};
-  if (!groupId || !password) return res.status(400).json({ message: "groupId & password required" });
-  const result = await mutate((d) => {
-    const configs = d.passwordGames;
-    const pathId = req.params.id;
-    let cfg = configs.find((p) => p.active && (!pathId || p.id === pathId));
-    if (!cfg) {
-      cfg = configs.find((p) => p.active);
-    }
-    if (!cfg) return { error: "not active" };
-    const group = d.groups.find((g) => g.id === groupId);
-    if (!group) return { error: "group not found" };
-    group.progress.attempts = (group.progress.attempts || 0) + 1;
-    const normalizePassword = (value: unknown): string => {
-      const text = typeof value === "string" ? value : value != null ? String(value) : "";
-      return text.trim().toUpperCase();
-    };
-    const normalizedAttempt = normalizePassword(password);
-    const correct = cfg.validPasswords.some((candidate) => normalizePassword(candidate) === normalizedAttempt);
-    if (correct) {
-      group.passwordSolved = true;
-      const completionTimestamp = new Date().toISOString();
-
-      if (!Array.isArray(group.progress.completedGames)) {
-        group.progress.completedGames = [];
-      }
-      if (!group.progress.completedGames.includes("password-solved")) {
-        group.progress.completedGames.push("password-solved");
-      }
-      group.progress.currentGame = "password-solved";
-      const fallbackStartTimestamp =
-        (typeof cfg.startedAt === "string" ? cfg.startedAt : undefined) ??
-        (typeof d.gameState?.startedAt === "string" ? d.gameState.startedAt : undefined) ??
-        completionTimestamp;
-      if (!group.startedAt) {
-        group.startedAt = fallbackStartTimestamp;
-      }
-      if (!group.finishedAt) {
-        group.finishedAt = completionTimestamp;
-      }
-      const solved = d.groups.filter((g) => g.passwordSolved).length;
-      const required = typeof cfg.requiredCorrectGroups === "number" ? cfg.requiredCorrectGroups : Infinity;
-      if (required !== Infinity && solved >= required && !cfg.endedAt) {
-        cfg.endedAt = new Date().toISOString();
-        cfg.active = false;
-      }
-    }
-    return { correct, solved: !!group.passwordSolved, ended: !!cfg.endedAt };
-  });
-  if ("error" in result) return res.status(400).json({ message: result.error });
-  res.json(result);
-});
-
-const passwordAddPaths = ["/password-game/passwords", "/password-game/:id/passwords"];
-/**
- * POST /api/games/password-game/passwords
- * POST /api/games/password-game/:id/passwords
- *
- * Admin endpoint to append a single valid password to the active configuration. Trims
- * input and prevents duplicates.
- *
- * Body: { password: string }
- * Response: PasswordGameConfig
- */
-gamesRouter.post(passwordAddPaths, requireAuth, async (req, res) => {
-  const { password } = req.body || {};
-  const value = typeof password === "string" ? password.trim() : String(password ?? "").trim();
-  if (!value) return res.status(400).json({ message: "password required" });
-  await ensureSinglePasswordConfig();
-  const updated = await mutate((d) => {
-    const cfg = d.passwordGames[0]!;
-    if (!cfg.validPasswords.includes(value)) {
-      cfg.validPasswords.push(value);
-      cfg.updatedAt = new Date().toISOString();
-    }
-    return cfg;
-  });
-  res.json(updated);
-});
-
-const passwordRemovePaths = ["/password-game/passwords/:password", "/password-game/:id/passwords/:password"];
-/**
- * DELETE /api/games/password-game/passwords/:password
- * DELETE /api/games/password-game/:id/passwords/:password
- *
- * Admin endpoint to remove a specific password from the configuration. Returns 204 when
- * removed or 404 if the password was not present.
- */
-gamesRouter.delete(passwordRemovePaths, requireAuth, async (req, res) => {
-  const raw = req.params.password ?? "";
-  const target = decodeURIComponent(raw);
-  await ensureSinglePasswordConfig();
-  const ok = await mutate((d) => {
-    const cfg = d.passwordGames[0]!;
-    const idx = cfg.validPasswords.findIndex((p) => p === target);
-    if (idx === -1) return false;
-    cfg.validPasswords.splice(idx, 1);
-    cfg.updatedAt = new Date().toISOString();
-    return true;
-  });
-  if (!ok) return res.status(404).json({ message: "password not found" });
   res.status(204).end();
 });
 
@@ -1238,6 +940,52 @@ gamesRouter.get(
     res.json({ question, answers });
   }
 );
+
+/**
+ * GET /api/games/questionary/answers
+ *
+ * Public endpoint that returns all funny question answers submitted during the
+ * questionary challenge. Provides guest and group metadata so teams can read
+ * through every response once the game concludes.
+ */
+gamesRouter.get("/questionary/answers", async (_req, res) => {
+  const data = await loadData();
+  const questions = data.funnyQuestions ?? [];
+  const answers = data.funnyAnswers ?? [];
+  const guests = data.guests ?? [];
+  const groups = data.groups ?? [];
+
+  const payload = questions
+    .map((question) => {
+      const relatedAnswers = answers
+        .filter((entry) => entry.questionId === question.id)
+        .map((entry) => {
+          const guest = guests.find((g) => g.id === entry.guestId);
+          const group = guest?.groupId ? groups.find((grp) => grp.id === guest.groupId) : undefined;
+          return {
+            id: entry.id,
+            answer: entry.answer,
+            guestId: entry.guestId,
+            guestName: guest?.name ?? null,
+            groupId: group?.id ?? guest?.groupId ?? null,
+            groupName: group?.name ?? null,
+            createdAt: entry.createdAt,
+          };
+        })
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+      return {
+        id: question.id,
+        question: question.question,
+        createdAt: question.createdAt,
+        updatedAt: question.updatedAt ?? null,
+        answers: relatedAnswers,
+      };
+    })
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  res.json({ questions: payload });
+});
 
 /**
  * DELETE /api/games/funny-questions/:id/answers/:answerId

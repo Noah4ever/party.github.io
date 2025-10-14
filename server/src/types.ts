@@ -12,8 +12,7 @@ export interface Group {
   guestIds: string[]; // length 0-2 typically
   progress: GroupProgress;
   startedAt?: string; // ISO time when game started
-  finishedAt?: string; // if password solved
-  passwordSolved?: boolean;
+  finishedAt?: string;
 }
 
 export interface GroupProgress {
@@ -21,7 +20,6 @@ export interface GroupProgress {
   completedGames: string[]; // e.g. ['never-have-i-ever', 'quiz']
   currentGame?: string; // id of current game
   quizScore?: number;
-  attempts?: number; // password attempts
   selfieUrl?: string;
   selfieUploadedAt?: string;
   lastSelfieChallenge?: string;
@@ -56,16 +54,6 @@ export interface QuizPack {
   id: string;
   title: string;
   questions: QuizQuestion[];
-}
-
-export interface PasswordGameConfig {
-  id: string; // single active maybe
-  validPasswords: string[]; // 5 possible
-  requiredCorrectGroups?: number; // e.g. 4 groups to end (optional now)
-  active: boolean;
-  startedAt?: string;
-  endedAt?: string;
-  updatedAt?: string;
 }
 
 export interface FunnyQuestion {
@@ -107,7 +95,6 @@ export interface DataShape {
   groups: Group[];
   neverHaveIEverPacks: NeverHaveIEverPack[];
   quizPacks: QuizPack[];
-  passwordGames: PasswordGameConfig[];
   funnyQuestions: FunnyQuestion[];
   funnyAnswers: FunnyAnswer[];
   uploads: UploadRecord[];
@@ -120,7 +107,6 @@ export const DEFAULT_DATA: DataShape = {
   groups: [],
   neverHaveIEverPacks: [],
   quizPacks: [],
-  passwordGames: [],
   funnyQuestions: [],
   funnyAnswers: [],
   uploads: [],

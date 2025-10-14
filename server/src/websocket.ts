@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "http";
 import { WebSocket, WebSocketServer } from "ws";
 import { loadData } from "./dataStore.js";
+import { buildScoreboard, type FinalScoreboardEntry, parseIsoTime } from "./scoreboard.js";
 import type { GameState } from "./types.js";
 
 export type OutboundMessage =
@@ -11,7 +12,18 @@ export type OutboundMessage =
   | {
       type: "game-state";
       payload: GameState;
+    }
+  | {
+      type: "scoreboard-update";
+      payload: ScoreboardBroadcastPayload;
     };
+
+export interface ScoreboardBroadcastPayload {
+  scoreboard: FinalScoreboardEntry[];
+  totalFinished: number;
+  totalGroups: number;
+  generatedAt: string;
+}
 
 let wss: WebSocketServer | null = null;
 
@@ -47,8 +59,22 @@ export function initWebsocket(server: HttpServer) {
           payload: state,
         })
       );
+
+      const fallbackGlobalMs = parseIsoTime(data.gameState?.startedAt) ?? undefined;
+      const scoreboard = buildScoreboard(data.groups ?? [], data.guests ?? [], fallbackGlobalMs);
+      socket.send(
+        serialize({
+          type: "scoreboard-update",
+          payload: {
+            scoreboard,
+            totalFinished: scoreboard.length,
+            totalGroups: data.groups?.length ?? 0,
+            generatedAt: new Date().toISOString(),
+          },
+        })
+      );
     } catch (error) {
-      console.error("Failed to load initial game state for websocket", error);
+      console.error("Failed to load initial websocket payload", error);
     }
   });
 
@@ -65,6 +91,16 @@ export function initWebsocket(server: HttpServer) {
 export function broadcastGameState(state: GameState) {
   if (!wss) return;
   const message = serialize({ type: "game-state", payload: state });
+  wss.clients.forEach((client: WebSocket) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
+
+export function broadcastScoreboardUpdate(payload: ScoreboardBroadcastPayload) {
+  if (!wss) return;
+  const message = serialize({ type: "scoreboard-update", payload });
   wss.clients.forEach((client: WebSocket) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(message);

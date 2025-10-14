@@ -368,6 +368,7 @@ export interface UploadSelfieResponse {
 export interface FinalScoreEntryDTO {
   id: string;
   name: string;
+  members: string[];
   durationMs: number;
   rawDurationMs: number;
   penaltySeconds: number;
@@ -392,7 +393,6 @@ export interface FinalSummaryDTO {
   totalGroups: number;
   scoreboard: FinalScoreEntryDTO[];
   fallback?: {
-    passwordStartedAt?: string | null;
     gameStartedAt?: string | null;
   };
 }
@@ -404,7 +404,6 @@ export interface GroupDTO {
   progress: GroupProgressDTO;
   startedAt?: string;
   finishedAt?: string;
-  passwordSolved?: boolean;
   guests?: GuestDTO[];
 }
 
@@ -427,10 +426,30 @@ export interface AdminDataDump {
   groups: GroupDTO[];
   neverHaveIEverPacks: NeverHaveIEverPackDTO[];
   quizPacks: QuizPackDTO[];
-  passwordGames: PasswordGameConfigDTO[];
   funnyQuestions: FunnyQuestionDTO[];
   funnyAnswers: FunnyAnswerDTO[];
   quizPenaltyConfig: QuizPenaltyConfigDTO;
+}
+export interface QuestionaryAnswerDTO {
+  id: string;
+  answer: string;
+  guestId: string | null;
+  guestName: string | null;
+  groupId: string | null;
+  groupName: string | null;
+  createdAt: string;
+}
+
+export interface QuestionaryQuestionDTO {
+  id: string;
+  question: string;
+  createdAt: string;
+  updatedAt?: string | null;
+  answers: QuestionaryAnswerDTO[];
+}
+
+export interface QuestionaryAnswersResponseDTO {
+  questions: QuestionaryQuestionDTO[];
 }
 
 export interface AdminUploadEntryDTO {
@@ -664,6 +683,7 @@ export const gameApi = {
       answer,
       guestId,
     }),
+  getQuestionaryAnswers: () => api.get<QuestionaryAnswersResponseDTO>("/games/questionary/answers"),
   getGameState: () => api.get<GameStateDTO>("/games/state"),
   getGalleryUploads: () => api.get<GalleryUploadListDTO>("/games/gallery"),
   archiveGalleryUploads: (filenames: string[]) =>

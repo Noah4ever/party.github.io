@@ -1,7 +1,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/constants/theme";
-import { useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { StyleSheet } from "react-native";
 import QRCodeStyled from "react-native-qrcode-styled";
@@ -44,10 +44,21 @@ export default function GuestQRCode() {
         />
       </ThemedView>
 
-      <ThemedText
-        style={{ marginTop: 12, textAlign: "center", color: theme.textMuted, fontSize: 13, paddingHorizontal: 12 }}>
+      <Link
+        href={{
+          pathname: "/game",
+          params: guestId ? { guestId } : {},
+        }}
+        style={{
+          marginTop: 12,
+          textAlign: "center",
+          color: theme.textMuted,
+          fontSize: 13,
+          paddingHorizontal: 12,
+          textDecorationLine: "underline",
+        }}>
         {qrUrl}
-      </ThemedText>
+      </Link>
     </ThemedView>
   );
 }

@@ -1,8 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
-import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
+import { Button } from "@/components/game/Button";
 import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
@@ -10,6 +12,7 @@ import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
 import { gameApi, type FinalScoreEntryDTO, type FinalSummaryDTO } from "@/lib/api";
+import { createGameSocket } from "@/lib/ws";
 import confetti from "canvas-confetti";
 
 const FINALIST_LIMIT = 3;
@@ -32,77 +35,106 @@ function formatDuration(ms: number): string {
 
 export default function FinalScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<FinalSummaryDTO | null>(null);
-
-useEffect(() => {
-  const timeout = setTimeout(() => {
-    const duration = 2 * 1000;
-    const end = Date.now() + duration;
-
-    (function frame() {
-      
-      confetti({
-        particleCount: 5,
-        angle: 280,
-        spread: 60,
-        origin: { y:-1 },
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    })();
-  }, 600);
-
-  return () => clearTimeout(timeout);
-}, []);
+  const mountedRef = useRef(true);
+  const groupIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
+    const timeout = setTimeout(() => {
+      const duration = 2 * 1000;
+      const end = Date.now() + duration;
 
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+      (function frame() {
+        confetti({
+          particleCount: 5,
+          angle: 280,
+          spread: 60,
+          origin: { y: -1 },
+        });
 
-        const storedGroupId = await AsyncStorage.getItem("groupId");
-        if (!storedGroupId) {
-          throw new Error("Keine Gruppenzuordnung gefunden. Scannt zuerst euren Partner.");
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
         }
+      })();
+    }, 600);
 
-        const response = (await gameApi.getFinalSummary(storedGroupId)) as FinalSummaryDTO;
+    return () => clearTimeout(timeout);
+  }, []);
 
-        if (!mounted) return;
-
-        if (!response || typeof response !== "object") {
-          throw new Error("Ergebnisse konnten nicht geladen werden. Versucht es gleich erneut.");
-        }
-
-        if (!response.group) {
-          throw new Error("Wir konnten eure Gruppe nicht finden. Meldet euch beim Orga-Team.");
-        }
-
-        setSummary(response);
-      } catch (err) {
-        console.error("final screen load failed", err);
-        if (mounted) {
-          setError(err instanceof Error ? err.message : "Etwas ist schiefgelaufen.");
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    load();
-
+  useEffect(() => {
     return () => {
-      mounted = false;
+      mountedRef.current = false;
     };
   }, []);
+
+  const loadSummary = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
+
+    try {
+      const existingGroupId = groupIdRef.current ?? (await AsyncStorage.getItem("groupId"));
+      if (!existingGroupId) {
+        throw new Error("Keine Gruppenzuordnung gefunden. Scannt zuerst euren Partner.");
+      }
+
+      groupIdRef.current = existingGroupId;
+      const response = (await gameApi.getFinalSummary(existingGroupId)) as FinalSummaryDTO;
+
+      if (!response || typeof response !== "object") {
+        throw new Error("Ergebnisse konnten nicht geladen werden. Versucht es gleich erneut.");
+      }
+
+      if (!response.group) {
+        throw new Error("Wir konnten eure Gruppe nicht finden. Meldet euch beim Orga-Team.");
+      }
+
+      if (!mountedRef.current) {
+        return;
+      }
+
+      setSummary(response);
+      setError(null);
+    } catch (err) {
+      console.error("final screen load failed", err);
+      if (!mountedRef.current) {
+        return;
+      }
+      if (!silent) {
+        setError(err instanceof Error ? err.message : "Etwas ist schiefgelaufen.");
+      }
+    } finally {
+      if (!mountedRef.current) {
+        return;
+      }
+      if (!silent) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSummary();
+  }, [loadSummary]);
+
+  useEffect(() => {
+    const socket = createGameSocket({
+      onMessage: (message) => {
+        if (message.type === "scoreboard-update") {
+          void loadSummary({ silent: true });
+        }
+      },
+    });
+
+    return () => {
+      socket.close();
+    };
+  }, [loadSummary]);
 
   const derived = useMemo(() => {
     const currentSummary = summary;
@@ -184,6 +216,10 @@ useEffect(() => {
   const ownPlacement = summary?.group?.placement;
   const showOwnRow = Boolean(summary?.group && derived.ownEntry && ownPlacement && ownPlacement > leaderboardLimit);
   const ownEntry = derived.ownEntry;
+  const podiumPalette = useMemo(
+    () => [theme.warning, theme.info, theme.accent],
+    [theme.warning, theme.info, theme.accent]
+  );
 
   return (
     <ThemedView style={styles.screen}>
@@ -351,44 +387,60 @@ useEffect(() => {
                   <View style={styles.leaderboardHeader}>
                     <IconSymbol name="list.bullet" size={20} color={theme.primary} />
                     <ThemedText type="subtitle" style={styles.leaderboardTitle}>
-                      Aktuelle Top {Math.min(FINALIST_LIMIT, summary.scoreboard.length)}
+                      Aktuelle Top {Math.min(leaderboardLimit, summary.scoreboard.length)}
                     </ThemedText>
                   </View>
                   <View style={styles.leaderboardList}>
                     {topEntries.map((entry, index) => {
-                      const highlight = summary?.group ? entry.id === summary.group.groupId : false;
                       const rank = index + 1;
+                      const isTopHighlight = rank <= FINALIST_LIMIT;
+                      const podiumColor = podiumPalette[rank - 1] ?? theme.primary;
+                      const memberNames = entry.members?.length ? entry.members.join(", ") : null;
+                      const nameDisplay = memberNames ? `${entry.name} · ${memberNames}` : entry.name;
+                      const isOwnTeam = summary?.group?.groupId === entry.id;
                       const baseDurationMs =
                         typeof entry.rawDurationMs === "number" ? entry.rawDurationMs : entry.durationMs;
                       const penaltyLabel =
                         entry.penaltySeconds > 0 ? `+${entry.penaltySeconds.toLocaleString("de-DE")}s` : null;
+
                       return (
                         <View
                           key={entry.id}
                           style={[
                             styles.leaderboardRow,
-                            highlight ? [styles.leaderboardRowActive, { borderColor: theme.primary }] : null,
+                            isTopHighlight ? styles.leaderboardRowPodium : null,
+                            isTopHighlight
+                              ? {
+                                  borderColor: podiumColor,
+                                  backgroundColor: `${podiumColor}33`,
+                                }
+                              : null,
                           ]}>
                           <View style={styles.leaderboardRankBadge}>
-                            <ThemedText style={[styles.leaderboardRankLabel, { color: theme.text }]}>
+                            <ThemedText
+                              style={[
+                                styles.leaderboardRankLabel,
+                                { color: isTopHighlight ? podiumColor : theme.text },
+                              ]}>
                               {rank}.
                             </ThemedText>
                           </View>
                           <View style={styles.leaderboardInfo}>
                             <ThemedText
-                              style={[
-                                styles.leaderboardName,
-                                {
-                                  color: highlight ? theme.primary : theme.text,
-                                },
-                              ]}>
-                              {entry.name}
+                              style={[styles.leaderboardName, { color: isTopHighlight ? podiumColor : theme.text }]}
+                              numberOfLines={2}>
+                              {nameDisplay}
                             </ThemedText>
-                            <ThemedText style={[styles.leaderboardPenalty, { color: theme.textMuted }]}>
-                              {entry.penaltySeconds > 0
-                                ? `+${entry.penaltySeconds.toLocaleString("de-DE")}s Strafe`
-                                : "Keine Strafe"}
-                            </ThemedText>
+                            {entry.penaltySeconds > 0 ? null : (
+                              <ThemedText style={[styles.leaderboardPenalty, { color: theme.textMuted }]}>
+                                Keine Strafe
+                              </ThemedText>
+                            )}
+                            {isOwnTeam && !isTopHighlight ? (
+                              <ThemedText style={[styles.leaderboardSelfLabel, { color: theme.primary }]}>
+                                Euer Team
+                              </ThemedText>
+                            ) : null}
                           </View>
                           <View style={styles.leaderboardTiming}>
                             <ThemedText style={[styles.leaderboardBaseTime, { color: theme.text }]}>
@@ -408,21 +460,30 @@ useEffect(() => {
                       <>
                         <View style={styles.leaderboardDivider} />
                         <View
-                          style={[styles.leaderboardRow, styles.leaderboardRowActive, { borderColor: theme.primary }]}>
+                          style={[
+                            styles.leaderboardRow,
+                            styles.leaderboardRowSelf,
+                            {
+                              borderColor: theme.primary,
+                              backgroundColor: `${theme.primary}1F`,
+                            },
+                          ]}>
                           <View style={styles.leaderboardRankBadge}>
                             <ThemedText style={[styles.leaderboardRankLabel, { color: theme.text }]}>
                               {ownPlacement}.
                             </ThemedText>
                           </View>
                           <View style={styles.leaderboardInfo}>
-                            <ThemedText style={[styles.leaderboardName, { color: theme.primary }]}>
-                              {ownEntry.name}
+                            <ThemedText style={[styles.leaderboardName, { color: theme.primary }]} numberOfLines={2}>
+                              {ownEntry.members?.length
+                                ? `${ownEntry.name} · ${ownEntry.members.join(", ")}`
+                                : ownEntry.name}
                             </ThemedText>
-                            <ThemedText style={[styles.leaderboardPenalty, { color: theme.textMuted }]}>
-                              {ownEntry.penaltySeconds > 0
-                                ? `+${ownEntry.penaltySeconds.toLocaleString("de-DE")}s Strafe`
-                                : "Keine Strafe"}
-                            </ThemedText>
+                            {ownEntry.penaltySeconds > 0 ? null : (
+                              <ThemedText style={[styles.leaderboardPenalty, { color: theme.textMuted }]}>
+                                Keine Strafe
+                              </ThemedText>
+                            )}
                           </View>
                           <View style={styles.leaderboardTiming}>
                             <ThemedText style={[styles.leaderboardBaseTime, { color: theme.text }]}>
@@ -444,6 +505,25 @@ useEffect(() => {
                   </View>
                 </View>
               ) : null}
+
+              <View style={styles.actionsFooter}>
+                <Button
+                  iconText="photo.on.rectangle"
+                  onPress={() => {
+                    router.navigate("/gallery");
+                  }}
+                  style={styles.actionButton}>
+                  Galerie & Uploads
+                </Button>
+                <Button
+                  iconText="doc.text"
+                  onPress={() => {
+                    router.navigate("/game/questionary-answers");
+                  }}
+                  style={styles.actionButton}>
+                  Fragebogen Antworten
+                </Button>
+              </View>
             </>
           )}
         </ThemedView>
@@ -610,6 +690,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
+  actionsFooter: {
+    marginTop: 24,
+    gap: 12,
+  },
+  actionButton: {
+    width: "100%",
+  },
   leaderboardCard: {
     marginTop: 18,
     borderRadius: 18,
@@ -647,7 +734,10 @@ const styles = StyleSheet.create({
     borderColor: "rgba(148,163,184,0.25)",
     backgroundColor: "rgba(255,255,255,0.04)",
   },
-  leaderboardRowActive: {
+  leaderboardRowPodium: {
+    borderWidth: 1.4,
+  },
+  leaderboardRowSelf: {
     borderWidth: 1.4,
   },
   leaderboardRankBadge: {
@@ -669,6 +759,12 @@ const styles = StyleSheet.create({
   leaderboardPenalty: {
     fontSize: 13,
     fontWeight: "500",
+  },
+  leaderboardSelfLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
   leaderboardTiming: {
     alignItems: "flex-end",
@@ -753,5 +849,4 @@ const styles = StyleSheet.create({
     right: 0,
     position: "absolute",
   },
-  
 });

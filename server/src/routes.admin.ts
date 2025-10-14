@@ -6,6 +6,7 @@ import path from "path";
 import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
 import { buildScoreboard, parseIsoTime } from "./scoreboard.js";
+import { broadcastLatestScoreboard } from "./scoreboardBroadcast.js";
 import { DataShape, DEFAULT_DATA, GameState, QuizPenaltyConfig, UploadRecord } from "./types.js";
 import { broadcastGameState } from "./websocket.js";
 
@@ -50,7 +51,6 @@ function sanitizeData(payload: unknown): DataShape {
     groups: toArray(raw.groups),
     neverHaveIEverPacks: toArray(raw.neverHaveIEverPacks),
     quizPacks: toArray(raw.quizPacks),
-    passwordGames: toArray(raw.passwordGames),
     funnyQuestions: toArray(raw.funnyQuestions),
     funnyAnswers: toArray(raw.funnyAnswers),
     uploads: toArray(raw.uploads),
@@ -251,11 +251,10 @@ adminRouter.post("/quiz-penalty", requireAuth, async (req, res) => {
 adminRouter.get("/leaderboard", requireAuth, async (_req, res) => {
   const data = await loadData();
   const groups = data.groups ?? [];
-  const passwordConfig = data.passwordGames.find((cfg) => cfg.active) ?? data.passwordGames[0];
-  const fallbackGlobalMs =
-    parseIsoTime(data.gameState?.startedAt) ?? parseIsoTime(passwordConfig?.startedAt) ?? undefined;
+  const guests = data.guests ?? [];
+  const fallbackGlobalMs = parseIsoTime(data.gameState?.startedAt) ?? undefined;
 
-  const scoreboard = buildScoreboard(groups, fallbackGlobalMs);
+  const scoreboard = buildScoreboard(groups, guests, fallbackGlobalMs);
   const scoreboardWithPlacement = scoreboard.map((entry, index) => ({ ...entry, placement: index + 1 }));
   const top = scoreboardWithPlacement.slice(0, 4);
   const others = scoreboardWithPlacement.slice(4);
@@ -276,7 +275,6 @@ adminRouter.get("/leaderboard", requireAuth, async (_req, res) => {
     others,
     unfinished,
     fallback: {
-      passwordStartedAt: passwordConfig?.startedAt ?? null,
       gameStartedAt: data.gameState?.startedAt ?? null,
     },
   });
@@ -299,7 +297,6 @@ adminRouter.post("/data", requireAuth, async (req, res) => {
     d.groups = sanitized.groups;
     d.neverHaveIEverPacks = sanitized.neverHaveIEverPacks;
     d.quizPacks = sanitized.quizPacks;
-    d.passwordGames = sanitized.passwordGames;
     d.funnyQuestions = sanitized.funnyQuestions;
     d.funnyAnswers = sanitized.funnyAnswers;
     d.gameState = sanitized.gameState;
@@ -308,6 +305,7 @@ adminRouter.post("/data", requireAuth, async (req, res) => {
   });
 
   broadcastGameState(sanitized.gameState);
+  void broadcastLatestScoreboard();
 
   res.json({ success: true, importedAt: new Date().toISOString() });
 });
@@ -369,6 +367,7 @@ adminRouter.post("/game/reset", requireAuth, async (_req, res) => {
     }
     const current = d.gameState;
     current.started = false;
+    current.startedAt = undefined;
     current.cluesUnlockedAt = undefined;
     return { ...current };
   });
@@ -390,7 +389,6 @@ adminRouter.post("/clear-data", requireAuth, async (_req, res) => {
     d.groups = [];
     d.neverHaveIEverPacks = [];
     d.quizPacks = [];
-    d.passwordGames = [];
     d.funnyQuestions = [];
     d.funnyAnswers = [];
     d.gameState = { started: false };
@@ -399,6 +397,7 @@ adminRouter.post("/clear-data", requireAuth, async (_req, res) => {
   });
 
   broadcastGameState({ started: false });
+  void broadcastLatestScoreboard();
 
   res.json({ success: true, clearedAt: new Date().toISOString() });
 });

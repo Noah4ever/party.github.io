@@ -32,7 +32,7 @@ groupsRouter.post("/", requireAuth, async (req, res) => {
     id: nanoid(8),
     name,
     guestIds: [...guestIds],
-    progress: { completedGames: [], attempts: 0 },
+    progress: { completedGames: [] },
   };
   await mutate((d) => {
     d.groups.push(group);

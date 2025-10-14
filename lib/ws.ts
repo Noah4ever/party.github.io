@@ -1,7 +1,17 @@
-import type { GameStateDTO } from "./api";
+import type { FinalScoreEntryDTO, GameStateDTO } from "./api";
 import { api } from "./api";
 
-export type GameSocketMessage = { type: "connected"; time: string } | { type: "game-state"; payload: GameStateDTO };
+export type GameSocketMessage =
+  | { type: "connected"; time: string }
+  | { type: "game-state"; payload: GameStateDTO }
+  | { type: "scoreboard-update"; payload: ScoreboardUpdateMessage };
+
+export interface ScoreboardUpdateMessage {
+  scoreboard: FinalScoreEntryDTO[];
+  totalFinished: number;
+  totalGroups: number;
+  generatedAt: string;
+}
 
 export interface GameSocketOptions {
   debug?: boolean;
