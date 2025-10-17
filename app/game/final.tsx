@@ -17,9 +17,6 @@ import confetti from "canvas-confetti";
 
 const FINALIST_LIMIT = 3;
 
-//TODO: add live leaderboard
-//TODO: add names of people in teams to leaderboard
-
 function formatDuration(ms: number): string {
   const totalSeconds = Math.max(0, Math.round(ms / 1000));
   const hours = Math.floor(totalSeconds / 3600);

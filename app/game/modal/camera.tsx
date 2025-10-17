@@ -7,12 +7,11 @@ import { useTheme } from "@/constants/theme";
 import { gameApi } from "@/lib/api";
 import { showAlert } from "@/lib/dialogs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import confetti from "canvas-confetti";
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Animated, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
-
-//TODO: NOAH add celebratory confetti burst to the success overlay
 
 export default function CameraModal() {
   const router = useRouter();
@@ -47,6 +46,15 @@ export default function CameraModal() {
       tension: 120,
       useNativeDriver: true,
     }).start();
+
+    if(scanFeedback === "success") {
+      confetti({
+          particleCount: 5,
+          angle: 280,
+          spread: 60,
+          origin: { y: -1 },
+        });
+    }
 
     const timeout = setTimeout(
       () => {
