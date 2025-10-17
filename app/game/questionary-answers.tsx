@@ -9,7 +9,14 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
-import { gameApi, type QuestionaryAnswerDTO, type QuestionaryQuestionDTO } from "@/lib/api";
+import {
+  gameApi,
+  groupsApi,
+  type GroupDTO,
+  type GuestDTO,
+  type QuestionaryAnswerDTO,
+  type QuestionaryQuestionDTO,
+} from "@/lib/api";
 
 export default function QuestionaryAnswersScreen() {
   const theme = useTheme();
@@ -17,6 +24,66 @@ export default function QuestionaryAnswersScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [questions, setQuestions] = useState<QuestionaryQuestionDTO[]>([]);
+  const [groupMembers, setGroupMembers] = useState<Record<string, string[]>>(
+    {}
+  );
+
+  const ensureGroupMembers = useCallback(
+    async (requiredGroupIds: Set<string>) => {
+      if (requiredGroupIds.size === 0) {
+        setGroupMembers({});
+        return;
+      }
+
+      const missingIds = Array.from(requiredGroupIds).filter(
+        (groupId) => groupId && !groupMembers[groupId]
+      );
+      if (missingIds.length === 0) {
+        return;
+      }
+
+      try {
+        const groupList = (await groupsApi.list({
+          expand: true,
+        })) as GroupDTO[];
+        setGroupMembers((prev) => {
+          let updated = false;
+          const next = { ...prev };
+
+          groupList.forEach((group: GroupDTO) => {
+            if (!group?.id || !requiredGroupIds.has(group.id)) {
+              return;
+            }
+
+            const membersSet = new Set<string>();
+            (group.guests ?? []).forEach((guest: GuestDTO) => {
+              const trimmed = guest?.name?.trim();
+              if (trimmed) {
+                membersSet.add(trimmed);
+              }
+            });
+
+            const uniqueNames = Array.from(membersSet);
+            const existing = next[group.id];
+            const hasChanged =
+              !existing ||
+              existing.length !== uniqueNames.length ||
+              existing.some((value, index) => value !== uniqueNames[index]);
+
+            if (hasChanged) {
+              next[group.id] = uniqueNames;
+              updated = true;
+            }
+          });
+
+          return updated ? next : prev;
+        });
+      } catch (groupsError) {
+        console.warn("questionary answers group load failed", groupsError);
+      }
+    },
+    [groupMembers]
+  );
 
   const loadAnswers = useCallback(async () => {
     setLoading(true);
@@ -27,22 +94,40 @@ export default function QuestionaryAnswersScreen() {
         response && typeof response === "object" && "questions" in response
           ? (response as { questions?: QuestionaryQuestionDTO[] }).questions
           : undefined;
-      setQuestions(Array.isArray(payload) ? payload : []);
+      const nextQuestions = Array.isArray(payload) ? payload : [];
+      setQuestions(nextQuestions);
+
+      const groupIds = new Set<string>();
+      nextQuestions.forEach((question) => {
+        question.answers.forEach((answer) => {
+          if (answer.groupId) {
+            groupIds.add(answer.groupId);
+          }
+        });
+      });
+
+      await ensureGroupMembers(groupIds);
     } catch (err) {
       console.error("questionary answers load failed", err);
-      setError("Antworten konnten nicht geladen werden. Versucht es gleich erneut.");
+      setError(
+        "Antworten konnten nicht geladen werden. Versucht es gleich erneut."
+      );
       setQuestions([]);
+      setGroupMembers({});
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [ensureGroupMembers]);
 
   useEffect(() => {
     void loadAnswers();
   }, [loadAnswers]);
 
   const totals = useMemo(() => {
-    const totalAnswers = questions.reduce((sum, entry) => sum + entry.answers.length, 0);
+    const totalAnswers = questions.reduce(
+      (sum, entry) => sum + entry.answers.length,
+      0
+    );
     return {
       totalQuestions: questions.length,
       totalAnswers,
@@ -55,31 +140,58 @@ export default function QuestionaryAnswersScreen() {
         headerBackgroundColor={{ light: "#BFDBFE", dark: "#1E293B" }}
         headerImage={
           <View style={styles.headerArt}>
-            <Image source={require("@/assets/images/papa/flower.png")} style={styles.headerImage} />
+            <Image
+              source={require("@/assets/images/papa/flower.png")}
+              style={styles.headerImage}
+            />
             <View style={[styles.spark, styles.sparkOne]} />
             <View style={[styles.spark, styles.sparkTwo]} />
             <View style={[styles.spark, styles.sparkThree]} />
           </View>
-        }>
-        <ThemedView style={[styles.card, styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+        }
+      >
+        <ThemedView
+          style={[
+            styles.card,
+            styles.heroCard,
+            { borderColor: theme.border, backgroundColor: theme.card },
+          ]}
+        >
           <View style={styles.heroHeader}>
             <ThemedText type="title">Fragebogen Antworten</ThemedText>
             <IconSymbol name="doc.text" size={26} color={theme.primary} />
           </View>
           <ThemedText style={[styles.heroText, { color: theme.textSecondary }]}>
-            Hier findet ihr jede Antwort, die beim Fragebogen abgegeben wurde. Nehmt euch Zeit, stöbert durch die
-            Highlights und lernt die anderen Teams noch besser kennen.
+            Hier findet ihr jede Antwort, die beim Fragebogen abgegeben wurde.
+            Nehmt euch Zeit, stöbert durch die Highlights und lernt die anderen
+            Teams noch besser kennen.
           </ThemedText>
-          <View style={[styles.heroStats, { backgroundColor: theme.backgroundAlt, borderColor: theme.border }]}>
+          <View
+            style={[
+              styles.heroStats,
+              {
+                backgroundColor: theme.backgroundAlt,
+                borderColor: theme.border,
+              },
+            ]}
+          >
             <View style={styles.statItem}>
-              <ThemedText style={[styles.statLabel, { color: theme.textMuted }]}>Fragen</ThemedText>
+              <ThemedText
+                style={[styles.statLabel, { color: theme.textMuted }]}
+              >
+                Fragen
+              </ThemedText>
               <ThemedText type="subtitle" style={styles.statValue}>
                 {totals.totalQuestions}
               </ThemedText>
             </View>
             <View style={styles.divider} />
             <View style={styles.statItem}>
-              <ThemedText style={[styles.statLabel, { color: theme.textMuted }]}>Antworten</ThemedText>
+              <ThemedText
+                style={[styles.statLabel, { color: theme.textMuted }]}
+              >
+                Antworten
+              </ThemedText>
               <ThemedText type="subtitle" style={styles.statValue}>
                 {totals.totalAnswers}
               </ThemedText>
@@ -90,66 +202,146 @@ export default function QuestionaryAnswersScreen() {
             onPress={() => {
               router.back();
             }}
-            style={styles.heroButton}>
+            style={styles.heroButton}
+          >
             Zurück zum Finale
           </Button>
         </ThemedView>
 
         {loading ? (
-          <View style={[styles.centerState, { borderColor: theme.border, backgroundColor: theme.card }]}>
+          <View
+            style={[
+              styles.centerState,
+              { borderColor: theme.border, backgroundColor: theme.card },
+            ]}
+          >
             <ActivityIndicator size="large" color={theme.primary} />
-            <ThemedText style={[styles.stateText, { color: theme.textMuted }]}>Antworten werden geladen …</ThemedText>
+            <ThemedText style={[styles.stateText, { color: theme.textMuted }]}>
+              Antworten werden geladen …
+            </ThemedText>
           </View>
         ) : error ? (
-          <View style={[styles.centerState, { borderColor: theme.danger, backgroundColor: theme.card }]}>
-            <IconSymbol name="exclamationmark.triangle" size={24} color={theme.danger} />
-            <ThemedText style={[styles.stateText, { color: theme.danger }]}>{error}</ThemedText>
-            <Button iconText="arrow.clockwise" onPress={loadAnswers} style={styles.retryButton}>
+          <View
+            style={[
+              styles.centerState,
+              { borderColor: theme.danger, backgroundColor: theme.card },
+            ]}
+          >
+            <IconSymbol
+              name="exclamationmark.triangle"
+              size={24}
+              color={theme.danger}
+            />
+            <ThemedText style={[styles.stateText, { color: theme.danger }]}>
+              {error}
+            </ThemedText>
+            <Button
+              iconText="arrow.clockwise"
+              onPress={loadAnswers}
+              style={styles.retryButton}
+            >
               Nochmal versuchen
             </Button>
           </View>
         ) : questions.length === 0 ? (
-          <View style={[styles.centerState, { borderColor: theme.border, backgroundColor: theme.card }]}>
+          <View
+            style={[
+              styles.centerState,
+              { borderColor: theme.border, backgroundColor: theme.card },
+            ]}
+          >
             <IconSymbol name="text.bubble" size={24} color={theme.primary} />
-            <ThemedText style={[styles.stateText, { color: theme.textSecondary }]}>
-              Es sind noch keine Antworten vorhanden. Schaut später noch einmal vorbei!
+            <ThemedText
+              style={[styles.stateText, { color: theme.textSecondary }]}
+            >
+              Es sind noch keine Antworten vorhanden. Schaut später noch einmal
+              vorbei!
             </ThemedText>
           </View>
         ) : (
           questions.map((question) => (
             <ThemedView
               key={question.id}
-              style={[styles.questionCard, { borderColor: theme.border, backgroundColor: theme.card }]}
-              testID={`question-${question.id}`}>
+              style={[
+                styles.questionCard,
+                { borderColor: theme.border, backgroundColor: theme.card },
+              ]}
+              testID={`question-${question.id}`}
+            >
               <View style={styles.questionHeader}>
-                <IconSymbol name="questionmark.circle" size={22} color={theme.primary} />
+                <IconSymbol
+                  name="questionmark.circle"
+                  size={22}
+                  color={theme.primary}
+                />
                 <ThemedText type="subtitle" style={styles.questionTitle}>
                   {question.question}
                 </ThemedText>
               </View>
-              <ThemedText style={[styles.answerCount, { color: theme.textMuted }]}>
+              <ThemedText
+                style={[styles.answerCount, { color: theme.textMuted }]}
+              >
                 {question.answers.length === 1
                   ? "1 Antwort eingegangen"
                   : `${question.answers.length} Antworten eingegangen`}
               </ThemedText>
               {question.answers.length === 0 ? (
-                <ThemedText style={[styles.emptyAnswers, { color: theme.textMuted }]}>
-                  Noch keine Antworten – vielleicht beim nächsten Mal!
+                <ThemedText
+                  style={[styles.emptyAnswers, { color: theme.textMuted }]}
+                >
+                  - Noch keine Antworten -
                 </ThemedText>
               ) : (
                 <View style={styles.answerList}>
-                  {question.answers.map((answer: QuestionaryAnswerDTO) => (
-                    <View key={answer.id} style={[styles.answerRow, { borderColor: theme.border }]}>
-                      <View style={[styles.answerBullet, { backgroundColor: theme.primary }]} />
-                      <View style={styles.answerContent}>
-                        <ThemedText style={[styles.answerText, { color: theme.text }]}>{answer.answer}</ThemedText>
-                        <ThemedText style={[styles.answerMeta, { color: theme.textMuted }]}>
-                          {answer.groupName ? `${answer.groupName} · ` : ""}
-                          {answer.guestName ?? "Anonym"}
-                        </ThemedText>
+                  {question.answers.map((answer: QuestionaryAnswerDTO) => {
+                    const members = answer.groupId
+                      ? groupMembers[answer.groupId]
+                      : undefined;
+
+                    return (
+                      <View
+                        key={answer.id}
+                        style={[
+                          styles.answerRow,
+                          { borderColor: theme.border },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.answerBullet,
+                            { backgroundColor: theme.primary },
+                          ]}
+                        />
+                        <View style={styles.answerContent}>
+                          <ThemedText
+                            style={[styles.answerText, { color: theme.text }]}
+                          >
+                            {answer.answer}
+                          </ThemedText>
+                          <ThemedText
+                            style={[
+                              styles.answerMeta,
+                              { color: theme.textMuted },
+                            ]}
+                          >
+                            {answer.groupName ? `${answer.groupName} · ` : ""}
+                            {answer.guestName == null ? (
+                              "Anonym"
+                            ) : members && members.length > 0 ? (
+                              <ThemedText
+                                style={[
+                                  styles.answerMembers,
+                                  { color: theme.textMuted },
+                                ]}
+                              >
+                                {members.join(", ")}
+                              </ThemedText>
+                            ) : null}
+                          </ThemedText>
+                        </View>
                       </View>
-                    </View>
-                  ))}
+                    );
+                  })}
                 </View>
               )}
             </ThemedView>
@@ -306,5 +498,9 @@ const styles = StyleSheet.create({
   },
   answerMeta: {
     fontSize: 14,
+  },
+  answerMembers: {
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

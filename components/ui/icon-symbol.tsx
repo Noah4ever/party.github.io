@@ -70,6 +70,7 @@ const MAPPING = {
   "images.outline": "images-outline",
   "chevron-right": "chevron-forward-outline",
   "chevron-left": "chevron-back-outline",
+  "chatbox.ellipses.outline": "chatbox-ellipses-outline",
 } as const satisfies IconMapping;
 
 // To add new icons:
@@ -97,5 +98,7 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <IconSet color={color} size={size} name={MAPPING[name]} style={style} />;
+  return (
+    <IconSet color={color} size={size} name={MAPPING[name]} style={style} />
+  );
 }
