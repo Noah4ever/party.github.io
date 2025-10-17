@@ -9,7 +9,6 @@ import { useTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
 
-
 export default function HomeScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -57,6 +56,7 @@ export default function HomeScreen() {
         <Animated.View
           style={{
             opacity: fadeAnim,
+            gap: 20,
             transform: [{ scale: scaleAnim }],
           }}
         >
@@ -71,9 +71,9 @@ export default function HomeScreen() {
             <ThemedText
               style={[styles.bodyText, { color: theme.textSecondary }]}
             >
-              Geht auf Klo und schreibt zusammen etwas Lustiges an die Wand. Macht
-              anschließend direkt hier auf der Website ein Foto davon – einfach auf
-              den „Foto aufnehmen“-Button klicken.
+              Geht auf Klo und schreibt zusammen etwas Lustiges an die Wand.
+              Macht anschließend direkt hier auf der Website ein Foto davon –
+              einfach auf den „Foto aufnehmen“-Button klicken.
             </ThemedText>
           </ThemedView>
 
@@ -98,7 +98,6 @@ export default function HomeScreen() {
     </ThemedView>
   );
 }
-
 
 const styles = StyleSheet.create({
   partyHeader: {

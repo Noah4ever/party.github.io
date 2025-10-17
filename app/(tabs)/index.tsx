@@ -1,5 +1,11 @@
 import { Image } from "expo-image";
-import { Platform, StyleSheet, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from "react-native";
 
 import { Button } from "@/components/game/Button";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
@@ -14,7 +20,8 @@ export default function HomeScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
 
-  const isCompactLayout = width < 720 || Platform.OS === "ios" || Platform.OS === "android";
+  const isCompactLayout =
+    width < 720 || Platform.OS === "ios" || Platform.OS === "android";
 
   return (
     <ParallaxScrollView
@@ -23,27 +30,47 @@ export default function HomeScreen() {
         <View style={styles.partyHeader}>
           <View style={[styles.partyGlow, styles.partyGlowPrimary]} />
           <View style={[styles.partyGlow, styles.partyGlowSecondary]} />
-          <Image source={require("@/assets/images/crown.png")} style={styles.partyCrown} contentFit="cover" />
+          <Image
+            source={require("@/assets/images/crown.png")}
+            style={styles.partyCrown}
+            contentFit="cover"
+          />
           <View style={[styles.confetti, styles.confettiOne]} />
           <View style={[styles.confetti, styles.confettiTwo]} />
           <View style={[styles.confetti, styles.confettiThree]} />
           <View style={[styles.confetti, styles.confettiFour]} />
         </View>
       }
-      headerHeight={180}>
-      <ThemedView style={[styles.heroCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      headerHeight={180}
+    >
+      <ThemedView
+        style={[
+          styles.heroCard,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
         <ThemedText type="title" style={styles.heroTitle}>
           Party Hub
         </ThemedText>
-        <ThemedText style={styles.heroSubtitle}>Eure Erinnerungen. Eure Momente. Ein gemeinsamer Abend.</ThemedText>
+        <ThemedText style={styles.heroSubtitle}>
+          Eure Erinnerungen. Eure Momente. Ein gemeinsamer Abend.
+        </ThemedText>
         <View style={styles.heroActions}>
-          <Button onPress={() => router.navigate("/game")} iconText="play.circle.fill">
+          <Button
+            onPress={() => router.navigate("/game")}
+            iconText="play.circle.fill"
+          >
             Start the Game!
           </Button>
         </View>
       </ThemedView>
 
-      <ThemedView style={[styles.sectionCard, { borderColor: theme.border, backgroundColor: theme.card }]}>
+      <ThemedView
+        style={[
+          styles.sectionCard,
+          { borderColor: theme.border, backgroundColor: theme.card },
+        ]}
+      >
         <View
           style={[
             styles.shortcutsContainer,
@@ -54,7 +81,8 @@ export default function HomeScreen() {
               alignItems: isCompactLayout ? "stretch" : "center",
               gap: isCompactLayout ? 16 : 20,
             },
-          ]}>
+          ]}
+        >
           <View
             style={[
               styles.shortcutsIconWrapper,
@@ -63,24 +91,50 @@ export default function HomeScreen() {
                 borderColor: theme.border,
                 alignSelf: isCompactLayout ? "center" : "flex-start",
               },
-            ]}>
+            ]}
+          >
             <IconSymbol name="images.outline" size={48} color={theme.primary} />
           </View>
-          <View style={[styles.shortcutsContent, isCompactLayout && styles.shortcutsContentCompact]}>
-            <ThemedText style={[styles.shortcutsHeading, { color: theme.text }]}>Galerie</ThemedText>
+          <View
+            style={[
+              styles.shortcutsContent,
+              isCompactLayout && styles.shortcutsContentCompact,
+            ]}
+          >
+            <ThemedText
+              style={[styles.shortcutsHeading, { color: theme.text }]}
+            >
+              Galerie
+            </ThemedText>
             <ThemedText
               style={[
                 styles.shortcutsBody,
                 { color: theme.textMuted },
                 isCompactLayout && styles.shortcutsBodyCompact,
-              ]}>
-              Entdeckt alle geteilten Fotos & Videos und ladet neue Erinnerungen hoch.
+              ]}
+            >
+              Entdeckt alle geteilten Fotos & Videos und ladet neue Erinnerungen
+              hoch.
             </ThemedText>
             <Button
               onPress={() => router.push("/gallery")}
               iconText="photo.on.rectangle"
-              style={[styles.shortcutsButton, isCompactLayout && styles.shortcutsButtonCompact]}>
+              style={[
+                styles.shortcutsButton,
+                isCompactLayout && styles.shortcutsButtonCompact,
+              ]}
+            >
               Zur Galerie
+            </Button>
+            <Button
+              onPress={() => router.push("/game/questionary-answers")}
+              iconText="chatbox.ellipses.outline"
+              style={[
+                styles.shortcutsButton,
+                isCompactLayout && styles.shortcutsButtonCompact,
+              ]}
+            >
+              Zu den Antworten
             </Button>
           </View>
         </View>
@@ -90,9 +144,14 @@ export default function HomeScreen() {
         accessibilityRole="button"
         onPress={() => router.push("/admin")}
         style={styles.footerAdminLink}
-        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      >
         <IconSymbol name="settings" size={16} color={theme.icon} />
-        <ThemedText style={[styles.footerAdminText, { color: theme.textMuted }]}>Admin</ThemedText>
+        <ThemedText
+          style={[styles.footerAdminText, { color: theme.textMuted }]}
+        >
+          Admin
+        </ThemedText>
       </TouchableOpacity>
     </ParallaxScrollView>
   );
