@@ -7,7 +7,13 @@ import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
 import { buildScoreboard, parseIsoTime } from "./scoreboard.js";
 import { broadcastLatestScoreboard } from "./scoreboardBroadcast.js";
-import { DataShape, DEFAULT_DATA, GameState, QuizPenaltyConfig, UploadRecord } from "./types.js";
+import {
+  DataShape,
+  DEFAULT_DATA,
+  GameState,
+  QuizPenaltyConfig,
+  UploadRecord,
+} from "./types.js";
 import { broadcastGameState } from "./websocket.js";
 
 export const adminRouter = Router();
@@ -23,8 +29,12 @@ function sanitizeGameState(value: unknown): GameState {
   const source = value as Partial<GameState>;
   return {
     started: Boolean(source.started),
-    startedAt: typeof source.startedAt === "string" ? source.startedAt : undefined,
-    cluesUnlockedAt: typeof source.cluesUnlockedAt === "string" ? source.cluesUnlockedAt : undefined,
+    startedAt:
+      typeof source.startedAt === "string" ? source.startedAt : undefined,
+    cluesUnlockedAt:
+      typeof source.cluesUnlockedAt === "string"
+        ? source.cluesUnlockedAt
+        : undefined,
   };
 }
 
@@ -34,18 +44,32 @@ function sanitizeQuizPenaltyConfig(value: unknown): QuizPenaltyConfig {
     return { ...defaults };
   }
   const source = value as Partial<QuizPenaltyConfig>;
+  const low = Number(source.lowPenaltySeconds);
   const minor = Number(source.minorPenaltySeconds);
   const major = Number(source.majorPenaltySeconds);
-  const safeMinor = Number.isFinite(minor) && minor >= 0 ? Math.floor(minor) : defaults.minorPenaltySeconds;
-  const safeMajor = Number.isFinite(major) && major >= 0 ? Math.floor(major) : defaults.majorPenaltySeconds;
+  const safeLow =
+    Number.isFinite(low) && low >= 0
+      ? Math.floor(low)
+      : defaults.lowPenaltySeconds;
+  const safeMinor =
+    Number.isFinite(minor) && minor >= 0
+      ? Math.floor(minor)
+      : defaults.minorPenaltySeconds;
+  const safeMajor =
+    Number.isFinite(major) && major >= 0
+      ? Math.floor(major)
+      : defaults.majorPenaltySeconds;
   return {
+    lowPenaltySeconds: safeLow,
     minorPenaltySeconds: safeMinor,
     majorPenaltySeconds: safeMajor,
   };
 }
 
 function sanitizeData(payload: unknown): DataShape {
-  const raw = (payload && typeof payload === "object" ? payload : {}) as Partial<DataShape>;
+  const raw = (
+    payload && typeof payload === "object" ? payload : {}
+  ) as Partial<DataShape>;
   return {
     guests: toArray(raw.guests),
     groups: toArray(raw.groups),
@@ -86,8 +110,12 @@ adminRouter.get("/uploads", requireAuth, async (_req, res) => {
           const record: UploadRecord | undefined = Array.isArray(data.uploads)
             ? data.uploads.find((item) => item.filename === entry.name)
             : undefined;
-          const guest = record?.guestId ? data.guests.find((g) => g.id === record.guestId) ?? null : null;
-          const group = record?.groupId ? data.groups.find((g) => g.id === record.groupId) ?? null : null;
+          const guest = record?.guestId
+            ? data.guests.find((g) => g.id === record.guestId) ?? null
+            : null;
+          const group = record?.groupId
+            ? data.groups.find((g) => g.id === record.groupId) ?? null
+            : null;
           return {
             filename: entry.name,
             size: stats.size,
@@ -108,7 +136,12 @@ adminRouter.get("/uploads", requireAuth, async (_req, res) => {
 
     res.json({ files });
   } catch (error: any) {
-    if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "ENOENT"
+    ) {
       return res.json({ files: [] });
     }
     console.error("admin uploads listing failed", error);
@@ -121,7 +154,13 @@ adminRouter.post("/uploads/delete", requireAuth, async (req, res) => {
   const filenames = Array.isArray(raw)
     ? raw
         .map((name) => (typeof name === "string" ? name.trim() : ""))
-        .filter((name) => name && !name.includes("/") && !name.includes("\\") && !name.includes(".."))
+        .filter(
+          (name) =>
+            name &&
+            !name.includes("/") &&
+            !name.includes("\\") &&
+            !name.includes("..")
+        )
     : [];
 
   if (filenames.length === 0) {
@@ -138,10 +177,16 @@ adminRouter.post("/uploads/delete", requireAuth, async (req, res) => {
       await fs.unlink(filePath);
       deleted.push(filename);
     } catch (error: any) {
-      if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "ENOENT"
+      ) {
         deleted.push(filename);
       } else {
-        const message = error instanceof Error ? error.message : "Unknown error";
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
         failed.push({ filename, error: message });
       }
     }
@@ -150,7 +195,9 @@ adminRouter.post("/uploads/delete", requireAuth, async (req, res) => {
   if (deleted.length > 0) {
     const deleteSet = new Set(deleted);
     await mutate((data) => {
-      data.uploads = (data.uploads ?? []).filter((record) => !deleteSet.has(record.filename));
+      data.uploads = (data.uploads ?? []).filter(
+        (record) => !deleteSet.has(record.filename)
+      );
       return true;
     });
   }
@@ -163,7 +210,13 @@ adminRouter.post("/uploads/archive", requireAuth, async (req, res) => {
   const filenames = Array.isArray(raw)
     ? raw
         .map((name) => (typeof name === "string" ? name.trim() : ""))
-        .filter((name) => name && !name.includes("/") && !name.includes("\\") && !name.includes(".."))
+        .filter(
+          (name) =>
+            name &&
+            !name.includes("/") &&
+            !name.includes("\\") &&
+            !name.includes("..")
+        )
     : [];
 
   if (filenames.length === 0) {
@@ -189,12 +242,16 @@ adminRouter.post("/uploads/archive", requireAuth, async (req, res) => {
   }
 
   if (files.length === 0) {
-    return res.status(404).json({ message: "None of the requested files exist.", missing });
+    return res
+      .status(404)
+      .json({ message: "None of the requested files exist.", missing });
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const archiveName =
-    files.length === 1 ? `${files[0].filename.replace(/\.zip$/i, "")}-${timestamp}.zip` : `uploads-${timestamp}.zip`;
+    files.length === 1
+      ? `${files[0].filename.replace(/\.zip$/i, "")}-${timestamp}.zip`
+      : `uploads-${timestamp}.zip`;
 
   res.status(200);
   res.setHeader("Content-Type", "application/zip");
@@ -228,6 +285,9 @@ adminRouter.get("/quiz-penalty", requireAuth, async (_req, res) => {
   const defaults = DEFAULT_DATA.quizPenaltyConfig;
   const config = data.quizPenaltyConfig ?? defaults;
   res.json({
+    lowPenaltySeconds: Number.isFinite(config?.lowPenaltySeconds)
+      ? config.lowPenaltySeconds
+      : defaults.lowPenaltySeconds,
     minorPenaltySeconds: Number.isFinite(config?.minorPenaltySeconds)
       ? config.minorPenaltySeconds
       : defaults.minorPenaltySeconds,
@@ -245,7 +305,11 @@ adminRouter.post("/quiz-penalty", requireAuth, async (req, res) => {
     return true;
   });
 
-  res.json({ success: true, config: sanitized, updatedAt: new Date().toISOString() });
+  res.json({
+    success: true,
+    config: sanitized,
+    updatedAt: new Date().toISOString(),
+  });
 });
 
 adminRouter.get("/leaderboard", requireAuth, async (_req, res) => {
@@ -255,7 +319,10 @@ adminRouter.get("/leaderboard", requireAuth, async (_req, res) => {
   const fallbackGlobalMs = parseIsoTime(data.gameState?.startedAt) ?? undefined;
 
   const scoreboard = buildScoreboard(groups, guests, fallbackGlobalMs);
-  const scoreboardWithPlacement = scoreboard.map((entry, index) => ({ ...entry, placement: index + 1 }));
+  const scoreboardWithPlacement = scoreboard.map((entry, index) => ({
+    ...entry,
+    placement: index + 1,
+  }));
   const top = scoreboardWithPlacement.slice(0, 4);
   const others = scoreboardWithPlacement.slice(4);
   const finishedIds = new Set(scoreboard.map((entry) => entry.id));

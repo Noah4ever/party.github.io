@@ -35,54 +35,63 @@ export default function QuestionaryAnswersScreen() {
         return;
       }
 
-      const missingIds = Array.from(requiredGroupIds).filter(
-        (groupId) => groupId && !groupMembers[groupId]
-      );
-      if (missingIds.length === 0) {
-        return;
-      }
+      setGroupMembers((currentMembers) => {
+        const missingIds = Array.from(requiredGroupIds).filter(
+          (groupId) => groupId && !currentMembers[groupId]
+        );
 
-      try {
-        const groupList = (await groupsApi.list({
-          expand: true,
-        })) as GroupDTO[];
-        setGroupMembers((prev) => {
-          let updated = false;
-          const next = { ...prev };
+        if (missingIds.length === 0) {
+          return currentMembers;
+        }
 
-          groupList.forEach((group: GroupDTO) => {
-            if (!group?.id || !requiredGroupIds.has(group.id)) {
-              return;
-            }
+        // Fetch in the background
+        (async () => {
+          try {
+            const groupList = (await groupsApi.list({
+              expand: true,
+            })) as GroupDTO[];
 
-            const membersSet = new Set<string>();
-            (group.guests ?? []).forEach((guest: GuestDTO) => {
-              const trimmed = guest?.name?.trim();
-              if (trimmed) {
-                membersSet.add(trimmed);
-              }
+            setGroupMembers((prev) => {
+              let updated = false;
+              const next = { ...prev };
+
+              groupList.forEach((group: GroupDTO) => {
+                if (!group?.id || !requiredGroupIds.has(group.id)) {
+                  return;
+                }
+
+                const membersSet = new Set<string>();
+                (group.guests ?? []).forEach((guest: GuestDTO) => {
+                  const trimmed = guest?.name?.trim();
+                  if (trimmed) {
+                    membersSet.add(trimmed);
+                  }
+                });
+
+                const uniqueNames = Array.from(membersSet);
+                const existing = next[group.id];
+                const hasChanged =
+                  !existing ||
+                  existing.length !== uniqueNames.length ||
+                  existing.some((value, index) => value !== uniqueNames[index]);
+
+                if (hasChanged) {
+                  next[group.id] = uniqueNames;
+                  updated = true;
+                }
+              });
+
+              return updated ? next : prev;
             });
+          } catch (groupsError) {
+            console.warn("questionary answers group load failed", groupsError);
+          }
+        })();
 
-            const uniqueNames = Array.from(membersSet);
-            const existing = next[group.id];
-            const hasChanged =
-              !existing ||
-              existing.length !== uniqueNames.length ||
-              existing.some((value, index) => value !== uniqueNames[index]);
-
-            if (hasChanged) {
-              next[group.id] = uniqueNames;
-              updated = true;
-            }
-          });
-
-          return updated ? next : prev;
-        });
-      } catch (groupsError) {
-        console.warn("questionary answers group load failed", groupsError);
-      }
+        return currentMembers;
+      });
     },
-    [groupMembers]
+    []
   );
 
   const loadAnswers = useCallback(async () => {

@@ -86,6 +86,7 @@ export interface GameState {
 }
 
 export interface QuizPenaltyConfig {
+  lowPenaltySeconds: number;
   minorPenaltySeconds: number;
   majorPenaltySeconds: number;
 }
@@ -114,6 +115,7 @@ export const DEFAULT_DATA: DataShape = {
     started: false,
   },
   quizPenaltyConfig: {
+    lowPenaltySeconds: 30,
     minorPenaltySeconds: 60,
     majorPenaltySeconds: 180,
   },

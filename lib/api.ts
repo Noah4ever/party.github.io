@@ -8,9 +8,14 @@ import * as ExpoConstants from "expo-constants";
 const normalizeBase = (url: string) => url.replace(/\/$/, "");
 
 const env: Record<string, string | undefined> =
-  typeof process !== "undefined" && process.env ? (process.env as Record<string, string | undefined>) : {};
+  typeof process !== "undefined" && process.env
+    ? (process.env as Record<string, string | undefined>)
+    : {};
 
-const DEV_SERVER_PORT = (env.EXPO_PUBLIC_DEV_SERVER_PORT ?? "5000").replace(/^:/, "");
+const DEV_SERVER_PORT = (env.EXPO_PUBLIC_DEV_SERVER_PORT ?? "5000").replace(
+  /^:/,
+  ""
+);
 const DEV_SERVER_PROTOCOL = env.EXPO_PUBLIC_DEV_SERVER_PROTOCOL;
 
 function resolveDevBaseUrl(defaultUrl: string): string {
@@ -57,7 +62,10 @@ function resolveDevBaseUrl(defaultUrl: string): string {
 
   try {
     if (typeof window !== "undefined" && window.location?.hostname) {
-      const candidate = build(window.location.hostname, window.location.protocol);
+      const candidate = build(
+        window.location.hostname,
+        window.location.protocol
+      );
       if (candidate) {
         return candidate;
       }
@@ -90,10 +98,13 @@ let unauthorizedHandler: (() => void) | null = null;
 export function setUnauthorizedHandler(handler: (() => void) | null) {
   unauthorizedHandler = handler;
 }
-const rawOverride = env.EXPO_PUBLIC_API_BASE ?? env.API_BASE_URL ?? env.NEXT_PUBLIC_API_BASE; // support multiple conventions
+const rawOverride =
+  env.EXPO_PUBLIC_API_BASE ?? env.API_BASE_URL ?? env.NEXT_PUBLIC_API_BASE; // support multiple conventions
 const rawDevFlag = env.EXPO_PUBLIC_DEV_PARTY ?? false;
 
-const DEFAULT_DEV_BASE = `${DEV_SERVER_PROTOCOL?.trim() || "http"}://localhost:${DEV_SERVER_PORT}/api`;
+const DEFAULT_DEV_BASE = `${
+  DEV_SERVER_PROTOCOL?.trim() || "http"
+}://localhost:${DEV_SERVER_PORT}/api`;
 
 const isDevFlag = (() => {
   if (rawDevFlag === undefined) return false;
@@ -176,15 +187,29 @@ function buildQuery(query?: Record<string, any>): string {
   return qs ? `?${qs}` : "";
 }
 
-async function request<TResponse = any, TBody = any>(opts: RequestOptions<TBody>): Promise<TResponse | Response> {
-  const { method = "GET", path, query, body, headers = {}, signal, timeoutMs = 15000, raw } = opts;
+async function request<TResponse = any, TBody = any>(
+  opts: RequestOptions<TBody>
+): Promise<TResponse | Response> {
+  const {
+    method = "GET",
+    path,
+    query,
+    body,
+    headers = {},
+    signal,
+    timeoutMs = 15000,
+    raw,
+  } = opts;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const finalSignal = signal ? mergeSignals(signal, controller.signal) : controller.signal;
+  const finalSignal = signal
+    ? mergeSignals(signal, controller.signal)
+    : controller.signal;
 
   const url = `${BASE_URL}${path}${buildQuery(query)}`;
 
-  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
 
   const reqHeaders: Record<string, string> = {
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
@@ -294,14 +319,26 @@ export const api = {
   setBaseUrl,
   getBaseUrl,
   onUnauthorized: setUnauthorizedHandler,
-  get: <T = any>(path: string, query?: Record<string, any>, opts: Partial<RequestOptions> = {}) =>
-    request<T>({ path, query, method: "GET", ...opts }),
-  post: <T = any, B = any>(path: string, body?: B, opts: Partial<RequestOptions<B>> = {}) =>
-    request<T, B>({ path, body, method: "POST", ...opts }),
-  put: <T = any, B = any>(path: string, body?: B, opts: Partial<RequestOptions<B>> = {}) =>
-    request<T, B>({ path, body, method: "PUT", ...opts }),
-  patch: <T = any, B = any>(path: string, body?: B, opts: Partial<RequestOptions<B>> = {}) =>
-    request<T, B>({ path, body, method: "PATCH", ...opts }),
+  get: <T = any>(
+    path: string,
+    query?: Record<string, any>,
+    opts: Partial<RequestOptions> = {}
+  ) => request<T>({ path, query, method: "GET", ...opts }),
+  post: <T = any, B = any>(
+    path: string,
+    body?: B,
+    opts: Partial<RequestOptions<B>> = {}
+  ) => request<T, B>({ path, body, method: "POST", ...opts }),
+  put: <T = any, B = any>(
+    path: string,
+    body?: B,
+    opts: Partial<RequestOptions<B>> = {}
+  ) => request<T, B>({ path, body, method: "PUT", ...opts }),
+  patch: <T = any, B = any>(
+    path: string,
+    body?: B,
+    opts: Partial<RequestOptions<B>> = {}
+  ) => request<T, B>({ path, body, method: "PATCH", ...opts }),
   delete: <T = any>(path: string, opts: Partial<RequestOptions> = {}) =>
     request<T>({ path, method: "DELETE", ...opts }),
   setToken: setAuthToken,
@@ -323,8 +360,10 @@ export type UpdateGuestInput = Partial<Omit<GuestDTO, "id" | "groupId">>;
 export const guestsApi = {
   list: () => api.get<GuestDTO[]>("/guests"),
   get: (id: string) => api.get<GuestDTO>(`/guests/${id}`),
-  create: (data: CreateGuestInput) => api.post<GuestDTO, CreateGuestInput>("/guests", data),
-  update: (id: string, data: UpdateGuestInput) => api.put<GuestDTO, UpdateGuestInput>(`/guests/${id}`, data),
+  create: (data: CreateGuestInput) =>
+    api.post<GuestDTO, CreateGuestInput>("/guests", data),
+  update: (id: string, data: UpdateGuestInput) =>
+    api.put<GuestDTO, UpdateGuestInput>(`/guests/${id}`, data),
   remove: (id: string) => api.delete<void>(`/guests/${id}`),
 };
 
@@ -412,12 +451,17 @@ export type CreateGroupInput = {
   guestIds?: string[];
 };
 
-export type UpdateGroupInput = Partial<Pick<GroupDTO, "name" | "guestIds" | "progress">>;
+export type UpdateGroupInput = Partial<
+  Pick<GroupDTO, "name" | "guestIds" | "progress">
+>;
 
 export const groupsApi = {
-  list: (options?: { expand?: boolean }) => api.get<GroupDTO[]>("/groups", options?.expand ? { expand: 1 } : undefined),
-  create: (data: CreateGroupInput) => api.post<GroupDTO, CreateGroupInput>("/groups", data),
-  update: (id: string, data: UpdateGroupInput) => api.put<GroupDTO, UpdateGroupInput>(`/groups/${id}`, data),
+  list: (options?: { expand?: boolean }) =>
+    api.get<GroupDTO[]>("/groups", options?.expand ? { expand: 1 } : undefined),
+  create: (data: CreateGroupInput) =>
+    api.post<GroupDTO, CreateGroupInput>("/groups", data),
+  update: (id: string, data: UpdateGroupInput) =>
+    api.put<GroupDTO, UpdateGroupInput>(`/groups/${id}`, data),
   remove: (id: string) => api.delete<void>(`/groups/${id}`),
 };
 
@@ -482,6 +526,7 @@ export interface DeleteUploadsResponseDTO {
 }
 
 export interface QuizPenaltyConfigDTO {
+  lowPenaltySeconds: number;
   minorPenaltySeconds: number;
   majorPenaltySeconds: number;
 }
@@ -512,14 +557,23 @@ export interface AdminLeaderboardDTO {
 export const adminApi = {
   downloadData: () => api.get<AdminDataDump>("/admin/data"),
   importData: (data: AdminDataDump) =>
-    api.post<{ success: boolean; importedAt: string }, AdminDataDump>("/admin/data", data),
-  clearAllData: () => api.post<{ success: boolean; clearedAt: string }>("/admin/clear-data"),
+    api.post<{ success: boolean; importedAt: string }, AdminDataDump>(
+      "/admin/data",
+      data
+    ),
+  clearAllData: () =>
+    api.post<{ success: boolean; clearedAt: string }>("/admin/clear-data"),
   getGameState: () => api.get<GameStateDTO>("/admin/game-state"),
-  startGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/start"),
-  resetGames: () => api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/reset"),
+  startGames: () =>
+    api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/start"),
+  resetGames: () =>
+    api.post<{ success: boolean; state: GameStateDTO }>("/admin/game/reset"),
   listUploads: () => api.get<AdminUploadListDTO>("/admin/uploads"),
   deleteUploads: (filenames: string[]) =>
-    api.post<DeleteUploadsResponseDTO, { filenames: string[] }>("/admin/uploads/delete", { filenames }),
+    api.post<DeleteUploadsResponseDTO, { filenames: string[] }>(
+      "/admin/uploads/delete",
+      { filenames }
+    ),
   archiveUploads: (filenames: string[]) =>
     api.post<Response, { filenames: string[] }>(
       "/admin/uploads/archive",
@@ -531,14 +585,21 @@ export const adminApi = {
       }
     ),
   getLeaderboard: () => api.get<AdminLeaderboardDTO>("/admin/leaderboard"),
-  getQuizPenaltyConfig: () => api.get<QuizPenaltyConfigDTO>("/admin/quiz-penalty"),
+  getQuizPenaltyConfig: () =>
+    api.get<QuizPenaltyConfigDTO>("/admin/quiz-penalty"),
   updateQuizPenaltyConfig: (data: QuizPenaltyConfigDTO) =>
-    api.post<{ success: boolean; config: QuizPenaltyConfigDTO }>("/admin/quiz-penalty", data),
+    api.post<{ success: boolean; config: QuizPenaltyConfigDTO }>(
+      "/admin/quiz-penalty",
+      data
+    ),
 };
 
 export const authApi = {
   login: (password: string) =>
-    api.post<{ token: string; expiresAt: number; expiresIn: number }, { password: string }>("/auth/login", {
+    api.post<
+      { token: string; expiresAt: number; expiresIn: number },
+      { password: string }
+    >("/auth/login", {
       password,
     }),
   logout: () => api.post<void>("/auth/logout"),
@@ -560,9 +621,15 @@ export interface UpsertNeverHaveIEverPackInput {
 export const neverHaveIEverApi = {
   list: () => api.get<NeverHaveIEverPackDTO[]>("/games/never-have-i-ever"),
   create: (data: { title: string; statements?: string[] }) =>
-    api.post<NeverHaveIEverPackDTO, { title: string; statements?: string[] }>("/games/never-have-i-ever", data),
+    api.post<NeverHaveIEverPackDTO, { title: string; statements?: string[] }>(
+      "/games/never-have-i-ever",
+      data
+    ),
   update: (id: string, data: UpsertNeverHaveIEverPackInput) =>
-    api.put<NeverHaveIEverPackDTO, UpsertNeverHaveIEverPackInput>(`/games/never-have-i-ever/${id}`, data),
+    api.put<NeverHaveIEverPackDTO, UpsertNeverHaveIEverPackInput>(
+      `/games/never-have-i-ever/${id}`,
+      data
+    ),
   remove: (id: string) => api.delete<void>(`/games/never-have-i-ever/${id}`),
 };
 
@@ -591,14 +658,30 @@ export interface QuizPackDTO {
 export const quizApi = {
   list: () => api.get<QuizPackDTO[]>("/games/quiz"),
   createPack: (data: { title: string; questions?: QuizQuestionDTO[] }) =>
-    api.post<QuizPackDTO, { title: string; questions?: QuizQuestionDTO[] }>("/games/quiz", data),
+    api.post<QuizPackDTO, { title: string; questions?: QuizQuestionDTO[] }>(
+      "/games/quiz",
+      data
+    ),
   updatePack: (id: string, data: { title?: string }) =>
     api.put<QuizPackDTO, { title?: string }>(`/games/quiz/${id}`, data),
   deletePack: (id: string) => api.delete<void>(`/games/quiz/${id}`),
-  addQuestion: (packId: string, data: Omit<QuizQuestionDTO, "id"> & { id?: string }) =>
-    api.post<QuizQuestionDTO, typeof data>(`/games/quiz/${packId}/questions`, data),
-  updateQuestion: (packId: string, questionId: string, data: Partial<QuizQuestionDTO>) =>
-    api.put<QuizQuestionDTO, Partial<QuizQuestionDTO>>(`/games/quiz/${packId}/questions/${questionId}`, data),
+  addQuestion: (
+    packId: string,
+    data: Omit<QuizQuestionDTO, "id"> & { id?: string }
+  ) =>
+    api.post<QuizQuestionDTO, typeof data>(
+      `/games/quiz/${packId}/questions`,
+      data
+    ),
+  updateQuestion: (
+    packId: string,
+    questionId: string,
+    data: Partial<QuizQuestionDTO>
+  ) =>
+    api.put<QuizQuestionDTO, Partial<QuizQuestionDTO>>(
+      `/games/quiz/${packId}/questions/${questionId}`,
+      data
+    ),
   deleteQuestion: (packId: string, questionId: string) =>
     api.delete<void>(`/games/quiz/${packId}/questions/${questionId}`),
 };
@@ -629,12 +712,19 @@ export const funnyQuestionApi = {
       question,
     }),
   update: (id: string, question: string) =>
-    api.put<FunnyQuestionDTO, { question: string }>(`/games/funny-questions/${id}`, { question }),
+    api.put<FunnyQuestionDTO, { question: string }>(
+      `/games/funny-questions/${id}`,
+      { question }
+    ),
   remove: (id: string) => api.delete<void>(`/games/funny-questions/${id}`),
   getWithAnswers: (id: string) =>
-    api.get<{ question: FunnyQuestionDTO; answers: FunnyAnswerDTO[] }>(`/games/funny-questions/${id}/answers`),
+    api.get<{ question: FunnyQuestionDTO; answers: FunnyAnswerDTO[] }>(
+      `/games/funny-questions/${id}/answers`
+    ),
   removeAnswer: (questionId: string, answerId: string) =>
-    api.delete<void>(`/games/funny-questions/${questionId}/answers/${answerId}`),
+    api.delete<void>(
+      `/games/funny-questions/${questionId}/answers/${answerId}`
+    ),
   addAnswer: (questionId: string, answer: string, guestId: string) =>
     api.post(`/games/funny-answers/${questionId}`, { answer, guestId }),
 };
@@ -659,17 +749,34 @@ export interface PasswordAttemptResponseDTO {
 export const passwordGameApi = {
   get: () => api.get<PasswordGameConfigDTO>("/games/password-game"),
   update: (data: { validPasswords?: string[]; active?: boolean }) =>
-    api.patch<PasswordGameConfigDTO, { validPasswords?: string[]; active?: boolean }>("/games/password-game", data),
+    api.patch<
+      PasswordGameConfigDTO,
+      { validPasswords?: string[]; active?: boolean }
+    >("/games/password-game", data),
   replace: (data: { validPasswords: string[]; active?: boolean }) =>
-    api.post<PasswordGameConfigDTO, { validPasswords: string[]; active?: boolean }>("/games/password-game", data),
+    api.post<
+      PasswordGameConfigDTO,
+      { validPasswords: string[]; active?: boolean }
+    >("/games/password-game", data),
   addPassword: (password: string) =>
-    api.post<PasswordGameConfigDTO, { password: string }>("/games/password-game/passwords", { password }),
+    api.post<PasswordGameConfigDTO, { password: string }>(
+      "/games/password-game/passwords",
+      { password }
+    ),
   removePassword: (password: string) =>
-    api.delete<void>(`/games/password-game/passwords/${encodeURIComponent(password)}`),
+    api.delete<void>(
+      `/games/password-game/passwords/${encodeURIComponent(password)}`
+    ),
   start: () => api.post<PasswordGameConfigDTO>("/games/password-game/start"),
-  attempt: (groupId: string, password: string, options?: { configId?: string }) =>
+  attempt: (
+    groupId: string,
+    password: string,
+    options?: { configId?: string }
+  ) =>
     api.post<PasswordAttemptResponseDTO, { groupId: string; password: string }>(
-      options?.configId ? `/games/password-game/${options.configId}/attempt` : "/games/password-game/attempt",
+      options?.configId
+        ? `/games/password-game/${options.configId}/attempt`
+        : "/games/password-game/attempt",
       { groupId, password }
     ),
 };
@@ -679,15 +786,23 @@ export const gameApi = {
   getNHIE: () => api.get<NeverHaveIEverPackDTO[]>("/games/never-have-i-ever"),
   getQuizQuestions: () => api.get<QuizPackDTO[]>("/games/quiz"),
   createFunnyAnswer: (questionId: string, answer: string, guestId: string) =>
-    api.post<FunnyAnswerDTO, { answer: string; guestId: string }>(`/games/funny-answers/${questionId}`, {
-      answer,
-      guestId,
-    }),
-  getQuestionaryAnswers: () => api.get<QuestionaryAnswersResponseDTO>("/games/questionary/answers"),
+    api.post<FunnyAnswerDTO, { answer: string; guestId: string }>(
+      `/games/funny-answers/${questionId}`,
+      {
+        answer,
+        guestId,
+      }
+    ),
+  getQuestionaryAnswers: () =>
+    api.get<QuestionaryAnswersResponseDTO>("/games/questionary/answers"),
   getGameState: () => api.get<GameStateDTO>("/games/state"),
   getGalleryUploads: () => api.get<GalleryUploadListDTO>("/games/gallery"),
   archiveGalleryUploads: (filenames: string[]) =>
-    api.post<Response, { filenames: string[] }>("/games/gallery/archive", { filenames }, { raw: true }),
+    api.post<Response, { filenames: string[] }>(
+      "/games/gallery/archive",
+      { filenames },
+      { raw: true }
+    ),
   getPartnerClues: (guestId: string) =>
     api.get<{
       unlocked: boolean;
@@ -718,7 +833,15 @@ export const gameApi = {
       },
       { gameId: string }
     >(`/games/groups/${groupId}/progress`, { gameId }),
-  addTimePenalty: (groupId: string, data: { seconds: number; reason?: string; source?: string; questionId?: string }) =>
+  addTimePenalty: (
+    groupId: string,
+    data: {
+      seconds: number;
+      reason?: string;
+      source?: string;
+      questionId?: string;
+    }
+  ) =>
     api.post<
       {
         success: boolean;
@@ -727,10 +850,18 @@ export const gameApi = {
       },
       { seconds: number; reason?: string; source?: string; questionId?: string }
     >(`/games/groups/${groupId}/time-penalty`, data),
-  getQuizPenaltyConfig: () => api.get<QuizPenaltyConfigDTO>("/games/quiz-penalty"),
-  getFinalSummary: (groupId: string) => api.get<FinalSummaryDTO>("/games/final-summary", { groupId }),
-  uploadSelfie: (data: FormData) => api.post<UploadSelfieResponse, FormData>("/upload", data, { timeoutMs: 30000 }),
-  uploadMedia: (data: FormData) => api.post<UploadSelfieResponse, FormData>("/upload", data, { timeoutMs: 120000 }),
+  getQuizPenaltyConfig: () =>
+    api.get<QuizPenaltyConfigDTO>("/games/quiz-penalty"),
+  getFinalSummary: (groupId: string) =>
+    api.get<FinalSummaryDTO>("/games/final-summary", { groupId }),
+  uploadSelfie: (data: FormData) =>
+    api.post<UploadSelfieResponse, FormData>("/upload", data, {
+      timeoutMs: 30000,
+    }),
+  uploadMedia: (data: FormData) =>
+    api.post<UploadSelfieResponse, FormData>("/upload", data, {
+      timeoutMs: 120000,
+    }),
 };
 
 // Example usage (remove or comment out in production):
