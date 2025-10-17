@@ -47,14 +47,7 @@ export default function CameraModal() {
       useNativeDriver: true,
     }).start();
 
-    if(scanFeedback === "success") {
-      confetti({
-          particleCount: 5,
-          angle: 280,
-          spread: 60,
-          origin: { y: -1 },
-        });
-    }
+  
 
     const timeout = setTimeout(
       () => {
@@ -103,7 +96,17 @@ export default function CameraModal() {
 
         if ("match" in result && result.match && result.groupId) {
           await AsyncStorage.setItem("groupId", result.groupId);
+           
+      confetti({
+          particleCount: 100,
+          angle: 280,
+          spread: 60,
+          origin: { y: -1 },
+        });
+    
+          setTimeout(() => {
           setScanFeedback("success");
+          }, 1000);
         } else {
           setScanFeedback("error");
         }
