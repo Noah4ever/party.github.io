@@ -80,7 +80,7 @@
           "password-solved"
         ],
         "attempts": 1,
-        "currentGame": "password-solved",
+        "currentGame": "partner-found",
         "selfieUrl": "/uploads/1760290961532-pRJ3mG.jpg",
         "selfieUploadedAt": "2025-10-12T17:42:41.540Z",
         "lastSelfieChallenge": "Klo Challenge"
@@ -520,19 +520,6 @@
       ]
     }
   ],
-  "passwordGames": [
-    {
-      "id": "password-default",
-      "validPasswords": [
-        "Test",
-        "Love",
-        "Pens"
-      ],
-      "active": true,
-      "startedAt": "2025-10-03T18:15:16.400Z",
-      "updatedAt": "2025-10-03T23:49:45.939Z"
-    }
-  ],
   "funnyQuestions": [
     {
       "id": "x8_27Rqv",
@@ -569,5 +556,18 @@
   "quizPenaltyConfig": {
     "minorPenaltySeconds": 60,
     "majorPenaltySeconds": 180
-  }
+  },
+  "passwordGames": [
+    {
+      "id": "password-default",
+      "validPasswords": [
+        "Test",
+        "Love",
+        "Pens"
+      ],
+      "active": true,
+      "startedAt": "2025-10-03T18:15:16.400Z",
+      "updatedAt": "2025-10-03T23:49:45.939Z"
+    }
+  ]
 }
