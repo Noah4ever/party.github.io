@@ -9,8 +9,6 @@ import { useTheme } from "@/constants/theme";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
 
-//TODO: show Noah
-
 
 export default function HomeScreen() {
   const theme = useTheme();

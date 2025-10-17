@@ -9,11 +9,9 @@ import { HelloWave } from "@/components/hello-wave";
 import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { Collapsible } from "@/components/ui/collapsible";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTheme } from "@/constants/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import QRCodeStyled from "react-native-qrcode-styled";
 
 export default function ChallengeTwoScreen() {
   const theme = useTheme();
@@ -112,46 +110,7 @@ export default function ChallengeTwoScreen() {
           </View>
         }
       >
-        <ThemedView
-          style={[
-            styles.card,
-            styles.heroCard,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
-          <View style={styles.sectionHeaderRow}>
-            <ThemedText type="subtitle" style={styles.sectionHeading}>
-              Dein QR-Code
-            </ThemedText>
-            <IconSymbol name="qr-code" size={20} color={theme.primary} />
-          </View>
-
-          <ThemedText
-            style={[styles.sectionIntro, { color: theme.textSecondary }]}
-          >
-            {/* TODO: kann das raus? */}
-            Nutze den Button unten, um deinen persönlichen QR-Code anzuzeigen, falls du ihn noch brauchst.
-          </ThemedText>
-
-          <Collapsible title="QR-Code anzeigen">
-            <View style={styles.qrWrapper}>
-              <QRCodeStyled
-                data={qrValue}
-                size={225}
-                isPiecesGlued={true}
-                pieceBorderRadius={5}
-                pieceLiquidRadius={2}
-                color={theme.text}
-                style={{ backgroundColor: theme.backgroundAlt }}
-                errorCorrectionLevel="M"
-              />
-              <ThemedText style={[styles.qrHint, { color: theme.textMuted }]}>
-                Deine Guest-Id: {qrValue}
-              </ThemedText>
-            </View>
-          </Collapsible>
-        </ThemedView>
-
+    
         <ThemedView
           style={[
             styles.card,
