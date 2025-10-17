@@ -32,8 +32,6 @@ const PENALTY_SECONDS_MAJOR = 180;
 const ADVANCE_DELAY_SUCCESS = 900;
 const ADVANCE_DELAY_ERROR = 1300;
 
-//TODO: change time penaltie add 25 or 30 %
-
 type AnswerFeedback = "neutral" | "correct" | "incorrect" | "missed";
 export default function QuizScreen() {
   const imageMap: Record<string, any> = {
@@ -277,6 +275,7 @@ export default function QuizScreen() {
       const finalIncorrect = Math.max(totalQuestions - finalCorrect, 0);
       const incorrectRatio =
         totalQuestions > 0 ? finalIncorrect / totalQuestions : 0;
+      const lowPenalty = penaltyConfig?.lowPenaltySeconds ?? 30;
       const minorPenalty =
         penaltyConfig?.minorPenaltySeconds ?? PENALTY_SECONDS_MINOR;
       const majorPenalty =
@@ -287,6 +286,8 @@ export default function QuizScreen() {
         penaltySeconds = majorPenalty;
       } else if (incorrectRatio > 0.5) {
         penaltySeconds = minorPenalty;
+      } else if (incorrectRatio > 0.25) {
+        penaltySeconds = lowPenalty;
       }
 
       if (penaltySeconds > 0 && groupId) {
@@ -422,7 +423,9 @@ export default function QuizScreen() {
             <HelloWave />
           </View>
           <ThemedText style={[styles.leadText, { color: theme.textSecondary }]}>
-            Beantwortet jede Frage gemeinsam. Für jede falsche Antwort bekommt ihr eine Zeitstrafe, die auf eure gemessene Zeit addiert wird, also überlegt gut, bevor ihr klickt!
+            Beantwortet jede Frage gemeinsam. Für jede falsche Antwort bekommt
+            ihr eine Zeitstrafe, die auf eure gemessene Zeit addiert wird, also
+            überlegt gut, bevor ihr klickt!
           </ThemedText>
           <View
             style={[
