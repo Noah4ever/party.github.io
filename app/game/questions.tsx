@@ -32,8 +32,6 @@ const PENALTY_SECONDS_MAJOR = 180;
 const ADVANCE_DELAY_SUCCESS = 900;
 const ADVANCE_DELAY_ERROR = 1300;
 
-//TODO: change time penaltie add 25 or 30 %
-
 type AnswerFeedback = "neutral" | "correct" | "incorrect" | "missed";
 export default function QuizScreen() {
   const imageMap: Record<string, any> = {
@@ -48,6 +46,9 @@ export default function QuizScreen() {
     "/assets/images/questions/winter.jpg": require("../../assets/images/questions/winter.jpg"),
     "/assets/images/questions/laufen.jpg": require("../../assets/images/questions/laufen.jpg"),
     "/assets/images/questions/pinkie.jpg": require("../../assets/images/questions/pinkie.jpg"),
+    "/assets/images/questions/age.jpg": require("../../assets/images/questions/age.jpg"),
+
+
   };
   const theme = useTheme();
   const router = useRouter();
