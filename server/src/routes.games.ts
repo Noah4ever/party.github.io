@@ -5,7 +5,11 @@ import { nanoid } from "nanoid";
 import path from "path";
 import { requireAuth } from "./auth.js";
 import { loadData, mutate } from "./dataStore.js";
-import { buildScoreboard, computeGroupScore, parseIsoTime } from "./scoreboard.js";
+import {
+  buildScoreboard,
+  computeGroupScore,
+  parseIsoTime,
+} from "./scoreboard.js";
 import { broadcastLatestScoreboard } from "./scoreboardBroadcast.js";
 import {
   DEFAULT_DATA,
@@ -51,8 +55,12 @@ gamesRouter.get("/gallery", async (_req, res) => {
           const record: UploadRecord | undefined = Array.isArray(data.uploads)
             ? data.uploads.find((item) => item.filename === entry.name)
             : undefined;
-          const guest = record?.guestId ? data.guests.find((g) => g.id === record.guestId) ?? null : null;
-          const group = record?.groupId ? data.groups.find((g) => g.id === record.groupId) ?? null : null;
+          const guest = record?.guestId
+            ? data.guests.find((g) => g.id === record.guestId) ?? null
+            : null;
+          const group = record?.groupId
+            ? data.groups.find((g) => g.id === record.groupId) ?? null
+            : null;
 
           return {
             filename: entry.name,
@@ -74,7 +82,12 @@ gamesRouter.get("/gallery", async (_req, res) => {
 
     res.json({ files });
   } catch (error: any) {
-    if (error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "ENOENT") {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "ENOENT"
+    ) {
       return res.json({ files: [] });
     }
     console.error("gallery uploads listing failed", error);
@@ -87,7 +100,13 @@ gamesRouter.post("/gallery/archive", async (req, res) => {
   const filenames = Array.isArray(raw)
     ? raw
         .map((name) => (typeof name === "string" ? name.trim() : ""))
-        .filter((name) => name && !name.includes("/") && !name.includes("\\") && !name.includes(".."))
+        .filter(
+          (name) =>
+            name &&
+            !name.includes("/") &&
+            !name.includes("\\") &&
+            !name.includes("..")
+        )
     : [];
 
   if (filenames.length === 0) {
@@ -113,12 +132,16 @@ gamesRouter.post("/gallery/archive", async (req, res) => {
   }
 
   if (files.length === 0) {
-    return res.status(404).json({ message: "None of the requested files exist.", missing });
+    return res
+      .status(404)
+      .json({ message: "None of the requested files exist.", missing });
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const archiveName =
-    files.length === 1 ? `${files[0].filename.replace(/\.zip$/i, "")}-${timestamp}.zip` : `gallery-${timestamp}.zip`;
+    files.length === 1
+      ? `${files[0].filename.replace(/\.zip$/i, "")}-${timestamp}.zip`
+      : `gallery-${timestamp}.zip`;
 
   res.status(200);
   res.setHeader("Content-Type", "application/zip");
@@ -152,6 +175,9 @@ gamesRouter.get("/quiz-penalty", async (_req, res) => {
   const defaults = DEFAULT_DATA.quizPenaltyConfig;
   const config: QuizPenaltyConfig = data.quizPenaltyConfig ?? defaults;
   res.json({
+    lowPenaltySeconds: Number.isFinite(config?.lowPenaltySeconds)
+      ? config.lowPenaltySeconds
+      : defaults.lowPenaltySeconds,
     minorPenaltySeconds: Number.isFinite(config?.minorPenaltySeconds)
       ? config.minorPenaltySeconds
       : defaults.minorPenaltySeconds,
@@ -169,9 +195,12 @@ gamesRouter.get("/quiz-penalty", async (_req, res) => {
  */
 gamesRouter.get("/final-summary", async (req, res) => {
   const groupIdRaw = req.query.groupId;
-  const groupId = typeof groupIdRaw === "string" ? groupIdRaw.trim() : undefined;
+  const groupId =
+    typeof groupIdRaw === "string" ? groupIdRaw.trim() : undefined;
   if (!groupId) {
-    return res.status(400).json({ message: "groupId query parameter required" });
+    return res
+      .status(400)
+      .json({ message: "groupId query parameter required" });
   }
 
   const data = await loadData();
@@ -185,7 +214,9 @@ gamesRouter.get("/final-summary", async (req, res) => {
   const fallbackGlobalMs = parseIsoTime(data.gameState?.startedAt) ?? undefined;
   const scoreboard = buildScoreboard(groups, guests, fallbackGlobalMs);
 
-  const placementIndex = scoreboard.findIndex((entry) => entry.id === targetGroup.id);
+  const placementIndex = scoreboard.findIndex(
+    (entry) => entry.id === targetGroup.id
+  );
   const ownScore = computeGroupScore(targetGroup, guests, fallbackGlobalMs);
 
   res.json({
@@ -194,7 +225,10 @@ gamesRouter.get("/final-summary", async (req, res) => {
       groupName: targetGroup.name,
       durationMs: ownScore?.durationMs,
       rawDurationMs: ownScore?.rawDurationMs,
-      penaltySeconds: Math.max(0, targetGroup.progress?.timePenaltySeconds ?? 0),
+      penaltySeconds: Math.max(
+        0,
+        targetGroup.progress?.timePenaltySeconds ?? 0
+      ),
       placement: placementIndex >= 0 ? placementIndex + 1 : undefined,
       startedAt: targetGroup.startedAt,
       finishedAt: targetGroup.finishedAt,
@@ -243,10 +277,13 @@ gamesRouter.get("/guests/:guestId/clues", async (req, res) => {
   }
 
   const partnerId = group.guestIds.find((id) => id !== guestId) ?? null;
-  const partner = partnerId ? data.guests.find((g) => g.id === partnerId) : null;
+  const partner = partnerId
+    ? data.guests.find((g) => g.id === partnerId)
+    : null;
   const clues = partner
     ? [partner.clue1, partner.clue2].filter(
-        (value): value is string => typeof value === "string" && value.trim().length > 0
+        (value): value is string =>
+          typeof value === "string" && value.trim().length > 0
       )
     : [];
 
@@ -414,13 +451,23 @@ gamesRouter.post("/groups/:groupId/time-penalty", async (req, res) => {
 
   const numericSeconds = Number(seconds);
   if (!Number.isFinite(numericSeconds) || numericSeconds <= 0) {
-    return res.status(400).json({ message: "seconds (positive number) required" });
+    return res
+      .status(400)
+      .json({ message: "seconds (positive number) required" });
   }
 
-  const sanitizedReason = typeof reason === "string" && reason.trim().length > 0 ? reason.trim() : undefined;
-  const sanitizedSource = typeof source === "string" && source.trim().length > 0 ? source.trim() : undefined;
+  const sanitizedReason =
+    typeof reason === "string" && reason.trim().length > 0
+      ? reason.trim()
+      : undefined;
+  const sanitizedSource =
+    typeof source === "string" && source.trim().length > 0
+      ? source.trim()
+      : undefined;
   const sanitizedQuestionId =
-    typeof questionId === "string" && questionId.trim().length > 0 ? questionId.trim() : undefined;
+    typeof questionId === "string" && questionId.trim().length > 0
+      ? questionId.trim()
+      : undefined;
   const entryId = nanoid(10);
   const addedAt = new Date().toISOString();
 
@@ -434,13 +481,18 @@ gamesRouter.post("/groups/:groupId/time-penalty", async (req, res) => {
       group.progress.timePenaltyEvents = [];
     }
 
-    if (typeof group.progress.timePenaltySeconds !== "number" || Number.isNaN(group.progress.timePenaltySeconds)) {
+    if (
+      typeof group.progress.timePenaltySeconds !== "number" ||
+      Number.isNaN(group.progress.timePenaltySeconds)
+    ) {
       group.progress.timePenaltySeconds = 0;
     }
 
     if (!group.startedAt) {
       const fallbackStart =
-        (typeof d.gameState?.startedAt === "string" ? d.gameState.startedAt : undefined) ?? new Date().toISOString();
+        (typeof d.gameState?.startedAt === "string"
+          ? d.gameState.startedAt
+          : undefined) ?? new Date().toISOString();
       group.startedAt = fallbackStart;
     }
 
@@ -495,14 +547,22 @@ async function ensureSingleNeverHaveIEverPack(): Promise<NeverHaveIEverPack> {
     let primary: NeverHaveIEverPack | null = null;
 
     for (const entry of entries) {
-      if (entry && typeof entry === "object" && "statements" in (entry as any)) {
+      if (
+        entry &&
+        typeof entry === "object" &&
+        "statements" in (entry as any)
+      ) {
         const pack = entry as Partial<NeverHaveIEverPack> & {
           statements?: unknown;
         };
         if (!primary) {
           primary = {
-            id: typeof pack.id === "string" && pack.id ? pack.id : "nhie-default",
-            title: typeof pack.title === "string" && pack.title ? pack.title : "Standard Pack",
+            id:
+              typeof pack.id === "string" && pack.id ? pack.id : "nhie-default",
+            title:
+              typeof pack.title === "string" && pack.title
+                ? pack.title
+                : "Standard Pack",
             statements: [],
           };
         }
@@ -550,7 +610,9 @@ async function ensureSingleQuizPack(): Promise<QuizPack> {
     const [primary, ...rest] = d.quizPacks;
     rest.forEach((pack) => {
       pack.questions.forEach((question) => {
-        if (!primary.questions.some((existing) => existing.id === question.id)) {
+        if (
+          !primary.questions.some((existing) => existing.id === question.id)
+        ) {
           primary.questions.push(question);
         }
       });
@@ -653,7 +715,8 @@ gamesRouter.post("/quiz/:packId/questions", requireAuth, async (req, res) => {
   const { packId } = req.params;
   const { question, answers, difficulty, imageUrl } = req.body || {};
   if (!question) return res.status(400).json({ message: "question required" });
-  if (!Array.isArray(answers) || answers.length < 2) return res.status(400).json({ message: "answers min 2" });
+  if (!Array.isArray(answers) || answers.length < 2)
+    return res.status(400).json({ message: "answers min 2" });
   const q: QuizQuestion = {
     id: nanoid(8),
     question,
@@ -681,23 +744,28 @@ gamesRouter.post("/quiz/:packId/questions", requireAuth, async (req, res) => {
  * Body: { question?: string; answers?: string[]; difficulty?: QuizQuestion['difficulty']; imageUrl?: string }
  * Response: QuizQuestion
  */
-gamesRouter.put("/quiz/:packId/questions/:qid", requireAuth, async (req, res) => {
-  const { packId, qid } = req.params;
-  const { question, answers, difficulty, imageUrl } = req.body || {};
-  const updated = await mutate((d) => {
-    const pack = d.quizPacks.find((p) => p.id === packId);
-    if (!pack) return null;
-    const q = pack.questions.find((item) => item.id === qid);
-    if (!q) return null;
-    if (question !== undefined) q.question = question;
-    if (answers) q.answers = answers as QuizQuestion["answers"];
-    if (difficulty !== undefined) q.difficulty = difficulty;
-    if (imageUrl !== undefined) q.imageUrl = imageUrl;
-    return q;
-  });
-  if (!updated) return res.status(404).json({ message: "question not found" });
-  res.json(updated);
-});
+gamesRouter.put(
+  "/quiz/:packId/questions/:qid",
+  requireAuth,
+  async (req, res) => {
+    const { packId, qid } = req.params;
+    const { question, answers, difficulty, imageUrl } = req.body || {};
+    const updated = await mutate((d) => {
+      const pack = d.quizPacks.find((p) => p.id === packId);
+      if (!pack) return null;
+      const q = pack.questions.find((item) => item.id === qid);
+      if (!q) return null;
+      if (question !== undefined) q.question = question;
+      if (answers) q.answers = answers as QuizQuestion["answers"];
+      if (difficulty !== undefined) q.difficulty = difficulty;
+      if (imageUrl !== undefined) q.imageUrl = imageUrl;
+      return q;
+    });
+    if (!updated)
+      return res.status(404).json({ message: "question not found" });
+    res.json(updated);
+  }
+);
 
 /**
  * DELETE /api/games/quiz/:packId/questions/:qid
@@ -705,19 +773,23 @@ gamesRouter.put("/quiz/:packId/questions/:qid", requireAuth, async (req, res) =>
  * Deletes a question from the specified quiz pack. Requires admin authentication.
  * Returns 204 when removed or 404 if the question is missing.
  */
-gamesRouter.delete("/quiz/:packId/questions/:qid", requireAuth, async (req, res) => {
-  const { packId, qid } = req.params;
-  const ok = await mutate((d) => {
-    const pack = d.quizPacks.find((p) => p.id === packId);
-    if (!pack) return false;
-    const idx = pack.questions.findIndex((question) => question.id === qid);
-    if (idx === -1) return false;
-    pack.questions.splice(idx, 1);
-    return true;
-  });
-  if (!ok) return res.status(404).json({ message: "question not found" });
-  res.status(204).end();
-});
+gamesRouter.delete(
+  "/quiz/:packId/questions/:qid",
+  requireAuth,
+  async (req, res) => {
+    const { packId, qid } = req.params;
+    const ok = await mutate((d) => {
+      const pack = d.quizPacks.find((p) => p.id === packId);
+      if (!pack) return false;
+      const idx = pack.questions.findIndex((question) => question.id === qid);
+      if (idx === -1) return false;
+      pack.questions.splice(idx, 1);
+      return true;
+    });
+    if (!ok) return res.status(404).json({ message: "question not found" });
+    res.status(204).end();
+  }
+);
 
 // NEVER HAVE I EVER PACKS
 // GET all packs
@@ -750,7 +822,9 @@ gamesRouter.get("/never-have-i-ever", async (_req, res) => {
 gamesRouter.post("/never-have-i-ever", requireAuth, async (req, res) => {
   const { title, statements } = req.body || {};
   if (!title) return res.status(400).json({ message: "title required" });
-  const sanitizedStatements = Array.isArray(statements) ? statements.map((s: unknown) => String(s)) : [];
+  const sanitizedStatements = Array.isArray(statements)
+    ? statements.map((s: unknown) => String(s))
+    : [];
   const pack: NeverHaveIEverPack = {
     id: nanoid(8),
     title,
@@ -796,17 +870,21 @@ gamesRouter.put("/never-have-i-ever/:packId", requireAuth, async (req, res) => {
  * Removes the specified Never Have I Ever pack. Requires admin authentication. Returns
  * 204 on success or 404 if the pack cannot be found.
  */
-gamesRouter.delete("/never-have-i-ever/:packId", requireAuth, async (req, res) => {
-  const { packId } = req.params;
-  const ok = await mutate((d) => {
-    const idx = d.neverHaveIEverPacks.findIndex((p) => p.id === packId);
-    if (idx === -1) return false;
-    d.neverHaveIEverPacks.splice(idx, 1);
-    return true;
-  });
-  if (!ok) return res.status(404).json({ message: "pack not found" });
-  res.status(204).end();
-});
+gamesRouter.delete(
+  "/never-have-i-ever/:packId",
+  requireAuth,
+  async (req, res) => {
+    const { packId } = req.params;
+    const ok = await mutate((d) => {
+      const idx = d.neverHaveIEverPacks.findIndex((p) => p.id === packId);
+      if (idx === -1) return false;
+      d.neverHaveIEverPacks.splice(idx, 1);
+      return true;
+    });
+    if (!ok) return res.status(404).json({ message: "pack not found" });
+    res.status(204).end();
+  }
+);
 
 // Funny Questions Admin
 
@@ -878,7 +956,8 @@ gamesRouter.put(
       }
       return fq;
     });
-    if (!updated) return res.status(404).json({ message: "question not found" });
+    if (!updated)
+      return res.status(404).json({ message: "question not found" });
     res.json(updated);
   }
 );
@@ -924,12 +1003,15 @@ gamesRouter.get(
     const { id } = req.params;
     const data = await loadData();
     const question = data.funnyQuestions.find((q) => q.id === id);
-    if (!question) return res.status(404).json({ message: "question not found" });
+    if (!question)
+      return res.status(404).json({ message: "question not found" });
     const answers = data.funnyAnswers
       .filter((a) => a.questionId === id)
       .map((answer) => {
         const guest = data.guests.find((g) => g.id === answer.guestId);
-        const group = guest?.groupId ? data.groups.find((g) => g.id === guest.groupId) : null;
+        const group = guest?.groupId
+          ? data.groups.find((g) => g.id === guest.groupId)
+          : null;
         return {
           ...answer,
           guestName: guest?.name ?? null,
@@ -961,7 +1043,9 @@ gamesRouter.get("/questionary/answers", async (_req, res) => {
         .filter((entry) => entry.questionId === question.id)
         .map((entry) => {
           const guest = guests.find((g) => g.id === entry.guestId);
-          const group = guest?.groupId ? groups.find((grp) => grp.id === guest.groupId) : undefined;
+          const group = guest?.groupId
+            ? groups.find((grp) => grp.id === guest.groupId)
+            : undefined;
           return {
             id: entry.id,
             answer: entry.answer,
@@ -1002,7 +1086,9 @@ gamesRouter.delete(
     const ok = await mutate((d) => {
       const question = d.funnyQuestions.find((q) => q.id === id);
       if (!question) return false;
-      const idx = d.funnyAnswers.findIndex((a) => a.id === answerId && a.questionId === id);
+      const idx = d.funnyAnswers.findIndex(
+        (a) => a.id === answerId && a.questionId === id
+      );
       if (idx === -1) return false;
       d.funnyAnswers.splice(idx, 1);
       return true;
